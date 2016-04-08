@@ -3,6 +3,6 @@
 
 using System.Reflection;
 
-[assembly: AssemblyCompany("Its")]
-[assembly: AssemblyCopyright("Its. All rights reserved.")]
-[assembly: AssemblyProduct("Its.Log")]
+[assembly: AssemblyCompany("Peaky")]
+[assembly: AssemblyCopyright("Peaky. All rights reserved.")]
+[assembly: AssemblyProduct("Peaky")]
