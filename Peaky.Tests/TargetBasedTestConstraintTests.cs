@@ -24,19 +24,20 @@ namespace Peaky.Tests
         [SetUp]
         public void SetUp()
         {
-            TestsConstrainedToTarget.AppliesTo = _ => false;
             disposables = new CompositeDisposable(log.Events().Subscribe(Console.WriteLine));
         }
 
-        private TestApi CreateApiClient()
+        private TestApi CreateApiClient(Func<HttpClient, bool> buildChecker)
         {
             var testApi = new TestApi(targets =>
-                                      targets.Add("staging", "widgetapi",
+                                      targets.Add("staging",
+                                                  "widgetapi",
                                                   new Uri("http://staging.widgets.com"),
                                                   dependencies =>
-                                                  dependencies.Register(() =>
-                                                                        new HttpClient(new HttpServer(new HttpConfiguration()
-                                                                                                          .MapSensorRoutes(_ => true))))),
+                                                  dependencies
+                                                      .Register(() => buildChecker)
+                                                      .Register(() => new HttpClient(new HttpServer(new HttpConfiguration()
+                                                                                                        .MapSensorRoutes(_ => true))))),
                                       typeof (TestsConstrainedToTarget));
 
             disposables.Add(testApi);
@@ -59,9 +60,7 @@ namespace Peaky.Tests
         {
             using (var activity = log.Enter(() => { }))
             {
-                TestsConstrainedToTarget.AppliesTo = BuildDateAfter(DateTime.Now);
-
-                var response = await CreateApiClient().GetAsync("http://tests.com/tests");
+                var response = await CreateApiClient(BuildDateAfter(DateTime.Now.AddDays(10))).GetAsync("http://tests.com/tests");
 
                 activity.Trace(() => new { response });
 
@@ -78,9 +77,7 @@ namespace Peaky.Tests
         {
             using (var activity = log.Enter(() => { }))
             {
-                TestsConstrainedToTarget.AppliesTo = BuildDateAfter(DateTime.Now.Subtract(TimeSpan.FromDays(1000)));
-
-                var response = await CreateApiClient().GetAsync("http://tests.com/tests");
+                var response = await CreateApiClient(BuildDateAfter(DateTime.Now.Subtract(TimeSpan.FromDays(1000)))).GetAsync("http://tests.com/tests");
 
                 activity.Confirm(() => new { response });
 
@@ -97,13 +94,11 @@ namespace Peaky.Tests
         {
             var constraintCalls = 0;
 
-            TestsConstrainedToTarget.AppliesTo = _ =>
-            {
-                Interlocked.Increment(ref constraintCalls);
-                return false;
-            };
-
-            var apiClient = CreateApiClient();
+            var apiClient = CreateApiClient(_ =>
+                                            {
+                                                Interlocked.Increment(ref constraintCalls);
+                                                return false;
+                                            });
 
             await apiClient.GetAsync("http://tests.com/tests");
             await apiClient.GetAsync("http://tests.com/tests");
@@ -118,35 +113,37 @@ namespace Peaky.Tests
             {
                 var sensorResult = httpClient.GetAsync("/sensors").Result.JsonContent();
                 Console.WriteLine(new { sensorResult });
-                var buildDate = sensorResult.Version["Build date"];
+                DateTime buildDate = sensorResult.Version["Build date"];
                 Console.WriteLine(new { buildDate, buildDateAfter });
                 return buildDate > buildDateAfter;
             };
         }
-    }
 
-    public class TestsConstrainedToTarget : IApplyToTarget
-    {
-        private readonly HttpClient httpClient;
-
-        public TestsConstrainedToTarget(HttpClient httpClient)
+        private class TestsConstrainedToTarget : IApplyToTarget
         {
-            if (httpClient == null)
+            private readonly HttpClient httpClient;
+            private readonly Func<HttpClient, bool> buildChecker;
+
+            public TestsConstrainedToTarget(HttpClient httpClient, Func<HttpClient, bool> buildChecker)
             {
-                throw new ArgumentNullException(nameof(httpClient));
+                if (httpClient == null)
+                {
+                    throw new ArgumentNullException(nameof(httpClient));
+                }
+                this.httpClient = httpClient;
+                this.buildChecker = buildChecker;
             }
-            this.httpClient = httpClient;
-        }
 
-        public void target_based_constraint_test()
-        {
-        }
+            public void target_based_constraint_test()
+            {
+            }
 
-        public bool AppliesToTarget(TestTarget target)
-        {
-            return AppliesTo(httpClient);
+            public bool AppliesToTarget(TestTarget target)
+            {
+                return buildChecker?.Invoke(httpClient) ?? false;
+            }
         }
-
-        public static Func<HttpClient, bool> AppliesTo = _ => false;
     }
+
+   
 }
