@@ -21,7 +21,10 @@ namespace Peaky
                                             .IfContains("Peaky.TestUiUri")
                                             .And()
                                             .IfTypeIs<string>()
-                                            .Else(() => "http://itsmonitoringux.azurewebsites.net/Peaky.js"),
+                                            .Else(() => "http://itsmonitoringux.azurewebsites.net/its.log.monitoring.js"),
+                        //TODO(phpruett): rehost UI
+
+
                         controllerDescriptor.Configuration
                                             .Properties
                                             .IfContains("Peaky.TestLibraryUris")
