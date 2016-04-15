@@ -6,24 +6,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Web.Http;
 using Pocket;
 
 namespace Peaky
 {
     public class TestTargetRegistry : IEnumerable<TestTarget>
     {
-        private readonly HttpConfiguration configuration;
-        private readonly IDictionary<string, TestTarget> targets = new Dictionary<string, TestTarget>();
-
-        internal TestTargetRegistry(HttpConfiguration configuration)
-        {
-            if (configuration == null)
-            {
-                throw new ArgumentNullException(nameof(configuration));
-            }
-            this.configuration = configuration;
-        }
+        private readonly IDictionary<string, Lazy<TestTarget>> targets = new Dictionary<string, Lazy<TestTarget>>();
 
         public TestTargetRegistry Add(
             string environment,
@@ -48,16 +37,14 @@ namespace Peaky
                 throw new ArgumentException("Base address must be an absolute URI.");
             }
 
-            var testTarget = new TestTarget
+            var container = new PocketContainer()
+                .Register(c => new HttpClient())
+                .RegisterSingle(c =>  new TestTarget(c.Resolve)
             {
                 Application = application,
                 Environment = environment,
                 BaseAddress = baseAddress
-            };
-
-            var container = new PocketContainer()
-                .Register(c => new HttpClient())
-                .Register(c => testTarget);
+            });
 
             testDependencies?.Invoke(new TestDependencyRegistry((t, func) => container.Register(t, c => func())));
 
@@ -65,14 +52,13 @@ namespace Peaky
             {
                 if (client.BaseAddress == null)
                 {
-                    client.BaseAddress = testTarget.BaseAddress;
+                    client.BaseAddress = baseAddress;
                 }
                 return client;
             });
 
-            testTarget.ResolveDependency = container.Resolve;
-
-            targets.Add(environment + ":" + application, testTarget);
+            targets.Add($"{environment}:{application}",
+                        new Lazy<TestTarget>(() => container.Resolve<TestTarget>()));
 
             return this;
         }
@@ -85,7 +71,7 @@ namespace Peaky
                 return testTarget;
             }
 
-            if (!targets.Any(t => t.Value.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase)))
+            if (!targets.Any(t => t.Value.Value.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase)))
             {
                 throw new ArgumentException($"Environment '{environment}' has not been defined.");
             }
@@ -95,16 +81,23 @@ namespace Peaky
 
         internal TestTarget TryGet(string environment, string application)
         {
-            TestTarget target;
+            Lazy<TestTarget> target;
             if (targets.TryGetValue(environment + ":" + application, out target))
             {
-                return target;
+                return target.Value;
             }
             return null;
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="T:System.Collections.Generic.IEnumerator`1"/> that can be used to iterate through the collection.
+        /// </returns>
+        /// <filterpriority>1</filterpriority>
         public IEnumerator<TestTarget> GetEnumerator() =>
-            targets.Select(c => c.Value).GetEnumerator();
+            targets.Select(c => c.Value.Value).GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

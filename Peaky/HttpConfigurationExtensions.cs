@@ -132,7 +132,7 @@ namespace Peaky
                 handler: handler);
 
             // set up test execution routes
-            var targetRegistry = new TestTargetRegistry(configuration);
+            var targetRegistry = new TestTargetRegistry();
             configuration.TestTargetsAre(targetRegistry);
             configureTargets?.Invoke(targetRegistry);
 

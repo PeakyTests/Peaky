@@ -13,8 +13,13 @@ namespace Peaky
             Formatter<TestTarget>.RegisterForAllMembers();  
         }
 
-        internal TestTarget()
+        public TestTarget(Func<Type, object> resolveDependency)
         {
+            if (resolveDependency == null)
+            {
+                throw new ArgumentNullException(nameof(resolveDependency));
+            }
+            ResolveDependency = resolveDependency;
         }
 
         public string Application { get; internal set; }
@@ -23,7 +28,7 @@ namespace Peaky
 
         public Uri BaseAddress { get; internal set; }
 
-        internal Func<Type, object> ResolveDependency { get; set; }
+        internal Func<Type, object> ResolveDependency { get; private set; }
 
         public override string ToString() => this.ToLogString();
     }
