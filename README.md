@@ -1,4 +1,6 @@
 ### Peaky Exposes Tests as HTTP Endpoints
+
+[![Join the chat at https://gitter.im/PhillipPruett/Peaky](https://badges.gitter.im/PhillipPruett/Peaky.svg)](https://gitter.im/PhillipPruett/Peaky?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Peaky discovers tests in an application and maps routes to allow them to be called over HTTP. These tests can live within the application they are testing or stood up as their own service.
 ### What does Peaky provide me?
 One of the great benefits of Peaky is moving tests away from the antiquated paradigm where tests are ran on local machines to being ran from a sharable and accessible location. This does away with _‘works on my machine’_ test issues and allows you to easily share, discover, and execute tests.
