@@ -114,11 +114,11 @@
     <Compile Include="FakeHttpClient.cs" />
     <Compile Include="JsonContent.cs" />
     <Compile Include="JsonSerializationExtensions.cs" />
-    <Compile Include="MonitoringTestDependencyTests.cs" />
-    <Compile Include="MonitoringTestDiscoveryTests.cs" />
-    <Compile Include="MonitoringTestExecutionForAttributedRoutedTests.cs" />
-    <Compile Include="MonitoringTestExecutionTests.cs" />
-    <Compile Include="MonitoringTestHtmlTests.cs" />
+    <Compile Include="PeakyTestDependencyTests.cs" />
+    <Compile Include="PeakyTestDiscoveryTests.cs" />
+    <Compile Include="PeakyTestExecutionForAttributedRoutedTests.cs" />
+    <Compile Include="PeakyTestExecutionTests.cs" />
+    <Compile Include="PeakyTestHtmlTests.cs" />
     <Compile Include="SensorAsyncTests.cs" />
     <Compile Include="SensorAuthorizationTests.cs" />
     <Compile Include="SensorErrorTests.cs" />

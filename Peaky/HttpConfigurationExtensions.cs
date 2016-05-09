@@ -72,8 +72,8 @@ namespace Peaky
         /// <param name="configuration">The configuration.</param>
         /// <param name="configureTargets">A delegate to configure the test targets.</param>
         /// <param name="baseUri">The base URI segment that the tests will be routed under.</param>
-        /// <param name="testTypes">The Types to map routes for. If omitted, all discovered implementations of <see cref="IMonitoringTest" /> will be routed.</param>
-        /// <param name="handler">A message handler to handle test requests, if you would like to provide authentication, logging, or other functionality during calls to monitoring tests.</param>
+        /// <param name="concreateTestClasses">The Types to map routes for. If omitted, all discovered implementations of <see cref="IPeakyTest" /> will be routed.</param>
+        /// <param name="handler">A message handler to handle test requests, if you would like to provide authentication, logging, or other functionality during calls to peaky tests.</param>
         /// <param name="testUiScriptUrl">The location of the test UI script.</param>
         /// <param name="testUiLibraryUrls">The locations of any libraries the UI script depends on</param>
         /// <returns></returns>
@@ -82,7 +82,7 @@ namespace Peaky
             this HttpConfiguration configuration,
             Action<TestTargetRegistry> configureTargets = null,
             string baseUri = "tests",
-            IEnumerable<Type> testTypes = null,
+            IEnumerable<Type> concreateTestClasses = null,
             HttpMessageHandler handler = null,
             string testUiScriptUrl = null,
             IEnumerable<string> testUiLibraryUrls = null)
@@ -123,7 +123,7 @@ namespace Peaky
                 testRootRouteTemplate,
                 defaults: new
                 {
-                    controller = "MonitoringTest",
+                    controller = "PeakyTest",
                     action = "tests",
                     application = RouteParameter.Optional,
                     environment = RouteParameter.Optional
@@ -136,10 +136,10 @@ namespace Peaky
             configuration.TestTargetsAre(targetRegistry);
             configureTargets?.Invoke(targetRegistry);
 
-            testTypes = testTypes ?? Discover.ConcreteTypes()
-                .DerivedFrom(typeof (IMonitoringTest));
+            concreateTestClasses = concreateTestClasses ?? Discover.ConcreteTypes()
+                .DerivedFrom(typeof (IPeakyTest));
 
-            var testDefinitions = testTypes.GetTestDefinitions();
+            var testDefinitions = concreateTestClasses.GetTestDefinitions();
             configuration.TestDefinitionsAre(testDefinitions);
 
             testDefinitions.Select(p => p.Value)
@@ -154,7 +154,7 @@ namespace Peaky
                                    testRootRouteTemplate.AppendSegment(test.TestName),
                                    defaults: new
                                    {
-                                       controller = "MonitoringTest",
+                                       controller = "PeakyTest",
                                        action = "run",
                                        testName = test.TestName
                                    },

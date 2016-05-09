@@ -3,7 +3,7 @@
 
 namespace Peaky
 {
-    public interface IApplyToEnvironment : IMonitoringTest
+    public interface IApplyToEnvironment : IPeakyTest
     {
         bool AppliesToEnvironment(string environment);
     }

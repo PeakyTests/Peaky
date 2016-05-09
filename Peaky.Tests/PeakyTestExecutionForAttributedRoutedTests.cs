@@ -13,12 +13,12 @@ using NUnit.Framework;
 namespace Peaky.Tests
 {
     [TestFixture]
-    public class MonitoringTestExecutionForAttributedRoutedTests
+    public class PeakyTestExecutionForAttributedRoutedTests
     {
         private static HttpClient apiClient;
         private static HttpConfiguration configuration;
 
-        public MonitoringTestExecutionForAttributedRoutedTests()
+        public PeakyTestExecutionForAttributedRoutedTests()
         {
             configuration = new HttpConfiguration();
             var constraintResolver = new DefaultInlineConstraintResolver();

@@ -12,7 +12,7 @@ namespace Peaky
 {
     [TestUiHtmlConfiguration]
     [DefaultJsonFormatter]
-    public class MonitoringTestController : ApiController
+    public class PeakyTestController : ApiController
     {
         [HttpGet]
         public dynamic Tests(string environment = null, string application = null)

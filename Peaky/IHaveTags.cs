@@ -3,7 +3,7 @@
 
 namespace Peaky
 {
-    public interface IHaveTags : IMonitoringTest
+    public interface IHaveTags : IPeakyTest
     {
         string[] Tags { get; }
     }

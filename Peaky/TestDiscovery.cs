@@ -12,10 +12,10 @@ namespace Peaky
     internal static class TestDiscovery
     {
         public static IDictionary<string, TestDefinition> GetTestDefinitions(
-            this IEnumerable<Type> monitoringTests)
+            this IEnumerable<Type> concreteTestClasses)
         {
             var definitions =
-                monitoringTests
+                concreteTestClasses
                     .SelectMany(
                         t => t
                               .GetMethods(BindingFlags.Public |

@@ -12,7 +12,7 @@ using System.Web.Http.Controllers;
 namespace Peaky
 {
     internal class TestDefinition<T> : TestDefinition
-        where T : class, IMonitoringTest
+        where T : class, IPeakyTest
     {
         private readonly Func<T, dynamic> defaultExecuteTestMethod;
         private readonly MethodInfo methodInfo;

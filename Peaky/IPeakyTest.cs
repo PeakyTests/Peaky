@@ -3,7 +3,7 @@
 
 namespace Peaky
 {
-    public interface IMonitoringTest
+    public interface IPeakyTest
     {
     }
 }

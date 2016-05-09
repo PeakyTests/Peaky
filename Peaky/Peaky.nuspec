@@ -9,7 +9,7 @@
     <projectUrl>https://github.com/PhillipPruett/Peaky</projectUrl>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Expose monitoring tests and sensors via HTTP for health monitoring, testing in production, integration testing, functionality testing, and smoke testing.</description>
+    <description>Expose peaky tests and sensors via HTTP for health monitoring, testing in production, integration testing, functionality testing, and smoke testing.</description>
     <tags>logging telemetry monitoring sensors diagnostics TiP testing</tags>
     <dependencies>
       <dependency id="Its.Log" version="[2.9.13,3.0.0)" />

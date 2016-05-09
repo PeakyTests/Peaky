@@ -3,7 +3,7 @@
 
 namespace Peaky
 {
-    public interface IApplyToTarget : IMonitoringTest
+    public interface IApplyToTarget : IPeakyTest
     {
         bool AppliesToTarget(TestTarget target);
     }

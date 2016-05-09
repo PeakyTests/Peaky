@@ -109,8 +109,8 @@
     <Compile Include="IHaveTags.cs" />
     <Compile Include="IApplyToEnvironment.cs" />
     <Compile Include="IApplyToTarget.cs" />
-    <Compile Include="IMonitoringTest.cs" />
-    <Compile Include="MonitoringTestController.cs" />
+    <Compile Include="IPeakyTest.cs" />
+    <Compile Include="PeakyTestController.cs" />
     <Compile Include="ParameterDescription.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ApplicationConstraint.cs" />

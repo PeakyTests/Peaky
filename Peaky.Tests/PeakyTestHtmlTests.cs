@@ -12,7 +12,7 @@ using NUnit.Framework;
 namespace Peaky.Tests
 {
     [TestFixture]
-    public class MonitoringTestHtmlTests
+    public class PeakyTestHtmlTests
     {
         private static HttpClient apiClient;
         private static HttpConfiguration configuration;

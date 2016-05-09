@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft. All rights reserved. 
+﻿// Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -15,7 +15,7 @@ using Newtonsoft.Json.Linq;
 namespace Peaky.Tests
 {
     [TestFixture]
-    public class MonitoringTestDependencyTests
+    public class PeakyTestDependencyTests
     {
         [Test]
         public void Target_environment_is_available_by_declaring_a_dependency_on_Target_when_no_resolver_is_specified()
@@ -171,7 +171,7 @@ namespace Peaky.Tests
         }
     }
 
-    public class TestsWithDependencies : IMonitoringTest
+    public class TestsWithDependencies : IPeakyTest
     {
         private readonly HttpClient httpClient;
         private readonly TestTarget testTarget;
@@ -202,7 +202,7 @@ namespace Peaky.Tests
         }
     }
 
-    public class TestsWithDependencyOnTarget : IMonitoringTest
+    public class TestsWithDependencyOnTarget : IPeakyTest
     {
         private readonly TestTarget testTarget;
 
@@ -221,7 +221,7 @@ namespace Peaky.Tests
         }
     }
 
-    public class TestWithUnsatisfiableDependencies : IMonitoringTest
+    public class TestWithUnsatisfiableDependencies : IPeakyTest
     {
         public TestWithUnsatisfiableDependencies(IEnumerable<KeyValuePair<DateTimeOffset?, HashSet<Guid>>> probablyNotRegistered)
         {

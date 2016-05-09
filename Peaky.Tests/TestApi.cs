@@ -25,7 +25,7 @@ namespace Peaky.Tests
             }
 
             var configuration = new HttpConfiguration();
-            configuration.MapTestRoutes(configureTargets, testTypes: testTypes);
+            configuration.MapTestRoutes(configureTargets, concreateTestClasses: testTypes);
             configuration.EnsureInitialized();
             return new HttpServer(configuration);
         }

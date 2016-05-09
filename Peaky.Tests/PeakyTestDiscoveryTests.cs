@@ -17,7 +17,7 @@ using Newtonsoft.Json.Linq;
 namespace Peaky.Tests
 {
     [TestFixture]
-    public class MonitoringTestDiscoveryTests
+    public class PeakyTestDiscoveryTests
     {
         private HttpClient apiClient;
 
@@ -231,7 +231,7 @@ namespace Peaky.Tests
             var configuration = new HttpConfiguration();
             configuration.MapTestRoutes(configureTargets: targets =>
                                                           targets.Add("production", "widgetapi", new Uri("http://widgets.com")),
-                                        testTypes: new[] {typeof (WidgetApiTests)});
+                                        concreateTestClasses: new[] {typeof (WidgetApiTests)});
             configuration.EnsureInitialized();
 
             var api = new HttpClient(new HttpServer(configuration));
@@ -523,7 +523,7 @@ namespace Peaky.Tests
         }
     }
 
-    public class GotTests : IMonitoringTest
+    public class GotTests : IPeakyTest
     {
         public string SomeProperty { get; set; }
 
@@ -713,7 +713,7 @@ namespace Peaky.Tests
         }
     }
 
-    public class CollisionTest1 : IMonitoringTest
+    public class CollisionTest1 : IPeakyTest
     {
         public dynamic name_collision()
         {
@@ -721,7 +721,7 @@ namespace Peaky.Tests
         }
     }
 
-    public class CollisionTest2 : IMonitoringTest
+    public class CollisionTest2 : IPeakyTest
     {
         public dynamic name_collision()
         {

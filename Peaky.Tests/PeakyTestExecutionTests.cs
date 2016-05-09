@@ -14,11 +14,11 @@ using NUnit.Framework;
 namespace Peaky.Tests
 {
     [TestFixture]
-    public class MonitoringTestExecutionTests
+    public class PeakyTestExecutionTests
     {
         private static HttpClient api;
 
-        public MonitoringTestExecutionTests()
+        public PeakyTestExecutionTests()
         {
             Formatter<TraceBuffer>.Register(b => new
             {
@@ -247,7 +247,7 @@ namespace Peaky.Tests
         }
     }
 
-    public class TestsWithTraceOutput : IMonitoringTest
+    public class TestsWithTraceOutput : IPeakyTest
     {
         public static Barrier Barrier;
 
