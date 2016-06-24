@@ -119,6 +119,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BingTests.cs" />
+    <Compile Include="HomePageTests.cs" />
+    <Compile Include="MicrosoftTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>

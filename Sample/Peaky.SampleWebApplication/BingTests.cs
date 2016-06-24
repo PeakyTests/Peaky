@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using FluentAssertions;
 
@@ -18,10 +17,21 @@ namespace Peaky.SampleWebApplication
             this.httpClient = httpClient;
         }
 
-        public async Task bing_is_reachable()
+        public bool AppliesToApplication(string application)
         {
-            (await httpClient.GetAsync("/")).StatusCode.Should().Be(HttpStatusCode.OK);
+            return application == "bing";
         }
+
+        public bool AppliesToEnvironment(string environment)
+        {
+            return environment == "prod";
+        }
+
+        public string[] Tags => new[]
+                                {
+                                    "LiveSite",
+                                    "NonSideEffecting"
+                                };
 
         public string bing_homepage_returned_in_under_5ms()
         {
@@ -35,6 +45,20 @@ namespace Peaky.SampleWebApplication
             return $"{stopwatch.ElapsedMilliseconds} milliseconds";
         }
 
+        public async Task images_should_return_200OK()
+        {
+            (await httpClient.GetAsync("/images")).StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        public async Task rewards_should_return_200OK()
+        {
+            (await httpClient.GetAsync("/rewards/dashboard")).StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        public async Task maps_should_return_200OK()
+        {
+            (await httpClient.GetAsync("/mapspreview")).StatusCode.Should().Be(HttpStatusCode.OK);
+        }
 
         public async Task sign_in_link_is_present()
         {
@@ -42,17 +66,5 @@ namespace Peaky.SampleWebApplication
 
             response.Should().Contain(">Sign In</span>");
         }
-
-        public bool AppliesToApplication(string application)
-        {
-            return application == "bing";
-        }
-
-        public bool AppliesToEnvironment(string environment)
-        {
-            return environment == "prod";
-        }
-
-        public string[] Tags => new[] {"LiveSite", "NonSideEffecting"};
     }
 }
