@@ -5,6 +5,7 @@ using Owin;
 using Peaky.SampleWebApplication;
 
 [assembly: OwinStartup(typeof (Startup))]
+
 namespace Peaky.SampleWebApplication
 {
     public class Startup
@@ -14,7 +15,12 @@ namespace Peaky.SampleWebApplication
             var config = new HttpConfiguration();
             config.MapHttpAttributeRoutes();
             config.MapTestRoutes(testUiScriptUrl: "http://localhost:8080/scripts/peaky.js",
-                               configureTargets: RegisterTargets);
+                testUiLibraryUrls: new[]
+                                   {
+                                       "http://localhost:8080/scripts/vendors.js"
+                                   },
+                configureTargets: RegisterTargets);
+
             config.EnsureInitialized();
             app.UseWebApi(config);
         }
@@ -22,9 +28,7 @@ namespace Peaky.SampleWebApplication
         private void RegisterTargets(TestTargetRegistry targets)
         {
             targets.Add("prod", "bing", new Uri("https://bing.com"))
-                .Add("prod", "microsoft", new Uri("https://microsoft.com"));
+                   .Add("prod", "microsoft", new Uri("https://microsoft.com"));
         }
     }
 }
-
-
