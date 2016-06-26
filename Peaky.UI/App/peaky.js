@@ -15,14 +15,14 @@ $(document).ready(function () {
                 dataType: 'json',
                 success: function (data) {
                     testResults.unshift({
-                        result: 'Pass',
+                        result: '[ Passed ]' + '[ ' + getTestNameFromUrl(url) + ' ] ',
                         raw: JSON.stringify(data.responseJSON || {})
                     });
                     viewModel.TestResults(testResults);
                 },
                 error: function (data) {
                     testResults.unshift({
-                        result: 'Fail',
+                        result: '[ Failed ]' + '[ ' + getTestNameFromUrl(url) + ' ] ',
                         raw: JSON.stringify(data.responseJSON)
                     });
                     viewModel.TestResults(testResults);
@@ -51,10 +51,10 @@ var groupTests = function (tests) {
     var groupedTests = DataGrouper(tests, ["Environment", "Application"]);
 
     var mappedTests = groupedTests.map(entry => ({
-        sectionName: entry.key.Application + ' ' + entry.key.Environment,
+        sectionName: (entry.key.Application + ' ' + entry.key.Environment).toUpperCase(),
         key: entry.key, 
         Tests: entry.vals.map(test => ({
-            TestName: test.Url.substr(test.Url.lastIndexOf('/') + 1),
+            TestName: getTestNameFromUrl(test.Url),
             Url: test.Url,
             Tags: test.Tags
         }))
@@ -63,23 +63,26 @@ var groupTests = function (tests) {
     return mappedTests;
 }
 
-var insertKnockoutBindingsIntoDom = function () {
-    var div = document.createElement('div');
-    div.className = 'row';
-    div.innerHTML =
-        '<ul data-bind="template: { foreach: TestGroups }">' +
-        '  <li><span class="sectionName" data-bind="text: sectionName"></span>' +
-        '    <ul data-bind="template: { foreach: Tests }">' +
-        '      <li><button id="run" data-bind="click: function () {$root.runTest(Url)}">Run</button><span class="test" data-bind="text: TestName"></span></li>' +
-        '    </ul>' +
-        '  </li>' +
-        '</ul>'+
-        '<ul data-bind="template: { foreach: TestResults }">' +
-        '  <li><span class="result" data-bind="text: result + raw"></span></li>' +
-        '</ul>';;
-    document.body.appendChild(div);
+var getTestNameFromUrl = function (url) {
+    return url.substr(url.lastIndexOf('/') + 1).replace(/_/g, " ");
 }
 
+var insertKnockoutBindingsIntoDom = function () {
+    var div = document.createElement('div');
+    div.className = 'peaky';
+    div.innerHTML =
+        '<ul class="testGroups" data-bind="template: { foreach: TestGroups }">' +
+        '  <li><h2 class="sectionName" data-bind="text: sectionName"></h2>' +
+        '    <ul data-bind="template: { foreach: Tests }">' +
+        '      <li class="test" data-bind="click: function () {$root.runTest(Url)}"><i class="fa fa-arrow-circle-right"></i><span data-bind="text: TestName"></span></li>' +
+        '    </ul>' +
+        '  </li>' +
+        '</ul>' +
+        '<ul class="results" data-bind="template: { foreach: TestResults }">' +
+        '  <li><span class="result" data-bind="text: result + raw"></span></li>' +
+        '</ul>';
+    document.body.appendChild(div);
+}
 
 var DataGrouper = (function () {
     var has = function (obj, target) {

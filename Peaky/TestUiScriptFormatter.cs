@@ -18,10 +18,11 @@ namespace Peaky
     {
         private readonly string bootstrapHtml;
 
-        public TestUiScriptFormatter(string scriptUrl, IEnumerable<string> libraryUrls)
+        public TestUiScriptFormatter(string scriptUrl, IEnumerable<string> libraryUrls, IEnumerable<string> styleSheets)
         {
             var version = FileVersionInfo.GetVersionInfo(typeof (TestUiScriptFormatter).Assembly.Location).FileVersion;
             var libraryScriptRefs = string.Join("\n", libraryUrls.Select(u => $@"<script src=""{u}""></script>"));
+            var styleSheetRefs = string.Join("\n", styleSheets.Select(u => $@"<link rel=""stylesheet"" href=""{u}"" >"));
 
             bootstrapHtml =
                 $@"<!doctype html>
@@ -30,6 +31,7 @@ namespace Peaky
 	    <meta charset=""UTF-8"">
         {libraryScriptRefs}
 	    <script src=""{scriptUrl}?monitoringVersion={version}""></script>
+        {styleSheetRefs}
     </head>
     <body>
     </body>

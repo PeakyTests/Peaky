@@ -13,23 +13,30 @@ namespace Peaky
     {
         public void Initialize(
             HttpControllerSettings controllerSettings,
-            HttpControllerDescriptor controllerDescriptor) =>
-                controllerSettings.Formatters.Add(
-                    new TestUiScriptFormatter(
-                        controllerDescriptor.Configuration
-                                            .Properties
-                                            .IfContains("Peaky.TestUiUri")
-                                            .And()
-                                            .IfTypeIs<string>()
-                                            .Else(() => "http://itsmonitoringux.azurewebsites.net/its.log.monitoring.js"),
-                        //TODO(phpruett): rehost UI
+            HttpControllerDescriptor controllerDescriptor)
+        {
+            var scriptUrl = controllerDescriptor.Configuration
+                                                .Properties
+                                                .IfContains("Peaky.TestUiUri")
+                                                .And()
+                                                .IfTypeIs<string>()
+                                                .Else(() =>"http://itsmonitoringux.azurewebsites.net/its.log.monitoring.js");
 
+            var libraryUrls = controllerDescriptor.Configuration
+                                                  .Properties
+                                                  .IfContains("Peaky.TestLibraryUris")
+                                                  .And()
+                                                  .IfTypeIs<IEnumerable<string>>()
+                                                  .Else(() => new string[]{});
 
-                        controllerDescriptor.Configuration
-                                            .Properties
-                                            .IfContains("Peaky.TestLibraryUris")
-                                            .And()
-                                            .IfTypeIs<IEnumerable<string>>()
-                                            .Else(() => new string [] {})));
+            var styleSheet = controllerDescriptor.Configuration
+                                                .Properties
+                                                .IfContains("Peaky.StyleSheets")
+                                                .And()
+                                                .IfTypeIs<IEnumerable<string>>()
+                                                .Else(() => new string[] { });
+
+            controllerSettings.Formatters.Add(new TestUiScriptFormatter(scriptUrl,libraryUrls, styleSheet));
+        }
     }
 }

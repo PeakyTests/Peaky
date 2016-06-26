@@ -19,7 +19,12 @@ namespace Peaky.SampleWebApplication
                                    {
                                        "http://localhost:8080/app/vendors.js"
                                    },
-                configureTargets: RegisterTargets);
+                configureTargets: RegisterTargets,
+                styleSheetUrls: new[]
+                                {
+                                    "http://localhost:8080/content/peaky.css",
+                                    "http://localhost:8080/content/css/font-awesome.min.css"
+                                });
 
             config.EnsureInitialized();
             app.UseWebApi(config);
