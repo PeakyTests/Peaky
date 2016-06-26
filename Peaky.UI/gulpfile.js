@@ -1,4 +1,5 @@
-﻿// include plug-ins
+﻿/// <binding BeforeBuild='default' />
+// include plug-ins
 var gulp = require('gulp');
 var concat = require('gulp-concat');
 var uglify = require('gulp-uglify');
@@ -7,7 +8,8 @@ var del = require('del');
 
 var config = {
     //Include all js files but exclude any min.js files and the reference files as it has unexpected characters
-    src: ['Scripts/**/*.js', '!Scripts/**/_references.js', '!Scripts/**/*.min.js']
+  //  src: ['Scripts/**/*.js', '!Scripts/**/*.intellisense.js', '!Scripts/**/*.min.js']
+    src: ['Scripts/**/*.js', '!Scripts/**/*.min.js', '!Scripts/**/*.debug.js', '!Scripts/**/*.intellisense.js']
 }
 
 //delete the output file(s)
@@ -21,7 +23,7 @@ gulp.task('clean', function () {
 // Combine and minify all files from the app folder
 // This tasks depends on the clean task which means gulp will ensure that the 
 // Clean task is completed before running the scripts task.
-gulp.task('scripts', function () {
+gulp.task('scripts', ['clean'], function () {
 
     return gulp.src(config.src)
       .pipe(uglify().on('error', gulpUtil.log))

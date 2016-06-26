@@ -8,7 +8,7 @@ namespace Peaky.UI
     {
         public void Configuration(IAppBuilder app)
         {
-            ConfigureAuth(app);
+            
         }
     }
 }
