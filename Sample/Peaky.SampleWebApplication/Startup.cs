@@ -23,7 +23,8 @@ namespace Peaky.SampleWebApplication
                 styleSheetUrls: new[]
                                 {
                                     "http://localhost:8080/content/peaky.css",
-                                    "http://localhost:8080/content/css/font-awesome.min.css"
+                                    "http://localhost:8080/content/css/font-awesome.min.css",
+                                    "http://localhost:8080/content/Highlight/atelier-lakeside.dark.css"
                                 });
 
             config.EnsureInitialized();

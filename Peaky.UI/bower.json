@@ -1,0 +1,14 @@
+{
+  "name": "peaku.ui",
+  "homepage": "https://github.com/PhillipPruett/Peaky",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "highlightjs": "^9.4.0"
+  }
+}

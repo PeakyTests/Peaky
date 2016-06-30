@@ -1,13 +1,13 @@
-﻿
-$(document).ready(function () {
+﻿$(document).ready(function () {
     insertKnockoutBindingsIntoDom();
-
+    hljs.initHighlightingOnLoad();
     var testResults = [];
 
     var viewModel = {
         TestGroups: ko.observableArray(),
         TestResults: ko.observableArray(),
         runTest: function (url) {
+
             $.ajax({
                 url: url,
                 type: "POST",
@@ -23,11 +23,15 @@ $(document).ready(function () {
                 error: function (data) {
                     testResults.unshift({
                         result: '[ Failed ]' + '[ ' + getTestNameFromUrl(url) + ' ] ',
-                        raw: JSON.stringify(data.responseJSON)
+                        raw: "{hey: 1, bye:4}"
                     });
+        
                     viewModel.TestResults(testResults);
+                    $('code').each(function (i, block) {
+                        hljs.configure({ useBR: true });
+                        hljs.highlightBlock(block);
+                    });
                 },
-                
             });
         }
     };
@@ -71,6 +75,7 @@ var insertKnockoutBindingsIntoDom = function () {
     var div = document.createElement('div');
     div.className = 'peaky';
     div.innerHTML =
+        '<pre><code class="json">{hey: 1, bye:4}</code></pre>' +
         '<ul class="testGroups" data-bind="template: { foreach: TestGroups }">' +
         '  <li><h2 class="sectionName" data-bind="text: sectionName"></h2>' +
         '    <ul data-bind="template: { foreach: Tests }">' +
@@ -78,9 +83,12 @@ var insertKnockoutBindingsIntoDom = function () {
         '    </ul>' +
         '  </li>' +
         '</ul>' +
-        '<ul class="results" data-bind="template: { foreach: TestResults }">' +
-        '  <li><span class="result" data-bind="text: result + raw"></span></li>' +
-        '</ul>';
+        '<div class="results" data-bind="template: { foreach: TestResults }">' +
+        '  <div>' +
+        '<span class="result" data-bind="text: result"></span>' +
+        '<pre><code class="json"><p data-bind="text: raw"></p></code></pre>' +
+        '</div>' +
+        '</div>';
     document.body.appendChild(div);
 }
 
