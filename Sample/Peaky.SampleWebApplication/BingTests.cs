@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Newtonsoft.Json;
 
 namespace Peaky.SampleWebApplication
 {
@@ -45,9 +47,12 @@ namespace Peaky.SampleWebApplication
             return $"{stopwatch.ElapsedMilliseconds} milliseconds";
         }
 
-        public async Task images_should_return_200OK()
+        public async Task<dynamic> images_should_return_200OK()
         {
-            (await httpClient.GetAsync("/images")).StatusCode.Should().Be(HttpStatusCode.OK);
+            var result = (await httpClient.GetAsync("/images"));
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            return result;
         }
 
         public async Task rewards_should_return_200OK()

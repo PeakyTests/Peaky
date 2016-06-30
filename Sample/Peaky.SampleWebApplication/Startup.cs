@@ -24,7 +24,7 @@ namespace Peaky.SampleWebApplication
                                 {
                                     "http://localhost:8080/content/peaky.css",
                                     "http://localhost:8080/content/css/font-awesome.min.css",
-                                    "http://localhost:8080/content/Highlight/atelier-lakeside.dark.css"
+                                    "http://localhost:8080/content/Highlight/magula.css"
                                 });
 
             config.EnsureInitialized();

@@ -14,7 +14,6 @@
     background-color: slategrey;
     display: flex;
     padding: 7px;
-    
 }
 
 .results {
@@ -26,6 +25,18 @@
 
 .results div {
     width: 100%
+}
+
+pre {
+        background-color: lightsteelblue;
+}
+
+code {
+        background-color: lightsteelblue;
+}
+
+span {
+    display:block
 }
 
 .result {

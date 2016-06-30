@@ -18,18 +18,20 @@
                         result: 'Passed',
                         name: getTestName(url),
                         target: testSection.sectionName,
-                        raw: JSON.stringify(data.responseJSON || {})
+                        raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
                     });
                     viewModel.TestResults(testResults);
+                    hljs.highlightBlock($('pre code').first()[0]);
                 },
                 error: function (data) {
                     testResults.unshift({
                         result: 'Failed',
                         name: getTestName(url),
                         target: testSection.sectionName,
-                        raw: JSON.stringify(data.responseJSON)
+                        raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
                     });
                     viewModel.TestResults(testResults);
+                    hljs.highlightBlock($('pre code').first()[0]);
                 },
                 
             });
@@ -91,7 +93,10 @@ var insertKnockoutBindingsIntoDom = function () {
         '</div>' +
                '<div class="results">' +
         '<div data-bind="template: { foreach: TestResults }">' +
-        '  <div class="result" data-bind="text:  result + \' - \' + target + \' - \' + name + \':\' + raw"></div>' +
+        '<div class="result">' +
+        '  <div data-bind="text:  result + \' - \' + target + \' - \' + name + \':\'"></div>' +
+        '  <span><pre><code class="json" data-bind="text:  raw"></code></pre></span>' +
+        '</div>' +
         '</div>' +
         '</div>' +
         '</div>';
