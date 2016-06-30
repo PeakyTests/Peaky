@@ -15,11 +15,12 @@ namespace Peaky.SampleWebApplication
             var config = new HttpConfiguration();
             config.MapHttpAttributeRoutes();
             config.MapTestRoutes(testUiScriptUrl: "http://localhost:8080/app/peaky.js",
-                testUiLibraryUrls: new[]
-                                   {
-                                       "http://localhost:8080/app/vendors.js"
-                                   },
-                configureTargets: RegisterTargets);
+                                 testUiLibraryUrls: new[]
+                                                    {
+                                                        "http://localhost:8080/app/vendors.js"
+                                                    },
+                                 testStyleSheetUrl: "http://localhost:8080/styles/peaky.css",
+                                 configureTargets: RegisterTargets);
 
             config.EnsureInitialized();
             app.UseWebApi(config);

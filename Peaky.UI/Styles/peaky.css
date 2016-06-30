@@ -1,0 +1,34 @@
+﻿body {
+    flex-direction: column;
+    background-color: lightslategrey;
+    font-family: "Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
+.testsAndResults {
+    flex-direction: row;
+    display: flex;
+    flex:1;
+}
+
+.tests {
+    background-color: slategrey;
+    display: flex;
+    padding: 7px;
+    
+}
+
+.results {
+    background-color: lightsteelblue;
+    display: flex;
+    padding: 7px;
+    width: 100%;
+}
+
+.results div {
+    width: 100%
+}
+
+.result {
+    border-bottom: thin solid lightslategray;
+    width: 100%;
+}

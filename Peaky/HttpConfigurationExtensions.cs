@@ -85,7 +85,8 @@ namespace Peaky
             IEnumerable<Type> concreateTestClasses = null,
             HttpMessageHandler handler = null,
             string testUiScriptUrl = null,
-            IEnumerable<string> testUiLibraryUrls = null)
+            IEnumerable<string> testUiLibraryUrls = null, 
+            string testStyleSheetUrl = null)
         {
             if (configuration == null)
             {
@@ -105,6 +106,12 @@ namespace Peaky
                 Uri.IsWellFormedUriString(testUiScriptUrl, UriKind.RelativeOrAbsolute))
             {
                 configuration.TestUiUriIs(testUiScriptUrl);
+            }
+
+            if (!string.IsNullOrEmpty(testStyleSheetUrl) &&
+                Uri.IsWellFormedUriString(testStyleSheetUrl, UriKind.RelativeOrAbsolute))
+            {
+                configuration.StyleSheetUrl(testStyleSheetUrl);
             }
             var testUiLibraryUrlsArray = testUiLibraryUrls
                 .IfNotNull()
@@ -185,6 +192,11 @@ namespace Peaky
             this HttpConfiguration configuration,
             string testUiUri) =>
                 configuration.Properties["Peaky.TestUiUri"] = testUiUri;
+
+        internal static void StyleSheetUrl(
+            this HttpConfiguration configuration,
+            string styleSheetUrl) =>
+                configuration.Properties["Peaky.StyleSheetUrl"] = styleSheetUrl;
 
         internal static void TestLibraryUrisAre(
             this HttpConfiguration configuration,

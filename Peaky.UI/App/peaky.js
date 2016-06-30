@@ -7,7 +7,7 @@ $(document).ready(function () {
     var viewModel = {
         TestGroups: ko.observableArray(),
         TestResults: ko.observableArray(),
-        runTest: function (url) {
+        runTest: function (url, testSection) {
             $.ajax({
                 url: url,
                 type: "POST",
@@ -15,14 +15,18 @@ $(document).ready(function () {
                 dataType: 'json',
                 success: function (data) {
                     testResults.unshift({
-                        result: 'Pass',
+                        result: 'Passed',
+                        name: getTestName(url),
+                        target: testSection.sectionName,
                         raw: JSON.stringify(data.responseJSON || {})
                     });
                     viewModel.TestResults(testResults);
                 },
                 error: function (data) {
                     testResults.unshift({
-                        result: 'Fail',
+                        result: 'Failed',
+                        name: getTestName(url),
+                        target: testSection.sectionName,
                         raw: JSON.stringify(data.responseJSON)
                     });
                     viewModel.TestResults(testResults);
@@ -47,14 +51,18 @@ $(document).ready(function () {
     });
 });
 
+var getTestName = function(url) {
+    return url.substr(url.lastIndexOf('/') + 1).replace(/_/g, " ");
+}
+
 var groupTests = function (tests) {
     var groupedTests = DataGrouper(tests, ["Environment", "Application"]);
 
     var mappedTests = groupedTests.map(entry => ({
-        sectionName: entry.key.Application + ' ' + entry.key.Environment,
+        sectionName: (entry.key.Application + ' ' + entry.key.Environment).toUpperCase(),
         key: entry.key, 
         Tests: entry.vals.map(test => ({
-            TestName: test.Url.substr(test.Url.lastIndexOf('/') + 1),
+            TestName: getTestName(test.Url),
             Url: test.Url,
             Tags: test.Tags
         }))
@@ -65,18 +73,24 @@ var groupTests = function (tests) {
 
 var insertKnockoutBindingsIntoDom = function () {
     var div = document.createElement('div');
-    div.className = 'row';
+    div.className = 'app';
     div.innerHTML =
-        '<ul data-bind="template: { foreach: TestGroups }">' +
-        '  <li><span class="sectionName" data-bind="text: sectionName"></span>' +
-        '    <ul data-bind="template: { foreach: Tests }">' +
-        '      <li><button id="run" data-bind="click: function () {$root.runTest(Url)}">Run</button><span class="test" data-bind="text: TestName"></span></li>' +
-        '    </ul>' +
-        '  </li>' +
-        '</ul>'+
-        '<ul data-bind="template: { foreach: TestResults }">' +
-        '  <li><span class="result" data-bind="text: result + raw"></span></li>' +
-        '</ul>';;
+        '<h1>Peaky</h1>' +
+        '<div class="testsAndResults">' +
+        '<div class="tests">' +
+        '<div data-bind="template: { foreach: TestGroups }">' +
+        '  <h2 class="sectionName" data-bind="text: sectionName"></h2>' +
+        '    <div data-bind="template: { foreach: Tests }">' +
+        '      <div id="run" data-bind="click: function () {$root.runTest(Url, $parent)}"><div class="test" data-bind="text: TestName"></div></div>' +
+        '    </div>' +
+        '</div>'+
+        '</div>' +
+               '<div class="results">' +
+        '<div data-bind="template: { foreach: TestResults }">' +
+        '  <div class="result" data-bind="text:  result + \' - \' + target + \' - \' + name + \':\' + raw"></div>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
     document.body.appendChild(div);
 }
 
