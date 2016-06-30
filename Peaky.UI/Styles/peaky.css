@@ -14,11 +14,7 @@
     background-color: slategrey;
     display: flex;
     padding: 7px;
-}
-
-.test:hover {
-    color: darkorange;
-    cursor: pointer;
+    
 }
 
 .results {
@@ -26,7 +22,6 @@
     display: flex;
     padding: 7px;
     width: 100%;
-    overflow: scroll;
 }
 
 .results div {
@@ -36,13 +31,4 @@
 .result {
     border-bottom: thin solid lightslategray;
     width: 100%;
-}
-
-.testName {
-    display: inline
-}
-
-i{
-    padding-right: 3px;
-    display: inline;
 }

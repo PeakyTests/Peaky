@@ -1,13 +1,17 @@
 ﻿$(document).ready(function () {
     insertKnockoutBindingsIntoDom();
-
+    hljs.initHighlightingOnLoad();
     var testResults = [];
 
     var viewModel = {
         TestGroups: ko.observableArray(),
         TestResults: ko.observableArray(),
-        runTest: function (url, testSection) {
+<<<<<<< HEAD
+        runTest: function (url) {
 
+=======
+        runTest: function (url, testSection) {
+>>>>>>> origin/newUI
             $.ajax({
                 url: url,
                 type: "POST",
@@ -15,23 +19,36 @@
                 dataType: 'json',
                 success: function (data) {
                     testResults.unshift({
+<<<<<<< HEAD
+                        result: '[ Passed ]' + '[ ' + getTestNameFromUrl(url) + ' ] ',
+=======
                         result: 'Passed',
                         name: getTestName(url),
                         target: testSection.sectionName,
+>>>>>>> origin/newUI
                         raw: JSON.stringify(data.responseJSON || {})
                     });
                     viewModel.TestResults(testResults);
                 },
                 error: function (data) {
                     testResults.unshift({
+<<<<<<< HEAD
+                        result: '[ Failed ]' + '[ ' + getTestNameFromUrl(url) + ' ] ',
+                        raw: "{hey: 1, bye:4}"
+=======
                         result: 'Failed',
                         name: getTestName(url),
                         target: testSection.sectionName,
                         raw: JSON.stringify(data.responseJSON)
+>>>>>>> origin/newUI
                     });
+        
                     viewModel.TestResults(testResults);
+                    $('code').each(function (i, block) {
+                        hljs.configure({ useBR: true });
+                        hljs.highlightBlock(block);
+                    });
                 },
-                
             });
         }
     };
@@ -62,7 +79,11 @@ var groupTests = function (tests) {
         sectionName: (entry.key.Application + ' ' + entry.key.Environment).toUpperCase(),
         key: entry.key, 
         Tests: entry.vals.map(test => ({
+<<<<<<< HEAD
+            TestName: getTestNameFromUrl(test.Url),
+=======
             TestName: getTestName(test.Url),
+>>>>>>> origin/newUI
             Url: test.Url,
             Tags: test.Tags
         }))
@@ -77,6 +98,22 @@ var getTestNameFromUrl = function (url) {
 
 var insertKnockoutBindingsIntoDom = function () {
     var div = document.createElement('div');
+<<<<<<< HEAD
+    div.className = 'peaky';
+    div.innerHTML =
+        '<pre><code class="json">{hey: 1, bye:4}</code></pre>' +
+        '<ul class="testGroups" data-bind="template: { foreach: TestGroups }">' +
+        '  <li><h2 class="sectionName" data-bind="text: sectionName"></h2>' +
+        '    <ul data-bind="template: { foreach: Tests }">' +
+        '      <li class="test" data-bind="click: function () {$root.runTest(Url)}"><i class="fa fa-arrow-circle-right"></i><span data-bind="text: TestName"></span></li>' +
+        '    </ul>' +
+        '  </li>' +
+        '</ul>' +
+        '<div class="results" data-bind="template: { foreach: TestResults }">' +
+        '  <div>' +
+        '<span class="result" data-bind="text: result"></span>' +
+        '<pre><code class="json"><p data-bind="text: raw"></p></code></pre>' +
+=======
     div.className = 'app';
     div.innerHTML =
         '<h1>Peaky</h1>' +
@@ -85,7 +122,7 @@ var insertKnockoutBindingsIntoDom = function () {
         '<div data-bind="template: { foreach: TestGroups }">' +
         '  <h2 class="sectionName" data-bind="text: sectionName"></h2>' +
         '    <div data-bind="template: { foreach: Tests }">' +
-        '      <div data-bind="css: \'test\', click: function () {$root.runTest(Url, $parent)}"><i class="fa fa-arrow-circle-right"></i><div class="testName" data-bind="text: TestName"></div></div>' +
+        '      <div id="run" data-bind="click: function () {$root.runTest(Url, $parent)}"><div class="test" data-bind="text: TestName"></div></div>' +
         '    </div>' +
         '</div>'+
         '</div>' +
@@ -93,6 +130,7 @@ var insertKnockoutBindingsIntoDom = function () {
         '<div data-bind="template: { foreach: TestResults }">' +
         '  <div class="result" data-bind="text:  result + \' - \' + target + \' - \' + name + \':\' + raw"></div>' +
         '</div>' +
+>>>>>>> origin/newUI
         '</div>' +
         '</div>';
     document.body.appendChild(div);
