@@ -22,9 +22,7 @@ namespace Peaky.SampleWebApplication
                 configureTargets: RegisterTargets,
                 styleSheetUrls: new[]
                                 {
-                                    "http://localhost:8080/content/peaky.css",
-                                    "http://localhost:8080/content/css/font-awesome.min.css",
-                                    "http://localhost:8080/content/Highlight/magula.css"
+                                    "http://localhost:8080/app/peaky.css"
                                 });
 
             config.EnsureInitialized();
