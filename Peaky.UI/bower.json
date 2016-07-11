@@ -9,6 +9,7 @@
     "tests"
   ],
   "dependencies": {
-    "highlightjs": "^9.4.0"
+    "highlightjs": "^9.4.0",
+    "react": "15.2.0"
   }
 }

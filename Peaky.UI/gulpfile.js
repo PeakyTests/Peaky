@@ -14,7 +14,7 @@ var vendorScripts = {
         'Scripts/**/*.js',
         '!Scripts/**/*.min.js',
         '!Scripts/**/*.debug.js',
-        '!Scripts/**/*.intellisense.js'
+        '!Scripts/**/*.intellisense.js',
     ]
 };
 
