@@ -34,7 +34,7 @@ namespace Peaky.Tests
 
             var result = response.Content.ReadAsStringAsync().Result;
 
-            result.Should().Contain(@"<script src=""http://itsmonitoringux.azurewebsites.net/its.log.monitoring.js?monitoringVersion=");
+            result.Should().Contain(@"<script src=""https://itsmonitoringux.azurewebsites.net/its.log.monitoring.js?monitoringVersion=");
         }
 
         [Test]
