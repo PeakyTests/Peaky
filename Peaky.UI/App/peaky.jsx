@@ -3,61 +3,133 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 var htmlContent = require('../App/peaky.html');
 
-$(document).ready(function () {
-    insertKnockoutBindingsIntoDom();
-    var testResults = [];
+var insertKnockoutBindingsIntoDom = function () {
+    var div = document.createElement('div');
+    div.className = 'app';
+    div.innerHTML = htmlContent;
+    document.body.appendChild(div);
+}
 
-    var viewModel = {
-        TestGroups: ko.observableArray(),
-        TestResults: ko.observableArray(),
-        runTest: function (url, testSection) {
+var testResults = [];
 
-            $.ajax({
-                url: url,
-                type: "POST",
-                data: {},
-                dataType: 'json',
-                success: function (data) {
-                    testResults.unshift({
-                        result: 'Passed',
-                        name: getTestName(url),
-                        target: testSection.sectionName,
-                        raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
-                    });
-                    viewModel.TestResults(testResults);
-                    hljs.highlightBlock($('pre code').first()[0]);
-                },
-                error: function (data) {
-                    testResults.unshift({
-                        result: 'Failed',
-                        name: getTestName(url),
-                        target: testSection.sectionName,
-                        raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
-                    });
-                    viewModel.TestResults(testResults);
-                    hljs.highlightBlock($('pre code').first()[0]);
-                },
-                
-            });
-        }
-    };
+var Sandwich = React.createClass({
+    render: function () {
+        return (
+         <div className="Sandwich">
+            <h1>Peaky!</h1>
+            <div className="testsAndResults">
+                <AvailableTests runTest={this.runTest} />
+                <div className="results">
 
-    ko.applyBindings(viewModel);
+                    <div className="result">
+                        {
+                            this.state.testResults.map((test) =>
+                                <div>
+                                    <div>{test.result} - {test.target} - {test.name}:</div>
+                                    <span><pre><code className="json">{test.raw}</code></pre></span>
+                                </div>
+                            )
+                        }
+                    </div>
+                </div>
+            </div>
+         </div>);
+    },
 
-    $.ajax({
-        url: "/" + (location.pathname + location.search).substr(1),
-        context: document.body,
-        success: function (data) {
-            console.log(data);
+    getInitialState: function () {
+        return {
+            testResults: []
+        };
+    },
 
-            var groupedTests = groupTests(data.Tests);
+    runTest: function (test) {
 
-            viewModel.TestGroups(groupedTests);
-        }
-    });
+        var sandwich = this;
+        $.ajax({
+            url: test.Url,
+            type: "POST",
+            data: {},
+            dataType: 'json',
+            success: function (data) {
+                testResults.unshift({
+                    result: 'Passed',
+                    name: getTestName(test.Url),
+                    target: "TODO section name",
+                    raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
+                });
+                sandwich.setState({ testResults: testResults });
+                hljs.highlightBlock($('pre code').first()[0]);
+            },
+            error: function (data) {
+                testResults.unshift({
+                    result: 'Failed',
+                    name: getTestName(test.Url),
+                    target: "TODO section name",
+                    raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
+                });
+                sandwich.setState({ testResults: testResults });
+                hljs.highlightBlock($('pre code').first()[0]);
+            },
+        });
+    }
+})
+
+var AvailableTests = React.createClass({
+    // get game info
+    loadTests: function () {
+        $.ajax({
+            url: "/" + (location.pathname + location.search).substr(1),
+            context: document.body,
+            dataType: 'json',
+            success: function (data) {
+                var groupedTests = groupTests(data.Tests);
+                this.setState({ data: groupedTests });
+            }.bind(this),
+            error: function (xhr, status, err) {
+                console.error('#GET Error', status, err.toString());
+            }.bind(this)
+        });
+    },
+
+    getInitialState: function () {
+        return {
+            data: []
+        };
+    },
+
+    componentDidMount: function () {
+        this.loadTests();
+    },
+
+    render: function () {
+        var currentTests = this;
+        return (
+          <div className="tests">
+              {
+              this.state.data.map(function (testGroup) {
+                  return  <div>
+                          <h2 className="sectionName">{testGroup.sectionName}</h2>
+                      {
+                                  testGroup.Tests.map(function (test, i) {
+                                      return <div className="test" onClick={currentTests.props.runTest.bind(null, test)}>
+                                        <i className="fa fa-arrow-circle-right"></i>
+                                        <div className="testName">{test.TestName}</div>
+                                      </div>
+                                  })
+                      }
+                  </div>
+              })
+              }
+          </div>);
+    },
 });
 
-var getTestName = function(url) {
+ReactDOM.render(
+  <Sandwich />,
+  document.getElementById('container')
+);
+
+var getTestName = function (url) {
     return url.substr(url.lastIndexOf('/') + 1).replace(/_/g, " ");
 }
 
@@ -66,7 +138,7 @@ var groupTests = function (tests) {
 
     var mappedTests = groupedTests.map(entry => ({
         sectionName: (entry.key.Application + ' ' + entry.key.Environment).toUpperCase(),
-        key: entry.key, 
+        key: entry.key,
         Tests: entry.vals.map(test => ({
             TestName: getTestName(test.Url),
             Url: test.Url,
@@ -81,12 +153,7 @@ var getTestNameFromUrl = function (url) {
     return url.substr(url.lastIndexOf('/') + 1).replace(/_/g, " ");
 }
 
-var insertKnockoutBindingsIntoDom = function () {
-    var div = document.createElement('div');
-    div.className = 'app';
-    div.innerHTML = htmlContent;
-    document.body.appendChild(div);
-}
+
 
 var DataGrouper = (function () {
     var has = function (obj, target) {
@@ -118,5 +185,3 @@ var DataGrouper = (function () {
     };
     return group;
 }());
-
-

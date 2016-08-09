@@ -14,6 +14,7 @@
     background-color: slategrey;
     display: flex;
     padding: 7px;
+    flex-direction: column;
 }
 
 .test:hover {

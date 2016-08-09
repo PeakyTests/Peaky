@@ -1,20 +1,20 @@
-﻿<h1>Peaky!</h1>
-<div class="testsAndResults">
-    <div class="tests">
-        <div data-bind="template: { foreach: TestGroups }">
-            <h2 class="sectionName" data-bind="text: sectionName"></h2>
-            <div data-bind="template: { foreach: Tests }">
-                <div data-bind="css: 'test', click: function () {$root.runTest(Url, $parent)}"><i class="fa fa-arrow-circle-right"></i>
-                    <div class="testName" data-bind="text: TestName"></div>
-                </div>
+﻿<div>
+    <h1>Peaky!</h1>
+    <div className="testsAndResults">
+        <div className="tests">
+            <h2 className="sectionName"></h2>
+
+            <div className="test">
+                <i className="fa fa-arrow-circle-right"></i>
+                <div className="testName"></div>
             </div>
+
         </div>
-    </div>
-    <div class="results">
-        <div data-bind="template: { foreach: TestResults }">
-            <div class="result">
-                <div data-bind="text:  result + ' - ' + target + ' - ' + name + ':'"></div>
-                <span><pre><code class="json" data-bind="text:  raw"></code></pre></span>
+        <div className="results">
+
+            <div className="result">
+                <div>result - target - name:</div>
+                <span><pre><code className="json">raw</code></pre></span>
             </div>
         </div>
     </div>

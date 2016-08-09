@@ -54,59 +54,172 @@
 	var ReactDOM = __webpack_require__(/*! react-dom */ 34);
 	var htmlContent = __webpack_require__(/*! ../App/peaky.html */ 171);
 	
-	$(document).ready(function () {
-	    insertKnockoutBindingsIntoDom();
-	    var testResults = [];
+	var insertKnockoutBindingsIntoDom = function insertKnockoutBindingsIntoDom() {
+	    var div = document.createElement('div');
+	    div.className = 'app';
+	    div.innerHTML = htmlContent;
+	    document.body.appendChild(div);
+	};
 	
-	    var viewModel = {
-	        TestGroups: ko.observableArray(),
-	        TestResults: ko.observableArray(),
-	        runTest: function runTest(url, testSection) {
+	var testResults = [];
 	
-	            $.ajax({
-	                url: url,
-	                type: "POST",
-	                data: {},
-	                dataType: 'json',
-	                success: function success(data) {
-	                    testResults.unshift({
-	                        result: 'Passed',
-	                        name: getTestName(url),
-	                        target: testSection.sectionName,
-	                        raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
-	                    });
-	                    viewModel.TestResults(testResults);
-	                    hljs.highlightBlock($('pre code').first()[0]);
-	                },
-	                error: function error(data) {
-	                    testResults.unshift({
-	                        result: 'Failed',
-	                        name: getTestName(url),
-	                        target: testSection.sectionName,
-	                        raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
-	                    });
-	                    viewModel.TestResults(testResults);
-	                    hljs.highlightBlock($('pre code').first()[0]);
-	                }
+	var Sandwich = React.createClass({
+	    displayName: 'Sandwich',
 	
-	            });
-	        }
-	    };
+	    render: function render() {
+	        return React.createElement(
+	            'div',
+	            { className: 'Sandwich' },
+	            React.createElement(
+	                'h1',
+	                null,
+	                'Peaky!'
+	            ),
+	            React.createElement(
+	                'div',
+	                { className: 'testsAndResults' },
+	                React.createElement(AvailableTests, { runTest: this.runTest }),
+	                React.createElement(
+	                    'div',
+	                    { className: 'results' },
+	                    React.createElement(
+	                        'div',
+	                        { className: 'result' },
+	                        this.state.testResults.map(function (test) {
+	                            return React.createElement(
+	                                'div',
+	                                null,
+	                                React.createElement(
+	                                    'div',
+	                                    null,
+	                                    test.result,
+	                                    ' - ',
+	                                    test.target,
+	                                    ' - ',
+	                                    test.name,
+	                                    ':'
+	                                ),
+	                                React.createElement(
+	                                    'span',
+	                                    null,
+	                                    React.createElement(
+	                                        'pre',
+	                                        null,
+	                                        React.createElement(
+	                                            'code',
+	                                            { className: 'json' },
+	                                            test.raw
+	                                        )
+	                                    )
+	                                )
+	                            );
+	                        })
+	                    )
+	                )
+	            )
+	        );
+	    },
 	
-	    ko.applyBindings(viewModel);
+	    getInitialState: function getInitialState() {
+	        return {
+	            testResults: []
+	        };
+	    },
 	
-	    $.ajax({
-	        url: "/" + (location.pathname + location.search).substr(1),
-	        context: document.body,
-	        success: function success(data) {
-	            console.log(data);
+	    runTest: function runTest(test) {
 	
-	            var groupedTests = groupTests(data.Tests);
-	
-	            viewModel.TestGroups(groupedTests);
-	        }
-	    });
+	        var sandwich = this;
+	        $.ajax({
+	            url: test.Url,
+	            type: "POST",
+	            data: {},
+	            dataType: 'json',
+	            success: function success(data) {
+	                testResults.unshift({
+	                    result: 'Passed',
+	                    name: getTestName(test.Url),
+	                    target: "TODO section name",
+	                    raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
+	                });
+	                sandwich.setState({ testResults: testResults });
+	                hljs.highlightBlock($('pre code').first()[0]);
+	            },
+	            error: function error(data) {
+	                testResults.unshift({
+	                    result: 'Failed',
+	                    name: getTestName(test.Url),
+	                    target: "TODO section name",
+	                    raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
+	                });
+	                sandwich.setState({ testResults: testResults });
+	                hljs.highlightBlock($('pre code').first()[0]);
+	            }
+	        });
+	    }
 	});
+	
+	var AvailableTests = React.createClass({
+	    displayName: 'AvailableTests',
+	
+	    // get game info
+	    loadTests: function loadTests() {
+	        $.ajax({
+	            url: "/" + (location.pathname + location.search).substr(1),
+	            context: document.body,
+	            dataType: 'json',
+	            success: function (data) {
+	                var groupedTests = groupTests(data.Tests);
+	                this.setState({ data: groupedTests });
+	            }.bind(this),
+	            error: function (xhr, status, err) {
+	                console.error('#GET Error', status, err.toString());
+	            }.bind(this)
+	        });
+	    },
+	
+	    getInitialState: function getInitialState() {
+	        return {
+	            data: []
+	        };
+	    },
+	
+	    componentDidMount: function componentDidMount() {
+	        this.loadTests();
+	    },
+	
+	    render: function render() {
+	        var currentTests = this;
+	        return React.createElement(
+	            'div',
+	            { className: 'tests' },
+	            this.state.data.map(function (testGroup) {
+	                return React.createElement(
+	                    'div',
+	                    null,
+	                    React.createElement(
+	                        'h2',
+	                        { className: 'sectionName' },
+	                        testGroup.sectionName
+	                    ),
+	                    testGroup.Tests.map(function (test, i) {
+	                        return React.createElement(
+	                            'div',
+	                            { className: 'test', onClick: currentTests.props.runTest.bind(null, test) },
+	                            React.createElement('i', { className: 'fa fa-arrow-circle-right' }),
+	                            React.createElement(
+	                                'div',
+	                                { className: 'testName' },
+	                                test.TestName
+	                            )
+	                        );
+	                    })
+	                );
+	            })
+	        );
+	    }
+	});
+	
+	ReactDOM.render(React.createElement(Sandwich, null), document.getElementById('container'));
 	
 	var getTestName = function getTestName(url) {
 	    return url.substr(url.lastIndexOf('/') + 1).replace(/_/g, " ");
@@ -134,13 +247,6 @@
 	
 	var getTestNameFromUrl = function getTestNameFromUrl(url) {
 	    return url.substr(url.lastIndexOf('/') + 1).replace(/_/g, " ");
-	};
-	
-	var insertKnockoutBindingsIntoDom = function insertKnockoutBindingsIntoDom() {
-	    var div = document.createElement('div');
-	    div.className = 'app';
-	    div.innerHTML = htmlContent;
-	    document.body.appendChild(div);
 	};
 	
 	var DataGrouper = function () {
@@ -31686,7 +31792,7 @@
   \************************/
 /***/ function(module, exports) {
 
-	module.exports = "<h1>Peaky!</h1>\r\n<div class=\"testsAndResults\">\r\n    <div class=\"tests\">\r\n        <div data-bind=\"template: { foreach: TestGroups }\">\r\n            <h2 class=\"sectionName\" data-bind=\"text: sectionName\"></h2>\r\n            <div data-bind=\"template: { foreach: Tests }\">\r\n                <div data-bind=\"css: 'test', click: function () {$root.runTest(Url, $parent)}\"><i class=\"fa fa-arrow-circle-right\"></i>\r\n                    <div class=\"testName\" data-bind=\"text: TestName\"></div>\r\n                </div>\r\n            </div>\r\n        </div>\r\n    </div>\r\n    <div class=\"results\">\r\n        <div data-bind=\"template: { foreach: TestResults }\">\r\n            <div class=\"result\">\r\n                <div data-bind=\"text:  result + ' - ' + target + ' - ' + name + ':'\"></div>\r\n                <span><pre><code class=\"json\" data-bind=\"text:  raw\"></code></pre></span>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</div>";
+	module.exports = "<div>\r\n    <h1>Peaky!</h1>\r\n    <div className=\"testsAndResults\">\r\n        <div className=\"tests\">\r\n            <h2 className=\"sectionName\"></h2>\r\n\r\n            <div className=\"test\">\r\n                <i className=\"fa fa-arrow-circle-right\"></i>\r\n                <div className=\"testName\"></div>\r\n            </div>\r\n\r\n        </div>\r\n        <div className=\"results\">\r\n\r\n            <div className=\"result\">\r\n                <div>result - target - name:</div>\r\n                <span><pre><code className=\"json\">raw</code></pre></span>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</div>";
 
 /***/ }
 /******/ ]);
