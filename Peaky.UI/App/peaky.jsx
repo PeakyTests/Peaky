@@ -18,19 +18,16 @@ var Sandwich = React.createClass({
          <div className="Sandwich">
             <h1>Peaky!</h1>
             <div className="testsAndResults">
-                <AvailableTests runTest={this.runTest} />
+                <AvailableTests runTest={this.runTest } />
                 <div className="results">
-
-                    <div className="result">
-                        {
-                            this.state.testResults.map((test) =>
-                                <div>
-                                    <div>{test.result} - {test.target} - {test.name}:</div>
-                                    <span><pre><code className="json">{test.raw}</code></pre></span>
-                                </div>
-                            )
-                        }
-                    </div>
+                    {
+                        this.state.testResults.map((test) =>
+                            <div className="result">
+                                <div className={test.result.toLowerCase() }>{test.result} - {test.target} - {test.name}</div>
+                                <pre><code className="json">{test.raw}</code></pre>
+                            </div>
+                        )
+                    }
                 </div>
             </div>
          </div>);
@@ -42,7 +39,7 @@ var Sandwich = React.createClass({
         };
     },
 
-    runTest: function (test) {
+    runTest: function (test, sectionName) {
 
         var sandwich = this;
         $.ajax({
@@ -54,7 +51,7 @@ var Sandwich = React.createClass({
                 testResults.unshift({
                     result: 'Passed',
                     name: getTestName(test.Url),
-                    target: "TODO section name",
+                    target: sectionName,
                     raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
                 });
                 sandwich.setState({ testResults: testResults });
@@ -64,7 +61,7 @@ var Sandwich = React.createClass({
                 testResults.unshift({
                     result: 'Failed',
                     name: getTestName(test.Url),
-                    target: "TODO section name",
+                    target: sectionName,
                     raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
                 });
                 sandwich.setState({ testResults: testResults });
@@ -75,15 +72,13 @@ var Sandwich = React.createClass({
 })
 
 var AvailableTests = React.createClass({
-    // get game info
     loadTests: function () {
         $.ajax({
             url: "/" + (location.pathname + location.search).substr(1),
             context: document.body,
             dataType: 'json',
             success: function (data) {
-                var groupedTests = groupTests(data.Tests);
-                this.setState({ data: groupedTests });
+                this.setState({ data: groupTests(data.Tests) });
             }.bind(this),
             error: function (xhr, status, err) {
                 console.error('#GET Error', status, err.toString());
@@ -111,7 +106,7 @@ var AvailableTests = React.createClass({
                           <h2 className="sectionName">{testGroup.sectionName}</h2>
                       {
                                   testGroup.Tests.map(function (test, i) {
-                                      return <div className="test" onClick={currentTests.props.runTest.bind(null, test)}>
+                                      return <div className="test" onClick={currentTests.props.runTest.bind(null, test, testGroup.sectionName)}>
                                         <i className="fa fa-arrow-circle-right"></i>
                                         <div className="testName">{test.TestName}</div>
                                       </div>

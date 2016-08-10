@@ -28,6 +28,7 @@
     padding: 7px;
     width: 100%;
     overflow: scroll;
+    flex-direction: column;
 }
 
 .results div {
@@ -37,6 +38,16 @@
 .result {
     border-bottom: thin solid lightslategray;
     width: 100%;
+}
+
+.result .passed {
+    color: green;
+    font-weight: bold;
+}
+
+.result .failed {
+    color:darkred;
+    font-weight: bold;
 }
 
 .testName {

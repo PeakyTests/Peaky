@@ -82,39 +82,30 @@
 	                React.createElement(
 	                    'div',
 	                    { className: 'results' },
-	                    React.createElement(
-	                        'div',
-	                        { className: 'result' },
-	                        this.state.testResults.map(function (test) {
-	                            return React.createElement(
+	                    this.state.testResults.map(function (test) {
+	                        return React.createElement(
+	                            'div',
+	                            { className: 'result' },
+	                            React.createElement(
 	                                'div',
+	                                { className: test.result.toLowerCase() },
+	                                test.result,
+	                                ' - ',
+	                                test.target,
+	                                ' - ',
+	                                test.name
+	                            ),
+	                            React.createElement(
+	                                'pre',
 	                                null,
 	                                React.createElement(
-	                                    'div',
-	                                    null,
-	                                    test.result,
-	                                    ' - ',
-	                                    test.target,
-	                                    ' - ',
-	                                    test.name,
-	                                    ':'
-	                                ),
-	                                React.createElement(
-	                                    'span',
-	                                    null,
-	                                    React.createElement(
-	                                        'pre',
-	                                        null,
-	                                        React.createElement(
-	                                            'code',
-	                                            { className: 'json' },
-	                                            test.raw
-	                                        )
-	                                    )
+	                                    'code',
+	                                    { className: 'json' },
+	                                    test.raw
 	                                )
-	                            );
-	                        })
-	                    )
+	                            )
+	                        );
+	                    })
 	                )
 	            )
 	        );
@@ -126,7 +117,7 @@
 	        };
 	    },
 	
-	    runTest: function runTest(test) {
+	    runTest: function runTest(test, sectionName) {
 	
 	        var sandwich = this;
 	        $.ajax({
@@ -138,7 +129,7 @@
 	                testResults.unshift({
 	                    result: 'Passed',
 	                    name: getTestName(test.Url),
-	                    target: "TODO section name",
+	                    target: sectionName,
 	                    raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
 	                });
 	                sandwich.setState({ testResults: testResults });
@@ -148,7 +139,7 @@
 	                testResults.unshift({
 	                    result: 'Failed',
 	                    name: getTestName(test.Url),
-	                    target: "TODO section name",
+	                    target: sectionName,
 	                    raw: JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n")
 	                });
 	                sandwich.setState({ testResults: testResults });
@@ -161,15 +152,13 @@
 	var AvailableTests = React.createClass({
 	    displayName: 'AvailableTests',
 	
-	    // get game info
 	    loadTests: function loadTests() {
 	        $.ajax({
 	            url: "/" + (location.pathname + location.search).substr(1),
 	            context: document.body,
 	            dataType: 'json',
 	            success: function (data) {
-	                var groupedTests = groupTests(data.Tests);
-	                this.setState({ data: groupedTests });
+	                this.setState({ data: groupTests(data.Tests) });
 	            }.bind(this),
 	            error: function (xhr, status, err) {
 	                console.error('#GET Error', status, err.toString());
@@ -204,7 +193,7 @@
 	                    testGroup.Tests.map(function (test, i) {
 	                        return React.createElement(
 	                            'div',
-	                            { className: 'test', onClick: currentTests.props.runTest.bind(null, test) },
+	                            { className: 'test', onClick: currentTests.props.runTest.bind(null, test, testGroup.sectionName) },
 	                            React.createElement('i', { className: 'fa fa-arrow-circle-right' }),
 	                            React.createElement(
 	                                'div',
