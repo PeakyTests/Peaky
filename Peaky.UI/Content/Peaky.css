@@ -28,7 +28,8 @@
     padding: 7px;
     width: 100%;
     overflow: scroll;
-    flex-direction: column;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
 }
 
 .results div {
@@ -40,14 +41,14 @@
     width: 100%;
 }
 
-.result .passed {
+.passed {
     color: green;
-    font-weight: bold;
+    animation: none;
 }
 
-.result .failed {
+.failed {
     color:darkred;
-    font-weight: bold;
+    animation: none;
 }
 
 .testName {
@@ -55,6 +56,10 @@
 }
 
 i{
-    padding-right: 3px;
+    margin-right: 3px;
     display: inline;
+}
+
+.history {
+    min-height: 22px;
 }
