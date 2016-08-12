@@ -30,10 +30,9 @@ namespace Peaky
     <head>
 	    <meta charset=""UTF-8"">
         {libraryScriptRefs}
-        {styleSheetRefs
-                    }
+        {styleSheetRefs}
     </head>
-    <body>
+    <body
 <div id=""container"">
 </div>
 	    <script src=""{scriptUrl}?monitoringVersion={version}""></script>

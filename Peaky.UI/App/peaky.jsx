@@ -5,13 +5,6 @@ var htmlContent = require('../App/peaky.html');
 var update = require('immutability-helper');
 require("babel-polyfill");
 
-var insertKnockoutBindingsIntoDom = function () {
-    var div = document.createElement('div');
-    div.className = 'app';
-    div.innerHTML = htmlContent;
-    document.body.appendChild(div);
-}
-
 var testResults = [];
 var uniqueIds = 0;
 
@@ -21,12 +14,15 @@ var Sandwich = React.createClass({
          <div className="Sandwich">
             <h1>Peaky!</h1>
             <div className="testsAndResults">
-                <AvailableTests runTest={this.runTest} testResults={this.state.testResults} />
+                <AvailableTests runTest={this.runTest} scrollTo={this.scrollElementIntoViewIfNeeded} testResults={this.state.testResults} />
                 <div className="results">
                     {
                         this.state.testResults.map((test, i) =>
                             <div key={i} className="result">
-                                <h3 className={test.result.toLowerCase() }>{test.result} - {test.target} - {test.name}</h3>
+                                <h3 className={test.result.toLowerCase() }>
+                                    <i className={getIcon(test.result)} aria-hidden="true"></i>
+                                    {test.target} - {test.name}
+                                </h3>
                                 <pre><code className="json">{test.raw}</code></pre>
                             </div>
                         )
@@ -40,6 +36,12 @@ var Sandwich = React.createClass({
         return {
             testResults: []
         };
+    },
+
+    scrollElementIntoViewIfNeeded: function(domNode) {
+        var containerDomNode = React.findDOMNode(this);
+        // Determine if `domNode` fully fits inside `containerDomNode`.
+        // If not, set the container's scrollTop appropriately.
     },
 
     runTest: function (test, sectionName) {
@@ -69,14 +71,14 @@ var Sandwich = React.createClass({
                 result.result = 'Passed';
                 result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
                 sandwich.setState({ testResults: sandwich.state.testResults });
-                //hljs.highlightBlock($('pre code').first()[0]);
+                //hljs.highlightBlock($('pre code').last()[0]);
             },
             error: function (data) {
                 var result = sandwich.state.testResults.find(t => t.key == key);
                 result.result = 'Failed';
                 result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
                 sandwich.setState({ testResults: sandwich.state.testResults });
-                //hljs.highlightBlock($('pre code').first()[0]);
+                //hljs.highlightBlock($('pre code').last()[0]);
             },
         });
     }
@@ -133,15 +135,9 @@ var AvailableTests = React.createClass({
                                         </div>
                                         <div className="history">
                                             {
-                                            currentTests.props.testResults.filter(i => i.url == test.Url).map((t,k) => {
-                                                var icon = "fa fa-spinner fa-pulse fa-fw";
-                                                if (t.result == "Passed") {
-                                                    icon = "fa fa-check-circle-o"
-                                                };
-                                                if (t.result == "Failed") {
-                                                    icon = "fa fa-times-circle-o"
-                                                };
-                                                return <i className={icon + ' ' + t.result.toLowerCase()} key={k} data={k} aria-hidden="true"></i>
+                                            currentTests.props.testResults.filter(i => i.url == test.Url).map((t, k) => {
+                                                var icon = getIcon(t.result);
+                                                return <i className={icon} key={k} data={k} aria-hidden="true"></i>
                                             }
                                             )}
                                         </div>
@@ -155,6 +151,17 @@ var AvailableTests = React.createClass({
             </div>);
     },
 });
+
+var getIcon = function (result) {
+    var icon = "fa fa-spinner fa-pulse fa-fw";
+    if (result == "Passed") {
+        icon = "fa fa-check-circle-o"
+    };
+    if (result == "Failed") {
+        icon = "fa fa-times-circle-o"
+    };
+    return icon + ' ' + result.toLowerCase();
+}
 
 ReactDOM.render(
   <Sandwich />,
@@ -185,8 +192,6 @@ var groupTests = function (tests) {
 var getTestNameFromUrl = function (url) {
     return url.substr(url.lastIndexOf('/') + 1).replace(/_/g, " ");
 }
-
-
 
 var DataGrouper = (function () {
     var has = function (obj, target) {

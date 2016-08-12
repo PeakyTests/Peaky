@@ -27,7 +27,7 @@
     display: flex;
     padding: 7px;
     width: 100%;
-    overflow: scroll;
+    overflow: hidden;
     flex-direction: column-reverse;
     justify-content: flex-end;
 }
@@ -62,4 +62,8 @@ i{
 
 .history {
     min-height: 22px;
+}
+
+.hljs {
+    overflow-x: hidden;
 }

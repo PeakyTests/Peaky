@@ -56,13 +56,6 @@
 	var update = __webpack_require__(/*! immutability-helper */ 172);
 	__webpack_require__(/*! babel-polyfill */ 174);
 	
-	var insertKnockoutBindingsIntoDom = function insertKnockoutBindingsIntoDom() {
-	    var div = document.createElement('div');
-	    div.className = 'app';
-	    div.innerHTML = htmlContent;
-	    document.body.appendChild(div);
-	};
-	
 	var testResults = [];
 	var uniqueIds = 0;
 	
@@ -81,7 +74,7 @@
 	            React.createElement(
 	                'div',
 	                { className: 'testsAndResults' },
-	                React.createElement(AvailableTests, { runTest: this.runTest, testResults: this.state.testResults }),
+	                React.createElement(AvailableTests, { runTest: this.runTest, scrollTo: this.scrollElementIntoViewIfNeeded, testResults: this.state.testResults }),
 	                React.createElement(
 	                    'div',
 	                    { className: 'results' },
@@ -92,8 +85,7 @@
 	                            React.createElement(
 	                                'h3',
 	                                { className: test.result.toLowerCase() },
-	                                test.result,
-	                                ' - ',
+	                                React.createElement('i', { className: getIcon(test.result), 'aria-hidden': 'true' }),
 	                                test.target,
 	                                ' - ',
 	                                test.name
@@ -118,6 +110,12 @@
 	        return {
 	            testResults: []
 	        };
+	    },
+	
+	    scrollElementIntoViewIfNeeded: function scrollElementIntoViewIfNeeded(domNode) {
+	        var containerDomNode = React.findDOMNode(this);
+	        // Determine if `domNode` fully fits inside `containerDomNode`.
+	        // If not, set the container's scrollTop appropriately.
 	    },
 	
 	    runTest: function runTest(test, sectionName) {
@@ -149,7 +147,7 @@
 	                result.result = 'Passed';
 	                result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
 	                sandwich.setState({ testResults: sandwich.state.testResults });
-	                //hljs.highlightBlock($('pre code').first()[0]);
+	                //hljs.highlightBlock($('pre code').last()[0]);
 	            },
 	            error: function error(data) {
 	                var result = sandwich.state.testResults.find(function (t) {
@@ -158,7 +156,7 @@
 	                result.result = 'Failed';
 	                result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
 	                sandwich.setState({ testResults: sandwich.state.testResults });
-	                //hljs.highlightBlock($('pre code').first()[0]);
+	                //hljs.highlightBlock($('pre code').last()[0]);
 	            }
 	        });
 	    }
@@ -238,14 +236,8 @@
 	                                currentTests.props.testResults.filter(function (i) {
 	                                    return i.url == test.Url;
 	                                }).map(function (t, k) {
-	                                    var icon = "fa fa-spinner fa-pulse fa-fw";
-	                                    if (t.result == "Passed") {
-	                                        icon = "fa fa-check-circle-o";
-	                                    };
-	                                    if (t.result == "Failed") {
-	                                        icon = "fa fa-times-circle-o";
-	                                    };
-	                                    return React.createElement('i', { className: icon + ' ' + t.result.toLowerCase(), key: k, data: k, 'aria-hidden': 'true' });
+	                                    var icon = getIcon(t.result);
+	                                    return React.createElement('i', { className: icon, key: k, data: k, 'aria-hidden': 'true' });
 	                                })
 	                            )
 	                        );
@@ -260,6 +252,17 @@
 	        );
 	    }
 	});
+	
+	var getIcon = function getIcon(result) {
+	    var icon = "fa fa-spinner fa-pulse fa-fw";
+	    if (result == "Passed") {
+	        icon = "fa fa-check-circle-o";
+	    };
+	    if (result == "Failed") {
+	        icon = "fa fa-times-circle-o";
+	    };
+	    return icon + ' ' + result.toLowerCase();
+	};
 	
 	ReactDOM.render(React.createElement(Sandwich, null), document.getElementById('container'));
 	

@@ -35,9 +35,9 @@ gulp.task('prepareVendorsJs', ['cleanVendorsJs'], function () {
 //-----------------------------------------------------
 var styleSheets = {
     src: [
-        'Content/Peaky.css',
         'Content/css/font-awesome.min.css',
         'Content/Highlight/magula.css',
+        'Content/Peaky.css',
     ]
 };
 
