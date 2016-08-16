@@ -71,14 +71,14 @@ var Sandwich = React.createClass({
                 result.result = 'Passed';
                 result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
                 sandwich.setState({ testResults: sandwich.state.testResults });
-                //hljs.highlightBlock($('pre code').last()[0]);
+                hljs.highlightBlock($('pre code').last()[0]);
             },
             error: function (data) {
                 var result = sandwich.state.testResults.find(t => t.key == key);
                 result.result = 'Failed';
                 result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
                 sandwich.setState({ testResults: sandwich.state.testResults });
-                //hljs.highlightBlock($('pre code').last()[0]);
+                hljs.highlightBlock($('pre code').last()[0]);
             },
         });
     }

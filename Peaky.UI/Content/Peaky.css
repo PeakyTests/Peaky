@@ -67,3 +67,7 @@ i{
 .hljs {
     overflow-x: hidden;
 }
+
+.results pre {
+    white-space: pre-wrap;
+}
