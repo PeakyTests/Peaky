@@ -20,7 +20,7 @@ namespace Peaky
                                                 .IfContains("Peaky.TestUiUri")
                                                 .And()
                                                 .IfTypeIs<string>()
-                                                .Else(() =>"http://itsmonitoringux.azurewebsites.net/its.log.monitoring.js");
+                                                .Else(() =>"https://itsmonitoringux.azurewebsites.net/its.log.monitoring.js");
 
             var libraryUrls = controllerDescriptor.Configuration
                                                   .Properties

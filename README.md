@@ -4,6 +4,8 @@
 
 [Peaky Nuget Package](https://www.nuget.org/packages/Peaky/)
 
+[Try it out here!](http://peaky.azurewebsites.net/tests)
+
 ### Peaky Exposes Tests as HTTP Endpoints
 Peaky discovers tests in an application and maps routes to allow them to be called over HTTP. These tests can live within the application they are testing or stood up as their own service.
 ### What does Peaky provide me?
