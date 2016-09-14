@@ -9,7 +9,6 @@ using Newtonsoft.Json;
 namespace Peaky.SampleWebApplication
 {
     public class BingTests : IApplyToApplication,
-                             IApplyToEnvironment,
                              IHaveTags
     {
         private readonly HttpClient httpClient;
@@ -22,11 +21,6 @@ namespace Peaky.SampleWebApplication
         public bool AppliesToApplication(string application)
         {
             return application == "bing";
-        }
-
-        public bool AppliesToEnvironment(string environment)
-        {
-            return environment == "prod";
         }
 
         public string[] Tags => new[]

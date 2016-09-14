@@ -32,6 +32,7 @@ namespace Peaky.SampleWebApplication
         private void RegisterTargets(TestTargetRegistry targets)
         {
             targets.Add("prod", "bing", new Uri("https://bing.com"))
+                   .Add("test", "bing", new Uri("https://bing.com"))
                    .Add("prod", "microsoft", new Uri("https://microsoft.com"));
         }
     }

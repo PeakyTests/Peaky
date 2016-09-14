@@ -56,25 +56,56 @@
 	var update = __webpack_require__(/*! immutability-helper */ 172);
 	__webpack_require__(/*! babel-polyfill */ 174);
 	
-	var testResults = [];
 	var uniqueIds = 0;
 	
 	var Sandwich = React.createClass({
 	    displayName: 'Sandwich',
+	
+	    loadTests: function loadTests() {
+	        var url = "/" + (location.pathname + location.search).substr(1);
+	        $.ajax({
+	            url: url,
+	            context: document.body,
+	            dataType: 'json',
+	            success: function (data) {
+	                this.setState({
+	                    data: groupTests(data.Tests),
+	                    id: 1
+	                });
+	            }.bind(this),
+	            error: function (xhr, status, err) {
+	                console.error('#GET Error', status, err.toString());
+	            }.bind(this)
+	        });
+	    },
 	
 	    render: function render() {
 	        return React.createElement(
 	            'div',
 	            { className: 'Sandwich' },
 	            React.createElement(
-	                'h1',
-	                null,
-	                'Peaky!'
+	                'div',
+	                { className: 'header' },
+	                React.createElement(
+	                    'h1',
+	                    null,
+	                    'Peaky!'
+	                ),
+	                React.createElement(
+	                    'div',
+	                    { className: 'controls' },
+	                    React.createElement('i', { className: 'fa fa-filter clickable', 'aria-hidden': 'true', title: JSON.stringify([new Set(flatten(flatten(this.state.data.map(function (testGroup) {
+	                            return testGroup.Tests;
+	                        })).map(function (test) {
+	                            return test.Tags;
+	                        })))]) }),
+	                    React.createElement('i', { className: 'fa fa-trash clickable', 'aria-hidden': 'true', onClick: this.clearTestResults })
+	                )
 	            ),
 	            React.createElement(
 	                'div',
 	                { className: 'testsAndResults' },
-	                React.createElement(AvailableTests, { runTest: this.runTest, scrollTo: this.scrollElementIntoViewIfNeeded, testResults: this.state.testResults }),
+	                React.createElement(AvailableTests, { runTest: this.runTest, scrollTo: this.scrollElementIntoViewIfNeeded, testResults: this.state.testResults, data: this.state.data }),
 	                React.createElement(
 	                    'div',
 	                    { className: 'results' },
@@ -83,12 +114,17 @@
 	                            'div',
 	                            { key: i, className: 'result' },
 	                            React.createElement(
-	                                'h3',
-	                                { className: test.result.toLowerCase() },
-	                                React.createElement('i', { className: getIcon(test.result), 'aria-hidden': 'true' }),
-	                                test.target,
-	                                ' - ',
-	                                test.name
+	                                'div',
+	                                { className: 'header' },
+	                                React.createElement(
+	                                    'h3',
+	                                    { className: test.result.toLowerCase() },
+	                                    React.createElement('i', { className: getIcon(test.result), 'aria-hidden': 'true' }),
+	                                    test.target,
+	                                    ' - ',
+	                                    test.name
+	                                ),
+	                                React.createElement('i', { className: 'fa fa-files-o clickable', 'aria-hidden': 'true', title: 'Copy test result to clipboard' })
 	                            ),
 	                            React.createElement(
 	                                'pre',
@@ -106,9 +142,14 @@
 	        );
 	    },
 	
+	    componentDidMount: function componentDidMount() {
+	        this.loadTests();
+	    },
+	
 	    getInitialState: function getInitialState() {
 	        return {
-	            testResults: []
+	            testResults: [],
+	            data: []
 	        };
 	    },
 	
@@ -116,6 +157,10 @@
 	        var containerDomNode = React.findDOMNode(this);
 	        // Determine if `domNode` fully fits inside `containerDomNode`.
 	        // If not, set the container's scrollTop appropriately.
+	    },
+	
+	    clearTestResults: function clearTestResults() {
+	        this.setState({ testResults: [] });
 	    },
 	
 	    runTest: function runTest(test, sectionName) {
@@ -165,24 +210,6 @@
 	var AvailableTests = React.createClass({
 	    displayName: 'AvailableTests',
 	
-	    loadTests: function loadTests() {
-	        var url = "/" + (location.pathname + location.search).substr(1);
-	        $.ajax({
-	            url: url,
-	            context: document.body,
-	            dataType: 'json',
-	            success: function (data) {
-	                this.setState({
-	                    data: groupTests(data.Tests),
-	                    id: 1
-	                });
-	            }.bind(this),
-	            error: function (xhr, status, err) {
-	                console.error('#GET Error', status, err.toString());
-	            }.bind(this)
-	        });
-	    },
-	
 	    runAll: function runAll(testGroup) {
 	        var _this = this;
 	
@@ -191,23 +218,12 @@
 	        });
 	    },
 	
-	    getInitialState: function getInitialState() {
-	        return {
-	            id: 1,
-	            data: []
-	        };
-	    },
-	
-	    componentDidMount: function componentDidMount() {
-	        this.loadTests();
-	    },
-	
 	    render: function render() {
 	        var currentTests = this;
 	        return React.createElement(
 	            'div',
 	            { className: 'AvailableTests', key: 0 },
-	            this.state.data.map(function (testGroup, i) {
+	            currentTests.props.data.map(function (testGroup, i) {
 	                return React.createElement(
 	                    'div',
 	                    { key: i, data: i },
@@ -222,7 +238,7 @@
 	                            { key: j, className: 'testandhistory', data: j },
 	                            React.createElement(
 	                                'div',
-	                                { className: 'test', onClick: currentTests.props.runTest.bind(null, test, testGroup.sectionName) },
+	                                { className: 'test clickable', onClick: currentTests.props.runTest.bind(null, test, testGroup.sectionName) },
 	                                React.createElement('i', { className: 'fa fa-arrow-circle-right' }),
 	                                React.createElement(
 	                                    'div',
@@ -252,6 +268,12 @@
 	        );
 	    }
 	});
+	
+	var flatten = function flatten(arr) {
+	    return arr.reduce(function (flat, toFlatten) {
+	        return flat.concat(Array.isArray(toFlatten) ? flatten(toFlatten) : toFlatten);
+	    }, []);
+	};
 	
 	var getIcon = function getIcon(result) {
 	    var icon = "fa fa-spinner fa-pulse fa-fw";
@@ -286,6 +308,8 @@
 	                };
 	            })
 	        };
+	    }).sort(function (a, b) {
+	        return a.sectionName > b.sectionName ? 1 : b.sectionName > a.sectionName ? -1 : 0;
 	    });
 	
 	    return mappedTests;

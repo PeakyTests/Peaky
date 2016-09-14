@@ -17,7 +17,7 @@
     flex-direction: column;
 }
 
-.test:hover {
+.clickable:hover {
     color: darkorange;
     cursor: pointer;
 }
@@ -70,4 +70,17 @@ i{
 
 .results pre {
     white-space: pre-wrap;
+}
+
+h1 {
+    display: inline;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: baseline;
 }

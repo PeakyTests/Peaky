@@ -5,24 +5,50 @@ var htmlContent = require('../App/peaky.html');
 var update = require('immutability-helper');
 require("babel-polyfill");
 
-var testResults = [];
 var uniqueIds = 0;
 
 var Sandwich = React.createClass({
+    loadTests: function () {
+        var url = "/" + (location.pathname + location.search).substr(1);
+        $.ajax({
+            url: url,
+            context: document.body,
+            dataType: 'json',
+            success: function (data) {
+                this.setState({
+                    data: groupTests(data.Tests),
+                    id: 1
+                });
+            }.bind(this),
+            error: function (xhr, status, err) {
+                console.error('#GET Error', status, err.toString());
+            }.bind(this)
+        });
+    },
+
     render: function () {
         return (
          <div className="Sandwich">
-            <h1>Peaky!</h1>
+            <div className="header">
+                <h1>Peaky!</h1>
+                <div className="controls">
+                    <i className="fa fa-filter clickable" aria-hidden="true" title={JSON.stringify([new Set(flatten(flatten(this.state.data.map((testGroup) => testGroup.Tests)).map((test) => test.Tags)))])}></i>
+                    <i className="fa fa-trash clickable" aria-hidden="true" onClick={this.clearTestResults}></i>
+                </div>
+            </div>
             <div className="testsAndResults">
-                <AvailableTests runTest={this.runTest} scrollTo={this.scrollElementIntoViewIfNeeded} testResults={this.state.testResults} />
+                <AvailableTests runTest={this.runTest} scrollTo={this.scrollElementIntoViewIfNeeded} testResults={this.state.testResults} data={this.state.data} />
                 <div className="results">
                     {
                         this.state.testResults.map((test, i) =>
                             <div key={i} className="result">
-                                <h3 className={test.result.toLowerCase() }>
-                                    <i className={getIcon(test.result)} aria-hidden="true"></i>
-                                    {test.target} - {test.name}
-                                </h3>
+                                <div className="header">
+                                    <h3 className={test.result.toLowerCase() }>
+                                        <i className={getIcon(test.result)} aria-hidden="true"></i>
+                                        {test.target} - {test.name}
+                                    </h3>
+                                    <i className="fa fa-files-o clickable" aria-hidden="true" title="Copy test result to clipboard"></i>
+                                </div>
                                 <pre><code className="json">{test.raw}</code></pre>
                             </div>
                         )
@@ -32,16 +58,25 @@ var Sandwich = React.createClass({
          </div>);
     },
 
+    componentDidMount: function () {
+        this.loadTests();
+    },
+
     getInitialState: function () {
         return {
-            testResults: []
+            testResults: [],
+            data: []
         };
     },
 
-    scrollElementIntoViewIfNeeded: function(domNode) {
+    scrollElementIntoViewIfNeeded: function (domNode) {
         var containerDomNode = React.findDOMNode(this);
         // Determine if `domNode` fully fits inside `containerDomNode`.
         // If not, set the container's scrollTop appropriately.
+    },
+
+    clearTestResults: function () {
+        this.setState({ testResults: [] });
     },
 
     runTest: function (test, sectionName) {
@@ -85,37 +120,8 @@ var Sandwich = React.createClass({
 })
 
 var AvailableTests = React.createClass({
-    loadTests: function () {
-        var url = "/" + (location.pathname + location.search).substr(1);
-        $.ajax({
-            url: url,
-            context: document.body,
-            dataType: 'json',
-            success: function (data) {
-                this.setState({
-                    data: groupTests(data.Tests),
-                    id: 1
-                });
-            }.bind(this),
-            error: function (xhr, status, err) {
-                console.error('#GET Error', status, err.toString());
-            }.bind(this)
-        });
-    },
-
-    runAll: function(testGroup) {
+    runAll: function (testGroup) {
         testGroup.Tests.forEach(t => this.props.runTest(t, testGroup.sectionName))
-    },
-
-    getInitialState: function () {
-        return {
-            id: 1,
-            data: []
-        };
-    },
-
-    componentDidMount: function () {
-        this.loadTests();
     },
 
     render: function () {
@@ -123,13 +129,13 @@ var AvailableTests = React.createClass({
         return (
             <div className="AvailableTests" key={0}>
                 {
-              this.state.data.map(function (testGroup, i) {
+              currentTests.props.data.map(function (testGroup, i) {
                   return <div key={i} data={i}>
                           <h2 className="sectionName">{testGroup.sectionName}</h2>
                       {
                                   testGroup.Tests.map(function (test, j) {
                                       return <div key={j} className="testandhistory" data={j}>
-                                        <div className="test" onClick={currentTests.props.runTest.bind(null, test, testGroup.sectionName)}>
+                                        <div className="test clickable" onClick={currentTests.props.runTest.bind(null, test, testGroup.sectionName)}>
                                             <i className="fa fa-arrow-circle-right"></i>
                                             <div className="testName">{test.TestName}</div>
                                         </div>
@@ -143,7 +149,7 @@ var AvailableTests = React.createClass({
                                         </div>
                                       </div>
                                   })
-                    }
+                      }
                     <div onClick={currentTests.runAll.bind(currentTests, testGroup)}>Run All</div>
                   </div>
               })
@@ -151,6 +157,12 @@ var AvailableTests = React.createClass({
             </div>);
     },
 });
+
+var flatten = function flatten(arr) {
+    return arr.reduce(function (flat, toFlatten) {
+        return flat.concat(Array.isArray(toFlatten) ? flatten(toFlatten) : toFlatten);
+    }, []);
+}
 
 var getIcon = function (result) {
     var icon = "fa fa-spinner fa-pulse fa-fw";
@@ -184,7 +196,7 @@ var groupTests = function (tests) {
             Url: test.Url,
             Tags: test.Tags
         }))
-    }));
+    })).sort(function (a, b) { return (a.sectionName > b.sectionName) ? 1 : ((b.sectionName > a.sectionName) ? -1 : 0); });
 
     return mappedTests;
 }
