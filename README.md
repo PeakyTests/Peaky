@@ -31,7 +31,7 @@ Check out the [Peaky WebApplication Sample](https://github.com/PhillipPruett/Pea
 Any class that implements IPeakyTest (or its children IApplyToApplication, IApplyToEnvironment, IApplyToTarget, and IHaveTags) will have its qualifying methods discovered and exposed as tests.
 
 #### How Peaky Tests Are Written
-write a peaky test much in the same way that you would write any mstest or nunit test. a test method that throws an exception will return a 500 Internal Server Error response code to the caller, signaling failure, and tests that do not throw any exceptions will return 200 OK, signaling success. 
+Write a Peaky test much in the same way that you would write any unit test. A test method that throws an exception will return a 500 Internal Server Error response code to the caller, signaling failure, and tests that do not throw any exceptions will return 200 OK, signaling success. 
 ```csharp
 public string bing_homepage_returned_in_under_5ms()
         {
@@ -55,10 +55,10 @@ a peaky uri ( http://yourPeakyApplicationsBaseUri/tests/{environment}/{applicati
 * Environment: what environment of that application is under test e.g production or internal, deployment A or deployment B.
 * Test Name: the name of the method discovered as a test
 
-These elements combine to form unique test uris. 
+These elements combine to form unique test URIs. 
 
 #### Test Discovery
-All tests, their tags, and their parameters are discoverable with a query. the following are examples of queries to discover tests:
+All tests, their tags, and their parameters are discoverable with a query. The following are examples of queries to discover tests:
 
 **HTTP GET /tests** will return all tests in the application
 **HTTP GET /tests/{environment}** will return all tests within the requested environment
@@ -73,13 +73,13 @@ A test class can implement IHaveTags which will allow for categorization of test
 Numerous tags can be filtered on with one request.
 
 #### Dependency Injection
-by default, peaky will allow your test classes to take a dependency on an HTTP client only. this is constructed using the details provided at app startup:
+By default, Peaky will allow your test classes to take a dependency on an `HttpClient` only. This is constructed using the details provided at app startup:
 ```csharp
 config.MapTestRoutes(targets => targets.Add("prod","bing", new Uri("https://bing.com")));
 ```
-this would allow any test classes that apply to both 'prod' and 'bing' to depend on an httpclient.
+This would allow any test classes that apply to both 'prod' and 'bing' to depend on an `HttpClient`.
 
-If you have other dependencies that can be registered as follows:
+If you have other dependencies, they can be registered as follows:
 ```csharp
 config.MapTestRoutes(targets =>
                      targets.Add("prod",
