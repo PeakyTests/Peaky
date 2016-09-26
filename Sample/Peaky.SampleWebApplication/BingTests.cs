@@ -1,13 +1,14 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Newtonsoft.Json;
 
 namespace Peaky.SampleWebApplication
 {
     public class BingTests : IApplyToApplication,
-                             IApplyToEnvironment,
                              IHaveTags
     {
         private readonly HttpClient httpClient;
@@ -20,11 +21,6 @@ namespace Peaky.SampleWebApplication
         public bool AppliesToApplication(string application)
         {
             return application == "bing";
-        }
-
-        public bool AppliesToEnvironment(string environment)
-        {
-            return environment == "prod";
         }
 
         public string[] Tags => new[]
@@ -45,9 +41,17 @@ namespace Peaky.SampleWebApplication
             return $"{stopwatch.ElapsedMilliseconds} milliseconds";
         }
 
-        public async Task images_should_return_200OK()
+        public async Task<string> images_should_return_200OK()
         {
-            (await httpClient.GetAsync("/images")).StatusCode.Should().Be(HttpStatusCode.OK);
+            var result = (await httpClient.GetAsync("/images"));
+            result.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var content = await result.Content.ReadAsStringAsync();
+            return JsonConvert.SerializeObject(new
+                   {
+                       StatusCode = result.StatusCode,
+                       Content = content
+                   });
         }
 
         public async Task rewards_should_return_200OK()
