@@ -84,7 +84,7 @@ namespace Peaky
             string baseUri = "tests",
             IEnumerable<Type> concreateTestClasses = null,
             HttpMessageHandler handler = null,
-            string testUiScriptUrl = "http://phillippruett.github.io/Peaky/javascripts/peaky.js",
+            string testUiScriptUrl = "//phillippruett.github.io/Peaky/javascripts/peaky.js",
             IEnumerable<string> testUiLibraryUrls = null,
             IEnumerable<string> styleSheetUrls = null)
         {
@@ -113,15 +113,15 @@ namespace Peaky
                 .Then(a => a.Where(u => !string.IsNullOrEmpty(u)
                                         && Uri.IsWellFormedUriString(u, UriKind.RelativeOrAbsolute))
                     .ToArray())
-                .Else(() => new string[] { "http://phillippruett.github.io/Peaky/stylesheets/peaky.css" });
-            configuration.StyleSheets(styleSheetUrls);
+                .Else(() => new string[] { "//phillippruett.github.io/Peaky/stylesheets/peaky.css" });
+            configuration.StyleSheets(styleSheetUrlsArray);
 
             var testUiLibraryUrlsArray = testUiLibraryUrls
                 .IfNotNull()
                 .Then(a => a.Where(u => !string.IsNullOrEmpty(u)
                                         && Uri.IsWellFormedUriString(u, UriKind.RelativeOrAbsolute))
                     .ToArray())
-                .Else(() => new string[] { "http://phillippruett.github.io/Peaky/javascripts/vendors.js" });
+                .Else(() => new string[] { "//phillippruett.github.io/Peaky/javascripts/vendors.js" });
             configuration.TestLibraryUrisAre(testUiLibraryUrlsArray);
 
             var testRootRouteTemplate = baseUri.AppendSegment("{environment}/{application}");
