@@ -78,8 +78,10 @@
 	            }.bind(this)
 	        });
 	    },
-	
 	    render: function render() {
+	        var _this = this;
+	
+	        var sandwich = this;
 	        return React.createElement(
 	            'div',
 	            { className: 'Sandwich' },
@@ -94,7 +96,7 @@
 	                React.createElement(
 	                    'div',
 	                    { className: 'controls' },
-	                    React.createElement('i', { className: 'fa fa-filter clickable', 'aria-hidden': 'true', title: JSON.stringify([new Set(flatten(flatten(this.state.data.map(function (testGroup) {
+	                    React.createElement('i', { className: 'fa fa-filter clickable', 'aria-hidden': 'true', title: 'feature coming soon! ... ' + JSON.stringify([new Set(flatten(flatten(this.state.data.map(function (testGroup) {
 	                            return testGroup.Tests;
 	                        })).map(function (test) {
 	                            return test.Tags;
@@ -105,34 +107,44 @@
 	            React.createElement(
 	                'div',
 	                { className: 'testsAndResults' },
-	                React.createElement(AvailableTests, { runTest: this.runTest, scrollTo: this.scrollElementIntoViewIfNeeded, testResults: this.state.testResults, data: this.state.data }),
+	                React.createElement(AvailableTests, { runTest: this.runTest, scrollTo: this.scrollTestResultIntoViewIfNeeded, testResults: this.state.testResults, data: this.state.data, gotoTestResult: this.gotoTestResult }),
 	                React.createElement(
 	                    'div',
 	                    { className: 'results' },
-	                    this.state.testResults.map(function (test, i) {
+	                    this.state.testResults.map(function (testResult, i) {
 	                        return React.createElement(
 	                            'div',
-	                            { key: i, className: 'result' },
+	                            { key: i, className: testResult.isHighlighted + ' result' },
 	                            React.createElement(
 	                                'div',
 	                                { className: 'header' },
 	                                React.createElement(
 	                                    'h3',
-	                                    { className: test.result.toLowerCase() },
-	                                    React.createElement('i', { className: getIcon(test.result), 'aria-hidden': 'true' }),
-	                                    test.target,
+	                                    { className: testResult.result.toLowerCase() },
+	                                    React.createElement('i', { className: getIcon(testResult.result), 'aria-hidden': 'true' }),
+	                                    testResult.target,
 	                                    ' - ',
-	                                    test.name
+	                                    testResult.name
 	                                ),
-	                                React.createElement('i', { className: 'fa fa-files-o clickable', 'aria-hidden': 'true', title: 'Copy test result to clipboard' })
+	                                React.createElement(
+	                                    'div',
+	                                    { className: 'controls' },
+	                                    React.createElement('i', { className: 'fa fa-files-o clickable', 'aria-hidden': 'true', title: 'Copy test result to clipboard', onClick: _this.copyToClipboard.bind(null, testResult.raw) }),
+	                                    React.createElement('i', { className: 'fa fa-minus-square clickable', 'aria-hidden': 'true', onClick: _this.collapse.bind(null, testResult) }),
+	                                    React.createElement('i', { className: 'fa fa-plus-square clickable', 'aria-hidden': 'true', onClick: _this.expand.bind(null, testResult) })
+	                                )
 	                            ),
 	                            React.createElement(
-	                                'pre',
-	                                null,
+	                                'section',
+	                                { className: testResult.collapsedState },
 	                                React.createElement(
-	                                    'code',
-	                                    { className: 'json' },
-	                                    test.raw
+	                                    'pre',
+	                                    null,
+	                                    React.createElement(
+	                                        'code',
+	                                        { className: 'json' },
+	                                        testResult.raw
+	                                    )
 	                                )
 	                            )
 	                        );
@@ -153,8 +165,45 @@
 	        };
 	    },
 	
-	    scrollElementIntoViewIfNeeded: function scrollElementIntoViewIfNeeded(domNode) {
-	        var containerDomNode = React.findDOMNode(this);
+	    copyToClipboard: function copyToClipboard(text) {
+	        window.prompt("Copy to clipboard: Ctrl+C, Enter", text);
+	    },
+	
+	    expand: function expand(testResult) {
+	        var result = this.state.testResults.find(function (t) {
+	            return testResult.key == t.key;
+	        });
+	        result.collapsedState = "uncollapsed";
+	        this.setState({ testResults: this.state.testResults });
+	    },
+	
+	    collapse: function collapse(testResult) {
+	        var result = this.state.testResults.find(function (t) {
+	            return testResult.key == t.key;
+	        });
+	        result.collapsedState = "collapsed";
+	        this.setState({ testResults: this.state.testResults });
+	    },
+	
+	    gotoTestResult: function gotoTestResult(testResult) {
+	        this.state.testResults.map(function (testResult, i) {
+	            return testResult.isHighlighted = "";
+	        });
+	        var result = this.state.testResults.find(function (t) {
+	            return testResult.key == t.key;
+	        });
+	        result.isHighlighted = "highlighted";
+	        this.setState({ testResults: this.state.testResults });
+	        //this.scrollTestResultIntoViewIfNeeded(testResult);
+	    },
+	
+	    scrollTestResultIntoViewIfNeeded: function scrollTestResultIntoViewIfNeeded(testResult) {
+	        //this isnt working yet. error says Uncaught Invariant Violation: Element appears to be neither
+	        //ReactComponent nor DOMNode (keys: result,name,url,target,key,raw,collapsedState,isHighlighted)
+	        var result = this.state.testResults.find(function (t) {
+	            return testResult.key == t.key;
+	        });
+	        var containerDomNode = ReactDOM.findDOMNode(result);
 	        // Determine if `domNode` fully fits inside `containerDomNode`.
 	        // If not, set the container's scrollTop appropriately.
 	    },
@@ -164,9 +213,7 @@
 	    },
 	
 	    runTest: function runTest(test, sectionName) {
-	
 	        var sandwich = this;
-	
 	        var key = uniqueIds++;
 	        var newState = update(sandwich.state.testResults, {
 	            $push: [{
@@ -190,6 +237,7 @@
 	                    return t.key == key;
 	                });
 	                result.result = 'Passed';
+	                result.collapsedState = 'collapsed';
 	                result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
 	                sandwich.setState({ testResults: sandwich.state.testResults });
 	                hljs.highlightBlock($('pre code').last()[0]);
@@ -199,6 +247,7 @@
 	                    return t.key == key;
 	                });
 	                result.result = 'Failed';
+	                result.collapsedState = 'uncollapsed';
 	                result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
 	                sandwich.setState({ testResults: sandwich.state.testResults });
 	                hljs.highlightBlock($('pre code').last()[0]);
@@ -211,10 +260,10 @@
 	    displayName: 'AvailableTests',
 	
 	    runAll: function runAll(testGroup) {
-	        var _this = this;
+	        var _this2 = this;
 	
 	        testGroup.Tests.forEach(function (t) {
-	            return _this.props.runTest(t, testGroup.sectionName);
+	            return _this2.props.runTest(t, testGroup.sectionName);
 	        });
 	    },
 	
@@ -252,8 +301,8 @@
 	                                currentTests.props.testResults.filter(function (i) {
 	                                    return i.url == test.Url;
 	                                }).map(function (t, k) {
-	                                    var icon = getIcon(t.result);
-	                                    return React.createElement('i', { className: icon, key: k, data: k, 'aria-hidden': 'true' });
+	                                    var icon = getIcon(t.result) + " clickable";
+	                                    return React.createElement('i', { className: icon, key: k, data: k, 'aria-hidden': 'true', onClick: currentTests.props.gotoTestResult.bind(null, t) });
 	                                })
 	                            )
 	                        );

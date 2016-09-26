@@ -41,12 +41,17 @@ namespace Peaky.SampleWebApplication
             return $"{stopwatch.ElapsedMilliseconds} milliseconds";
         }
 
-        public async Task<dynamic> images_should_return_200OK()
+        public async Task<string> images_should_return_200OK()
         {
             var result = (await httpClient.GetAsync("/images"));
             result.StatusCode.Should().Be(HttpStatusCode.OK);
 
-            return result;
+            var content = await result.Content.ReadAsStringAsync();
+            return JsonConvert.SerializeObject(new
+                   {
+                       StatusCode = result.StatusCode,
+                       Content = content
+                   });
         }
 
         public async Task rewards_should_return_200OK()

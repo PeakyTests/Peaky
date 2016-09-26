@@ -25,31 +25,37 @@ var Sandwich = React.createClass({
             }.bind(this)
         });
     },
-
     render: function () {
+        var sandwich = this;
         return (
          <div className="Sandwich">
             <div className="header">
                 <h1>Peaky!</h1>
                 <div className="controls">
-                    <i className="fa fa-filter clickable" aria-hidden="true" title={JSON.stringify([new Set(flatten(flatten(this.state.data.map((testGroup) => testGroup.Tests)).map((test) => test.Tags)))])}></i>
+                    <i className="fa fa-filter clickable" aria-hidden="true" title={'feature coming soon! ... ' + JSON.stringify([new Set(flatten(flatten(this.state.data.map((testGroup) => testGroup.Tests)).map((test) => test.Tags)))])}></i>
                     <i className="fa fa-trash clickable" aria-hidden="true" onClick={this.clearTestResults}></i>
                 </div>
             </div>
             <div className="testsAndResults">
-                <AvailableTests runTest={this.runTest} scrollTo={this.scrollElementIntoViewIfNeeded} testResults={this.state.testResults} data={this.state.data} />
+                <AvailableTests runTest={this.runTest} scrollTo={this.scrollTestResultIntoViewIfNeeded} testResults={this.state.testResults} data={this.state.data} gotoTestResult={this.gotoTestResult} />
                 <div className="results">
                     {
-                        this.state.testResults.map((test, i) =>
-                            <div key={i} className="result">
+                        this.state.testResults.map((testResult, i) =>
+                            <div key={i} className={testResult.isHighlighted + ' result'}>
                                 <div className="header">
-                                    <h3 className={test.result.toLowerCase() }>
-                                        <i className={getIcon(test.result)} aria-hidden="true"></i>
-                                        {test.target} - {test.name}
+                                    <h3 className={testResult.result.toLowerCase() }>
+                                        <i className={getIcon(testResult.result)} aria-hidden="true"></i>
+                                        {testResult.target} - {testResult.name}
                                     </h3>
-                                    <i className="fa fa-files-o clickable" aria-hidden="true" title="Copy test result to clipboard"></i>
+                                    <div className="controls">
+                                        <i className="fa fa-files-o clickable" aria-hidden="true" title="Copy test result to clipboard" onClick={this.copyToClipboard.bind(null, testResult.raw)}></i>
+                                        <i className="fa fa-minus-square clickable" aria-hidden="true" onClick={this.collapse.bind(null, testResult)}></i>
+                                        <i className="fa fa-plus-square clickable" aria-hidden="true" onClick={this.expand.bind(null, testResult)}></i>
+                                    </div>
                                 </div>
-                                <pre><code className="json">{test.raw}</code></pre>
+                                <section className={testResult.collapsedState}>
+                                    <pre><code className="json">{testResult.raw}</code></pre>
+                                </section>
                             </div>
                         )
                     }
@@ -69,8 +75,35 @@ var Sandwich = React.createClass({
         };
     },
 
-    scrollElementIntoViewIfNeeded: function (domNode) {
-        var containerDomNode = React.findDOMNode(this);
+    copyToClipboard : function(text) {
+        window.prompt("Copy to clipboard: Ctrl+C, Enter", text);
+    },
+
+    expand: function (testResult) {
+        var result = this.state.testResults.find(t => testResult.key == t.key);
+        result.collapsedState = "uncollapsed";
+        this.setState({ testResults: this.state.testResults });
+    },
+
+    collapse: function (testResult) {
+        var result = this.state.testResults.find(t => testResult.key == t.key);
+        result.collapsedState = "collapsed";
+        this.setState({ testResults: this.state.testResults });
+    },
+
+    gotoTestResult: function (testResult) {
+        this.state.testResults.map((testResult, i) => testResult.isHighlighted = "");
+        var result = this.state.testResults.find(t => testResult.key == t.key);
+        result.isHighlighted = "highlighted";
+        this.setState({ testResults: this.state.testResults });
+        //this.scrollTestResultIntoViewIfNeeded(testResult);
+    },
+
+    scrollTestResultIntoViewIfNeeded: function (testResult) {
+        //this isnt working yet. error says Uncaught Invariant Violation: Element appears to be neither 
+        //ReactComponent nor DOMNode (keys: result,name,url,target,key,raw,collapsedState,isHighlighted)
+        var result = this.state.testResults.find(t => testResult.key == t.key);
+        var containerDomNode = ReactDOM.findDOMNode(result);
         // Determine if `domNode` fully fits inside `containerDomNode`.
         // If not, set the container's scrollTop appropriately.
     },
@@ -80,9 +113,7 @@ var Sandwich = React.createClass({
     },
 
     runTest: function (test, sectionName) {
-
         var sandwich = this;
-
         var key = uniqueIds++;
         var newState = update(sandwich.state.testResults, {
             $push: [{
@@ -104,6 +135,7 @@ var Sandwich = React.createClass({
             success: function (data) {
                 var result = sandwich.state.testResults.find(t => t.key == key);
                 result.result = 'Passed';
+                result.collapsedState = 'collapsed';
                 result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
                 sandwich.setState({ testResults: sandwich.state.testResults });
                 hljs.highlightBlock($('pre code').last()[0]);
@@ -111,6 +143,7 @@ var Sandwich = React.createClass({
             error: function (data) {
                 var result = sandwich.state.testResults.find(t => t.key == key);
                 result.result = 'Failed';
+                result.collapsedState = 'uncollapsed';
                 result.raw = JSON.stringify(data.responseJSON || data.responseText || {}, null, 2).replace(/[\\]+r[\\]+n/g, "\n");
                 sandwich.setState({ testResults: sandwich.state.testResults });
                 hljs.highlightBlock($('pre code').last()[0]);
@@ -142,8 +175,8 @@ var AvailableTests = React.createClass({
                                         <div className="history">
                                             {
                                             currentTests.props.testResults.filter(i => i.url == test.Url).map((t, k) => {
-                                                var icon = getIcon(t.result);
-                                                return <i className={icon} key={k} data={k} aria-hidden="true"></i>
+                                                var icon = getIcon(t.result) + " clickable";
+                                                return <i className={icon} key={k} data={k} aria-hidden="true" onClick={currentTests.props.gotoTestResult.bind(null, t)}></i>
                                             }
                                             )}
                                         </div>
