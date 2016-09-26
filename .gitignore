@@ -29,3 +29,4 @@ Its.Log.Monitoring.UI/styles/monitoring.css
 *.xml
 *.nupkg
 /.vs/*
+*.stackdump
