@@ -114,7 +114,7 @@ namespace Peaky
                                         && Uri.IsWellFormedUriString(u, UriKind.RelativeOrAbsolute))
                     .ToArray())
                 .Else(() => new string[] { "http://phillippruett.github.io/Peaky/stylesheets/peaky.css" });
-            configuration.StyleSheets(styleSheetUrls);
+            configuration.StyleSheets(styleSheetUrlsArray);
 
             var testUiLibraryUrlsArray = testUiLibraryUrls
                 .IfNotNull()
