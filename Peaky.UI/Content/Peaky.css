@@ -4,10 +4,17 @@
     font-family: "Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;
 }
 
+* {
+    margin: 0;
+    padding: 0;
+}
+
 .testsAndResults {
     flex-direction: row;
     display: flex;
     flex:1;
+    padding: 3px;
+    padding-left: 8px;
 }
 
 .tests {
@@ -18,7 +25,7 @@
 }
 
 .clickable:hover {
-    color: #ff6a00;
+    color: #00a1c5;
     cursor: pointer;
 }
 
@@ -36,30 +43,37 @@
     box-sizing: border-box;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
-    border: thin solid #A9A9A9;
     margin-bottom: 0.5em;
     width: 100%;
     background-color: #e2e2e2;
 }
 
-.passed {
-    color: green;
+i.passed {
+    color: #049004;
     animation: none;
 }
 
-.failed {
-    color:darkred;
+i.failed {
+    color:#f52900;
     animation: none;
 }
 
 .testName {
-    display: inline
+    display: inline;
+}
+
+.test {
+    display: flex;
+}
+
+.test i {
+    margin-top: 3px;
 }
 
 i{
     margin-right: 3px;
     display: inline;
-    color: #ff6a00;
+    color: #00c7f4;
 }
 
 .history {
@@ -76,24 +90,27 @@ i{
 
 h1 {
     display: inline;
-    margin-bottom: 0;
-    margin-top: 0;
-    color: #ff6a00;
-    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+    color: #ffffff;
 }
 
 h2 {
     border-bottom: thin solid #A9A9A9;
 }
 
-.header {
+.pageHeader {
+    background-color: #322525;
+    padding: 3px;
+    padding-left: 8px;
+}
+
+.header, .pageHeader{
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: baseline;
 }
 
-.header i {
+.header i, .pageHeader i {
     padding-left: 5px
 }
 
@@ -114,5 +131,19 @@ h3 {
     box-sizing: border-box;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
-    border: 3px solid #ff6a00;
+    border: 3px solid #00c7f4;
+}
+
+.passedResult {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    border-left: 5px solid #5fe35f;
+}
+
+.failedResult {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    border-left: 5px solid #fc5c3c;
 }
