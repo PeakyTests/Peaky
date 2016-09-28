@@ -32,7 +32,7 @@ namespace Peaky
         {libraryScriptRefs}
         {styleSheetRefs}
     </head>
-    <body
+    <body>
 <div id=""container"">
 </div>
 	    <script src=""{scriptUrl}?monitoringVersion={version}""></script>
