@@ -171,7 +171,7 @@
   <ItemGroup>
     <Content Include="App\peaky.css" />
     <Content Include="App\peaky.html" />
-    <Content Include="App\vendors.js" />
+    <Content Include="App\peaky.js" />
     <Content Include="Content\css\font-awesome.css" />
     <Content Include="Content\css\font-awesome.min.css" />
     <Content Include="Content\fonts\fontawesome-webfont.svg" />
@@ -285,6 +285,7 @@
     <Content Include="Content\Peaky.css" />
     <Content Include="gulpfile.js" />
     <Content Include="webpack.config.js" />
+    <Content Include="App\peaky.js.map" />
     <None Include="App\peaky.jsx" />
     <Content Include="Content\fonts\fontawesome-webfont.eot" />
     <Content Include="Content\fonts\fontawesome-webfont.ttf" />
