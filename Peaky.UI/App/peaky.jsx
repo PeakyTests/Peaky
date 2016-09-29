@@ -78,7 +78,17 @@ var Sandwich = React.createClass({
     },
 
     copyToClipboard : function(text) {
-        window.prompt("Copy to clipboard: Ctrl+C, Enter", text);
+        var element = document.createElement('div');
+        element.textContent = text;
+        document.body.appendChild(element);
+
+        var range = document.createRange();
+        range.selectNode(element);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+
+        document.execCommand('copy');
+        element.remove();
     },
 
     expand: function (testResult) {
