@@ -121,7 +121,7 @@ namespace Peaky
                 .Then(a => a.Where(u => !string.IsNullOrEmpty(u)
                                         && Uri.IsWellFormedUriString(u, UriKind.RelativeOrAbsolute))
                     .ToArray())
-                .Else(() => new string[] { "//phillippruett.github.io/Peaky/javascripts/vendors.js" });
+                .Else(() => new string[] {  });
             configuration.TestLibraryUrisAre(testUiLibraryUrlsArray);
 
             var testRootRouteTemplate = baseUri.AppendSegment("{environment}/{application}");

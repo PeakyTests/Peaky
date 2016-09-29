@@ -7,30 +7,6 @@ var del = require('del');
 var minifyCSS = require('gulp-minify-css');
 
 //-----------------------------------------------------
-//Prepare Vendor.js 
-//-----------------------------------------------------
-var vendorScripts = {
-    src: [
-        'Scripts/**/*.js',
-        '!Scripts/**/*.min.js',
-        '!Scripts/**/*.debug.js',
-        '!Scripts/**/*.intellisense.js',
-    ]
-};
-
-gulp.task('cleanVendorsJs', function () {
-    return del(['App/vendors.js']);
-});
-
-gulp.task('prepareVendorsJs', ['cleanVendorsJs'], function () {
-
-    return gulp.src(vendorScripts.src)
-      .pipe(uglify().on('error', gulpUtil.log))
-      .pipe(concat('vendors.js'))
-      .pipe(gulp.dest('App/'));
-});
-
-//-----------------------------------------------------
 //Prepare Peaky.css 
 //-----------------------------------------------------
 var styleSheets = {
@@ -73,4 +49,4 @@ gulp.task('copyFonts', ['cleanFonts'], function () {
         .pipe(gulp.dest('fonts/'));
 });
 
-gulp.task('default', ['prepareVendorsJs', 'preparePeakyCss', 'copyFonts'], function () { });
+gulp.task('default', ['preparePeakyCss', 'copyFonts'], function () { });
