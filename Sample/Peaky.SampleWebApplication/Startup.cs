@@ -1,23 +1,31 @@
 ﻿using System;
-using System.Web.Http;
-using Microsoft.Owin;
-using Owin;
-using Peaky.SampleWebApplication;
-
-[assembly: OwinStartup(typeof (Startup))]
+using System.Linq;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Peaky.SampleWebApplication
 {
     public class Startup
     {
-        public void Configuration(IAppBuilder app)
+        public Startup(IConfiguration configuration)
         {
-            var config = new HttpConfiguration();
-            config.MapHttpAttributeRoutes();
-            config.MapTestRoutes(configureTargets: RegisterTargets);
+            Configuration = configuration;
+        }
 
-            config.EnsureInitialized();
-            app.UseWebApi(config);
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMvc();
+        }
+
+        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        {
+            app.UseDeveloperExceptionPage();
         }
 
         private void RegisterTargets(TestTargetRegistry targets)

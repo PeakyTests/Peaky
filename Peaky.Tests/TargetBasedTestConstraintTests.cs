@@ -4,101 +4,82 @@
 using System;
 using System.Collections;
 using System.Net.Http;
-using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Http;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
-using log = Its.Log.Instrumentation.Log;
+using Pocket;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Peaky.Tests
 {
-    [TestFixture]
     public class TargetBasedTestConstraintTests
     {
-        private CompositeDisposable disposables;
+        private readonly ITestOutputHelper output;
+        private readonly CompositeDisposable disposables;
 
-        [SetUp]
-        public void SetUp()
+        public TargetBasedTestConstraintTests(ITestOutputHelper output)
         {
-            disposables = new CompositeDisposable(log.Events().Subscribe(Console.WriteLine));
+            this.output = output;
+            disposables = new CompositeDisposable
+            {
+                LogEvents.Subscribe(e => Console.WriteLine(e.ToLogString()))
+            };
         }
 
-        private TestApi CreateApiClient(Func<HttpClient, bool> buildChecker)
+        private HttpClient CreateApiClient(Func<HttpClient, bool> buildChecker)
         {
             var testApi = new TestApi(targets =>
-                                      targets.Add("staging",
-                                                  "widgetapi",
-                                                  new Uri("http://staging.widgets.com"),
-                                                  dependencies =>
-                                                  dependencies
-                                                      .Register(() => buildChecker)
-                                                      .Register(() => new HttpClient(new HttpServer(new HttpConfiguration()
-                                                                                                        .MapSensorRoutes(_ => true))))),
-                                      typeof (TestsConstrainedToTarget));
+                                          targets.Add("staging",
+                                                      "widgetapi",
+                                                      new Uri("http://staging.widgets.com"),
+                                                      dependencies =>
+                                                          dependencies
+                                                              .Register(() => buildChecker)),
+                                      typeof(TestsConstrainedToTarget));
 
             disposables.Add(testApi);
-            return testApi;
+            return testApi.CreateHttpClient();
         }
 
-        [TearDown]
-        public void TearDown()
+        public void Dispose()
         {
-            foreach (DictionaryEntry entry in HttpRuntime.Cache)
-            {
-                HttpRuntime.Cache.Remove((string) entry.Key);
-            }
+           
 
             disposables.Dispose();
         }
 
-        [Test]
+        [Fact]
         public async Task A_test_can_be_hidden_based_on_the_target_application_build_date_sensor()
         {
-            using (var activity = log.Enter(() => { }))
-            {
-                var response = await CreateApiClient(BuildDateAfter(DateTime.Now.AddDays(10))).GetAsync("http://tests.com/tests");
+            var response = await CreateApiClient(BuildDateAfter(DateTime.Now.AddDays(10))).GetAsync("http://tests.com/tests");
 
-                activity.Trace(() => new { response });
+            JArray tests = response.JsonContent().Tests;
 
-                JArray tests = response.JsonContent().Tests;
-
-                activity.Trace(() => new { tests });
-
-                tests.Should().NotContain(t => t.Value<string>("Url").Contains("target_based_constraint_test"));
-            }
+            tests.Should().NotContain(t => t.Value<string>("Url").Contains("target_based_constraint_test"));
         }
 
-        [Test]
+        [Fact]
         public async Task A_test_can_be_shown_based_on_the_target_application_build_date_sensor()
         {
-            using (var activity = log.Enter(() => { }))
-            {
-                var response = await CreateApiClient(BuildDateAfter(DateTime.Now.Subtract(TimeSpan.FromDays(1000)))).GetAsync("http://tests.com/tests");
+            var response = await CreateApiClient(BuildDateAfter(DateTime.Now.Subtract(TimeSpan.FromDays(1000)))).GetAsync("http://tests.com/tests");
 
-                activity.Confirm(() => new { response });
+            JArray tests = response.JsonContent().Tests;
 
-                JArray tests = response.JsonContent().Tests;
-
-                activity.Confirm(() => new { tests });
-
-                tests.Should().Contain(t => t.Value<string>("Url").Contains("target_based_constraint_test"));
-            }
+            tests.Should().Contain(t => t.Value<string>("Url").Contains("target_based_constraint_test"));
         }
 
-        [Test]
+        [Fact]
         public async Task Target_constraints_cache_their_results_and_and_do_not_trigger_every_time_Match_is_called()
         {
             var constraintCalls = 0;
 
             var apiClient = CreateApiClient(_ =>
-                                            {
-                                                Interlocked.Increment(ref constraintCalls);
-                                                return false;
-                                            });
+            {
+                Interlocked.Increment(ref constraintCalls);
+                return false;
+            });
 
             await apiClient.GetAsync("http://tests.com/tests");
             await apiClient.GetAsync("http://tests.com/tests");
@@ -144,6 +125,4 @@ namespace Peaky.Tests
             }
         }
     }
-
-   
 }

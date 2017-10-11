@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Its.Log.Instrumentation;
 
 namespace Peaky
 {
@@ -36,10 +35,7 @@ namespace Peaky
                     var definition = testDefinition;
                     dictionary.Add(name,
                                    new AnonymousTestDefinition(name,
-                                                               _ =>
-                                                               {
-                                                                   throw new InvalidOperationException("Test could not be routed:\n" + definition.ToLogString());
-                                                               }));
+                                                               _ => throw new InvalidOperationException($"Test could not be routed:\n{definition}")));
                 }
             }
 

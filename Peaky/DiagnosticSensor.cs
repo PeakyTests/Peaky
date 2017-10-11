@@ -5,11 +5,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Composition.Hosting;
-using System.ComponentModel.Composition.Primitives;
-using System.IO;
-using System.Linq;
 using System.Reflection;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Peaky
 {
@@ -24,27 +22,6 @@ namespace Peaky
         private readonly Type returnType;
         private bool isAsync;
 
-        /// <summary>
-        ///   Initializes a new instance of the <see cref="DiagnosticSensor" /> class.
-        /// </summary>
-        internal DiagnosticSensor(ExportedDelegate export)
-        {
-            if (export == null)
-            {
-                throw new ArgumentNullException(nameof(export));
-            }
-
-            @delegate = export.CreateDelegate(typeof (Delegate));
-            if (@delegate != null)
-            {
-                name = GetName(@delegate.Method);
-                declaringType = @delegate.Method.DeclaringType;
-                returnType = @delegate.Method.ReturnType;
-            }
-
-            ValidateAndInitialize();
-        }
-
         internal DiagnosticSensor(Type returnType, string name, Type declaringType, Delegate @delegate)
         {
             this.returnType = returnType;
@@ -53,6 +30,10 @@ namespace Peaky
             this.@delegate = @delegate;
 
             ValidateAndInitialize();
+        }
+
+        private DiagnosticSensor(MethodInfo methodInfo) : this(methodInfo.ReturnType, methodInfo.Name, methodInfo.DeclaringType, methodInfo.CreateDelegate(typeof(Func<object>)))
+        {
         }
 
         private void ValidateAndInitialize()
@@ -74,7 +55,7 @@ namespace Peaky
                 throw new ArgumentNullException(nameof(@delegate));
             }
 
-            isAsync = returnType.IsAsync();
+            isAsync = typeof(Task).IsAssignableFrom(returnType);
         }
 
         /// <summary>
@@ -116,10 +97,6 @@ namespace Peaky
             }
             catch (Exception exception)
             {
-                if (exception.ShouldThrow())
-                {
-                    throw;
-                }
                 return exception;
             }
         }
@@ -130,46 +107,26 @@ namespace Peaky
         /// <summary>
         /// Discovers sensors found in all loaded assemblies.
         /// </summary>
-        public static ConcurrentDictionary<string, DiagnosticSensor> Discover() =>
-            AppDomain.CurrentDomain
-                     .GetAssemblies()
-                     .Where(a => !a.IsDynamic && !a.GlobalAssemblyCache)
-                     .SelectMany(a =>
-                     {
-                         try
-                         {
-                             return new CompositionContainer(new AggregateCatalog(new AssemblyCatalog(a)))
-                                 .GetExports<object>("DiagnosticSensor")
-                                 .Select(lazy => lazy.Value)
-                                 .OfType<ExportedDelegate>()
-                                 .Select(sensorMethod => new DiagnosticSensor(sensorMethod));
-                         }
-                         catch (Exception ex)
-                         {
-                             if (ex is TypeLoadException ||
-                                 ex is ReflectionTypeLoadException ||
-                                 ex is FileNotFoundException ||
-                                 ex is FileLoadException)
-                             {
-                                 return new[]
-                                 {
-                                     new DiagnosticSensor(typeof (Exception),
-                                                          "AssemblyLoadError-" + a.FullName,
-                                                          typeof (DiagnosticSensor),
-                                                          new Func<Exception>(() => ex))
-                                 };
-                             }
-                             throw;
-                         }
-                     })
-                     .OrderBy(sensor => sensor.Name)
-                     .ThenBy(sensor => sensor.DeclaringType.Assembly.FullName)
-                     .Aggregate(new ConcurrentDictionary<string, DiagnosticSensor>(), (sensors, sensor) =>
-                     {
-                         // FIX: (Discover) we should be graceful about collisions or deterministic about ordering
-                         sensors[sensor.Name] = sensor;
-                         return sensors;
-                     });
+        public static ConcurrentDictionary<string, DiagnosticSensor> Discover()
+        {
+            var enumerable = Pocket.Discover
+                                   .ConcreteTypes()
+                                   .SelectMany(t => t.GetTypeInfo()
+                                                     .GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
+                                                                 BindingFlags.Static)
+                                                     .Where(m => m.CustomAttributes
+                                                                  .Any(a => a.GetType().Name.Equals("DiagnosticSensor") || a.GetType().Name.Equals("DiagnosticSensorAttribute"))))
+                                   .Select(m => new DiagnosticSensor(m));
+            return enumerable
+                .OrderBy(sensor => sensor.Name)
+                .ThenBy(sensor => sensor.DeclaringType.GetTypeInfo().Assembly.FullName)
+                .Aggregate(new ConcurrentDictionary<string, DiagnosticSensor>(), (sensors, sensor) =>
+                {
+                    // FIX: (Discover) we should be graceful about collisions or deterministic about ordering
+                    sensors[sensor.Name] = sensor;
+                    return sensors;
+                });
+        }
 
         /// <summary>
         /// Gets the name of a sensor.
@@ -180,7 +137,7 @@ namespace Peaky
         public static string GetName(MethodInfo sensorMethod)
         {
             var displayName = sensorMethod
-                .GetCustomAttributes(typeof (DisplayNameAttribute), false)
+                .GetCustomAttributes(typeof(DisplayNameAttribute), false)
                 .OfType<DisplayNameAttribute>()
                 .FirstOrDefault();
 
@@ -201,23 +158,18 @@ namespace Peaky
         /// <param name="name"> The name of the sensor. </param>
         public static void Register<T>(Func<T> sensor, string name = null)
         {
-            var anonymousMethodInfo = sensor.GetAnonymousMethodInfo();
-            name = name ?? anonymousMethodInfo.MethodName;
+            name = name ?? sensor.GetMethodInfo().Name;
             allSensors.Value[name] = new DiagnosticSensor(
                 @delegate: sensor,
-                returnType: typeof (T),
+                returnType: typeof(T),
                 name: name,
-                declaringType: anonymousMethodInfo.EnclosingType);
+                declaringType: sensor.GetMethodInfo().DeclaringType);
         }
 
         /// <summary>
         ///   Removes any sensor having the specified name.
         /// </summary>
         /// <param name="name"> The sensor name. </param>
-        public static void Remove(string name)
-        {
-            DiagnosticSensor sensor;
-            allSensors.Value.TryRemove(name, out sensor);
-        }
+        public static void Remove(string name) => allSensors.Value.TryRemove(name, out DiagnosticSensor _);
     }
 }

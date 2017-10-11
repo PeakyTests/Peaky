@@ -5,11 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Web.Http.Controllers;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Peaky
 {
-    internal abstract class TestDefinition
+    public abstract class TestDefinition
     {
         private IEnumerable<Parameter> testParameters;
         public abstract string TestName { get; }
@@ -22,7 +22,7 @@ namespace Peaky
 
         internal Type TestType { get; set; }
 
-        internal abstract dynamic Run(HttpActionContext actionContext, Func<Type, object> resolver = null);
+        internal abstract dynamic Run(ActionContext actionContext, Func<Type, object> resolver);
 
         internal static TestDefinition Create(MethodInfo methodInfo)
         {
@@ -41,17 +41,11 @@ namespace Peaky
             return testDefinition;
         }
 
-        public IEnumerable<Parameter> Parameters
+        internal IEnumerable<Parameter> Parameters
         {
-            get
-            {
-                return testParameters ??
-                       (testParameters = System.Linq.Enumerable.Empty<Parameter>());
-            }
-            set
-            {
-                testParameters = value;
-            }
+            get => testParameters ??
+                   (testParameters = System.Linq.Enumerable.Empty<Parameter>());
+            set => testParameters = value;
         }
     }
 }

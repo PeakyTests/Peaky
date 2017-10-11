@@ -5,43 +5,31 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Http;
 using FluentAssertions;
-using Its.Log.Instrumentation;
 using Its.Recipes;
-using NUnit.Framework;
 using Newtonsoft.Json.Linq;
+using Xunit;
 
 namespace Peaky.Tests
 {
-    [TestFixture]
-    public class SensorAsyncTests
+    public class SensorAsyncTests : IDisposable
     {
         private static HttpClient apiClient;
         private string sensorName;
 
         public SensorAsyncTests()
         {
-            var configuration1 = new HttpConfiguration();
-            configuration1.MapSensorRoutes(ctx => true);
-            var server = new HttpServer(configuration1);
-            apiClient = new HttpClient(server);
-        }
-
-        [SetUp]
-        public void SetUp()
-        {
+            apiClient = new TestApi().CreateHttpClient();
             sensorName = Any.AlphanumericString(10, 20);
         }
 
-        [TearDown]
-        public void TearDown()
+        public void Dispose()
         {
             DiagnosticSensor.Remove(sensorName);
             TestSensor.GetSensorValue = null;
         }
 
-        [Test]
+        [Fact]
         public void When_a_sensor_returning_a_Task_of_anonymous_type_is_requested_specifically_then_the_Result_is_returned()
         {
             var words = Any.Paragraph(5);
@@ -58,7 +46,7 @@ namespace Peaky.Tests
                 .Be(words);
         }
 
-        [Test]
+        [Fact]
         public void When_a_sensor_returning_a_Task_is_requested_specifically_then_the_Result_is_returned()
         {
             var words = Any.Paragraph(5);
@@ -71,7 +59,7 @@ namespace Peaky.Tests
                 .Be(words);
         }
 
-        [Test]
+        [Fact]
         public void When_all_sensors_are_requested_then_the_Result_values_are_returned_for_those_that_return_Tasks()
         {
             var words = Any.Paragraph(5);
@@ -85,7 +73,7 @@ namespace Peaky.Tests
                   .Contain(string.Format("\"SensorMethod\":\"{0}\"", words));
         }
 
-        [Test]
+        [Fact]
         public void When_all_sensors_are_requested_and_some_are_slow_async_they_are_combined_with_synchronous_sensors()
         {
             var testSensor = Any.Paragraph(5);

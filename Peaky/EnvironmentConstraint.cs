@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Net.Http;
+using System.Reflection;
 using Its.Recipes;
-using Microsoft.Its.Recipes;
+using Microsoft.AspNetCore.Http;
 
 namespace Peaky
 {
@@ -15,13 +15,13 @@ namespace Peaky
 
         public EnvironmentConstraint(TestDefinition testDefinition)
         {
-            if (typeof (IApplyToEnvironment).IsAssignableFrom(testDefinition.TestType))
+            if (typeof(IApplyToEnvironment).IsAssignableFrom(testDefinition.TestType))
             {
                 TestDefinition = testDefinition;
             }
         }
 
-        protected override bool Match(TestTarget target, HttpRequestMessage request)
+        protected override bool Match(TestTarget target, HttpRequest request)
         {
             if (TestDefinition == null)
             {

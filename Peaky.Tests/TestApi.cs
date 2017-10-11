@@ -4,30 +4,43 @@
 using System;
 using System.Linq;
 using System.Net.Http;
-using System.Web.Http;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
 
 namespace Peaky.Tests
 {
-    public class TestApi : HttpClient
+    public class TestApi : IDisposable
     {
-        public TestApi(Action<TestTargetRegistry> configureTargets = null,
-                       params Type[] testTypes) : base(Configure(configureTargets, testTypes))
-        {
-        }
+        private readonly TestServer testServer;
+        private HttpClient httpClient;
 
-        private static HttpServer Configure(
+        public TestApi(
             Action<TestTargetRegistry> configureTargets = null,
             params Type[] testTypes)
         {
-            if (!testTypes.Any())
-            {
-                testTypes = null;
-            }
-
-            var configuration = new HttpConfiguration();
-            configuration.MapTestRoutes(configureTargets, concreateTestClasses: testTypes);
-            configuration.EnsureInitialized();
-            return new HttpServer(configuration);
+            testServer = Configure(configureTargets, testTypes);
         }
+
+        private static TestServer Configure(
+            Action<TestTargetRegistry> configureTargets = null,
+            params Type[] testTypes)
+        {
+            return new TestServer(new WebHostBuilder().UseStartup<TestApiStartup>());
+        }
+
+        public HttpClient CreateHttpClient()
+        {
+            return httpClient ?? (httpClient = testServer.CreateClient());
+        }
+
+        public void Dispose() => httpClient.Dispose();
+    }
+
+    internal class TestApiStartup
+    {
+
+
+
+
     }
 }

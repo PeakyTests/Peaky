@@ -20,7 +20,6 @@ namespace Its.Recipes
     /// </summary>
 #if !RecipesProject
     [System.Diagnostics.DebuggerStepThrough]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
     internal static partial class MaybeExtensions
     {
@@ -707,7 +706,6 @@ namespace Its.Recipes
     /// <typeparam name="T">The type of the possible value.</typeparam>
 #if !RecipesProject
     [System.Diagnostics.DebuggerStepThrough]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
     internal struct Maybe<T>
     {
@@ -781,7 +779,6 @@ namespace Its.Recipes
     /// </summary>
 #if !RecipesProject
     [System.Diagnostics.DebuggerStepThrough]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
     internal struct Unit
     {

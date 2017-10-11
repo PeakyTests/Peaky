@@ -2,41 +2,38 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Http;
 using FluentAssertions;
-using Its.Log.Instrumentation.Extensions;
 using Its.Recipes;
+using Microsoft.AspNetCore.TestHost;
 using Newtonsoft.Json;
-using NUnit.Framework;
 using Newtonsoft.Json.Linq;
+using Xunit;
 
 namespace Peaky.Tests
 {
-    [TestFixture]
-    public class PeakyTestDiscoveryTests
+    public class PeakyTestDiscoveryTests : IDisposable
     {
-        private HttpClient apiClient;
+        private readonly HttpClient apiClient;
 
-        [SetUp]
-        public void SetUp()
+        public PeakyTestDiscoveryTests()
         {
             apiClient = new TestApi(targets => targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
                                                       .Add("production", "widgetapi", new Uri("http://widgets.com"))
                                                       .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
-                                                      .Add("production", "sprocketapi", new Uri("http://sprockets.com")));
+                                                      .Add("production", "sprocketapi", new Uri("http://sprockets.com"))).CreateHttpClient();
         }
 
-        [TearDown]
-        public void TearDown()
+        public void Dispose()
         {
             apiClient.Dispose();
         }
 
-        [Test]
+        [Fact]
         public void API_exposes_void_methods()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi").Result;
@@ -48,7 +45,7 @@ namespace Peaky.Tests
             json.Should().Contain("passing_void_test");
         }
 
-        [Test]
+        [Fact]
         public void API_does_not_expose_private_methods()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi").Result;
@@ -60,7 +57,7 @@ namespace Peaky.Tests
             json.Should().NotContain("not_a_test");
         }
 
-        [Test]
+        [Fact]
         public void API_does_not_expose_static_methods()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi").Result;
@@ -72,7 +69,7 @@ namespace Peaky.Tests
             json.Should().NotContain("not_a_test");
         }
 
-        [Test]
+        [Fact]
         public void API_does_not_expose_environments_that_were_not_configured()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/" + Any.CamelCaseName()).Result;
@@ -80,7 +77,7 @@ namespace Peaky.Tests
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }
 
-        [Test]
+        [Fact]
         public void API_does_not_expose_applications_that_were_not_configured()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/" + Any.CamelCaseName()).Result;
@@ -88,7 +85,7 @@ namespace Peaky.Tests
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }
 
-        [Test]
+        [Fact]
         public void When_tests_are_queried_by_environment_then_tests_not_valid_for_that_enviroment_are_not_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi").Result;
@@ -102,7 +99,7 @@ namespace Peaky.Tests
             tests.Should().NotContain(o => o.Value<string>("Url") == "internal_only_test");
         }
 
-        [Test]
+        [Fact]
         public void When_tests_are_queried_by_application_then_tests_not_valid_for_that_application_are_not_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/sprocketapi/").Result;
@@ -116,7 +113,7 @@ namespace Peaky.Tests
             tests.Should().NotContain(o => o.Value<string>("Url").Contains("widgetapi_only_test"));
         }
 
-        [Test]
+        [Fact]
         public void When_tests_are_queried_by_environment_then_routes_are_returned_with_the_environment_filled_in()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi").Result;
@@ -130,7 +127,7 @@ namespace Peaky.Tests
             tests.Should().Contain(o => o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/passing_test_returns_object");
         }
 
-        [Test]
+        [Fact]
         public void When_two_tests_have_the_same_name_then_an_informative_error_URL_is_displayed()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi").Result;
@@ -145,7 +142,7 @@ namespace Peaky.Tests
                                    o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/TEST_NAME_COLLISION_1");
         }
 
-        [Test]
+        [Fact]
         public void When_two_tests_have_the_same_name_then_calling_the_error_test_returns_500_and_details()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/TEST_NAME_COLLISION_1").Result;
@@ -157,7 +154,7 @@ namespace Peaky.Tests
             message.Should().Contain("CollisionTest2.name_collision");
         }
 
-        [Test]
+        [Fact]
         public void When_an_undefined_application_is_queried_then_an_informative_error_is_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapiz/is_reachable").Result;
@@ -165,7 +162,7 @@ namespace Peaky.Tests
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }
 
-        [Test]
+        [Fact]
         public void When_an_undefined_environment_is_queried_then_an_informative_error_is_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/productionz/widgetapi/is_reachable").Result;
@@ -173,7 +170,7 @@ namespace Peaky.Tests
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }
 
-        [Test]
+        [Fact]
         public void When_tests_are_queried_by_environment_but_not_application_then_tests_for_all_applications_are_shown()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production").Result;
@@ -199,7 +196,7 @@ namespace Peaky.Tests
                              o.Value<string>("Url") == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
         }
 
-        [Test]
+        [Fact]
         public void When_tests_are_queried_with_no_environment_or_application_then_all_tests_are_shown()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/").Result;
@@ -225,18 +222,14 @@ namespace Peaky.Tests
                           o.Value<string>("Url") == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
         }
 
-        [Test]
+        [Fact]
         public void Specific_tests_can_be_routed_using_the_testTypes_argument()
         {
-            var configuration = new HttpConfiguration();
-            configuration.MapTestRoutes(configureTargets: targets =>
-                                                          targets.Add("production", "widgetapi", new Uri("http://widgets.com")),
-                                        concreateTestClasses: new[] {typeof (WidgetApiTests)});
-            configuration.EnsureInitialized();
+            var api = new TestApi(configureTargets: targets =>
+                                      targets.Add("production", "widgetapi", new Uri("http://widgets.com")),
+                                  testTypes: new[] { typeof(WidgetApiTests) });
 
-            var api = new HttpClient(new HttpServer(configuration));
-
-            var response = api.GetAsync("http://blammo.com/tests/").Result;
+            var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/").Result;
 
             response.ShouldSucceed();
 
@@ -246,14 +239,14 @@ namespace Peaky.Tests
 
             tests.Should()
                  .Contain(o =>
-                          o.Value<string>("Url").Contains("widgetapi_only_test"));
+                              o.Value<string>("Url").Contains("widgetapi_only_test"));
             tests.Should()
                  .NotContain(o =>
-                             o.Value<string>("Url").Contains("passing_test_returns_object"));
+                                 o.Value<string>("Url").Contains("passing_test_returns_object"));
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_tests_with_a_specific_tag_are_requested_then_tests_with_that_tag_are_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=true").Result;
@@ -263,7 +256,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_tests_with_a_specific_tag_are_requested_then_untagged_tests_are_not_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=true").Result;
@@ -273,7 +266,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_tests_with_a_specific_tag_are_requested_then_tagged_tests_without_that_tag_are_not_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=true").Result;
@@ -283,7 +276,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_a_tag_is_not_specified_then_tests_with_tags_are_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
@@ -293,7 +286,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_a_tag_is_specified_that_multiple_tests_share_then_both_are_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?fruit=true").Result;
@@ -303,7 +296,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_tests_with_a_specific_tag_are_requested_to_be_excluded_then_they_are()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=false").Result;
@@ -313,7 +306,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_tests_with_a_specific_tag_are_requested_to_be_excluded_then_tagged_tests_without_that_tag_are_included()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=false").Result;
@@ -323,7 +316,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_tests_with_a_specific_tag_are_requested_to_be_excluded_then_untagged_tests_are_included()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=false").Result;
@@ -333,7 +326,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public async Task all_of_the_available_tags_are_exposed_by_the_API()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/");
@@ -354,7 +347,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_two_tags_are_required_then_only_tests_containing_both_are_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=true&fruit=true").Result;
@@ -368,7 +361,7 @@ namespace Peaky.Tests
         }
 
         [Category("Tags")]
-        [Test]
+        [Fact]
         public void when_a_tag_is_specific_the_casing_on_the_tag_does_not_matter()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?Brooklyn=true").Result;
@@ -377,7 +370,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().Contain("manhattan");
         }
 
-        [Test]
+        [Fact]
         public void when_a_test_class_has_a_public_property_then_it_is_not_discovered_as_a_test()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
@@ -386,7 +379,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().NotContain("SomeProperty");
         }
 
-        [Test]
+        [Fact]
         public void when_a_public_void_method_has_optional_parameters_then_it_is_discovered_as_a_test()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
@@ -395,7 +388,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().Contain("void_test_with_optional_parameters");
         }
 
-        [Test]
+        [Fact]
         public void when_public_type_returning_methods_have_optional_parameters_then_they_are_discovered_as_a_tests()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
@@ -404,7 +397,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().Contain("string_returning_test_with_optional_parameters");
         }
 
-        [Test]
+        [Fact]
         public void when_a_public_method_has_non_optional_parameters_then_it_is_not_discovered_as_a_test()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
@@ -413,7 +406,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().NotContain("test_with_non_optional_parameters");
         }
 
-        [Test]
+        [Fact]
         public void when_a_test_with_optional_parameters_is_called_then_the_parameter_is_set_to_the_default_value()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/" +
@@ -423,7 +416,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().Contain("bar");
         }
 
-        [Test]
+        [Fact]
         public void when_a_test_with_optional_parameters_is_called_then_the_parameters_can_be_set_with_a_query_string_parameter()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/" +
@@ -433,7 +426,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().Contain("notbar");
         }
 
-        [Test]
+        [Fact]
         public void when_passing_query_parameters_that_are_not_test_parameters_then_the_test_still_executes()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/" +
@@ -444,7 +437,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().NotContain("iHaveNothingToDoWithYourTest");
         }
 
-        [Test]
+        [Fact]
         public void when_a_parameter_of_the_wrong_type_is_supplied_then_a_useful_error_message_is_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/" +
@@ -454,7 +447,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().Contain("The value specified for parameter 'count' could not be parsed as System.Int32");
         }
 
-        [Test]
+        [Fact]
         public void when_the_first_optional_parameter_is_not_specified_then_the_test_still_works()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/" +
@@ -465,7 +458,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().Contain("5");
         }
 
-        [Test]
+        [Fact]
         public void when_tests_with_parameters_are_called_repeatedly_with_different_parameters_then_the_different_parameters_are_used()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/" +
@@ -481,7 +474,7 @@ namespace Peaky.Tests
             response.Content.ReadAsStringAsync().Result.Should().Contain("final");
         }
 
-        [Test]
+        [Fact]
         public void when_a_test_accepts_input_parameters_then_the_input_parameter_names_are_discoverable()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
@@ -495,7 +488,7 @@ namespace Peaky.Tests
                    .Parameters.Should().ContainSingle(p => p.Name == "count");
         }
 
-        [Test]
+        [Fact]
         public void when_a_test_accepts_input_parameters_then_the_input_parameter_default_values_are_discoverable()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
@@ -509,7 +502,7 @@ namespace Peaky.Tests
                    .Parameters.Single(p => p.Name == "count").DefaultValue.ShouldBeEquivalentTo(1);
         }
 
-        [Test]
+        [Fact]
         public void when_a_test_does_not_accept_input_parameters_then_queryParameters_is_null()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;

@@ -3,14 +3,13 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
-using NUnit.Framework;
+using Xunit;
 
 namespace Peaky.Tests
 {
-    [TestFixture]
     public class AssertionExtensionsTests
     {
-        [Test]
+        [Fact]
         public async Task When_ShouldSucceed_is_passed_a_failed_response_it_throws()
         {
             var response = new HttpResponseMessage(HttpStatusCode.BadRequest);
@@ -20,7 +19,7 @@ namespace Peaky.Tests
             assert.ShouldThrow<AssertionFailedException>();
         }
 
-        [Test]
+        [Fact]
         public async Task When_ShouldFailWith_is_passed_a_successful_response_it_throws()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
@@ -30,7 +29,7 @@ namespace Peaky.Tests
             assert.ShouldThrow<AssertionFailedException>();
         }
 
-        [Test]
+        [Fact]
         public async Task When_ShouldSucceed_is_passed_a_successful_response_it_doesnt_throw()
         {
             var response = new HttpResponseMessage(HttpStatusCode.Accepted);
@@ -40,7 +39,7 @@ namespace Peaky.Tests
             assert.ShouldNotThrow();
         }
 
-        [Test]
+        [Fact]
         public async Task When_ShouldFailWith_is_passed_a_failed_response_it_doesnt_throw()
         {
             var response = new HttpResponseMessage(HttpStatusCode.BadRequest);
@@ -50,7 +49,7 @@ namespace Peaky.Tests
             assert.ShouldNotThrow();
         }
 
-        [Test]
+        [Fact]
         public async Task When_ShouldSucceedAsync_is_passed_a_failed_response_it_throws()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.BadRequest));
@@ -63,7 +62,7 @@ namespace Peaky.Tests
             assert.ShouldThrow<AssertionFailedException>();
         }
 
-        [Test]
+        [Fact]
         public async Task When_ShouldFailWithAsync_is_passed_a_successful_response_it_throws()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.OK));
@@ -76,7 +75,7 @@ namespace Peaky.Tests
             assert.ShouldThrow<AssertionFailedException>();
         }
 
-        [Test]
+        [Fact]
         public async Task When_ShouldSucceedAsync_is_passed_a_successful_response_it_doesnt_throw()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.Accepted));
@@ -89,7 +88,7 @@ namespace Peaky.Tests
             assert.ShouldNotThrow();
         }
 
-        [Test]
+        [Fact]
         public async Task When_ShouldFailWithAsync_is_passed_a_failed_response_it_doesnt_throw()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.BadRequest));

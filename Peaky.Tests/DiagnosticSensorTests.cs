@@ -4,25 +4,19 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Composition;
 using System.IO;
+using FluentAssertions;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using AssemblyWithMissingDependency;
-using FluentAssertions;
 using Its.Recipes;
-using NUnit.Framework;
-using Assert = NUnit.Framework.Assert;
+using Xunit;
 
 namespace Peaky
 {
-    [TestFixture]
-    public class DiagnosticSensorTests
+    public class DiagnosticSensorTests : IDisposable
     {
-        [TearDown]
-        public void TearDown()
+        public void Dispose()
         {
             if (StaticTestSensors.Barrier != null)
             {
@@ -31,63 +25,63 @@ namespace Peaky
             }
         }
 
-        [Test]
+        [Fact]
         public void Sensors_can_be_queried_based_on_sensor_name()
         {
             var sensors = DiagnosticSensor.KnownSensors().Where(s => s.Name == "DictionarySensor");
 
-            Assert.That(sensors.Count(), Is.EqualTo(1));
+            sensors.Should().HaveCount(1);
         }
 
-        [Test]
+        [Fact]
         public void Sensor_methods_can_be_internal()
         {
             var sensors = DiagnosticSensor.KnownSensors().Where(s => s.Name == "InternalSensor");
 
-            Assert.That(sensors.Count(), Is.EqualTo(1));
+            sensors.Should().HaveCount(1);
         }
 
-        [Test]
+        [Fact]
         public void Sensor_methods_can_be_private()
         {
             var sensors = DiagnosticSensor.KnownSensors().Where(s => s.Name == "PrivateSensor");
 
-            Assert.That(sensors.Count(), Is.EqualTo(1));
+            sensors.Should().HaveCount(1);
         }
 
-        [Test]
+        [Fact]
         public void Sensor_methods_can_be_static_methods()
         {
-            var sensors = DiagnosticSensor.KnownSensors().Where(s => s.DeclaringType == typeof (StaticTestSensors));
+            var sensors = DiagnosticSensor.KnownSensors().Where(s => s.DeclaringType == typeof(StaticTestSensors));
 
-            Assert.That(sensors.Count(), Is.AtLeast(1));
+            sensors.Count().Should().BeGreaterOrEqualTo(1);
         }
 
-        [Test]
+        [Fact]
         public void Sensor_methods_can_be_instance_methods()
         {
-            var sensors = DiagnosticSensor.KnownSensors().Where(s => s.DeclaringType == typeof (TestSensors));
+            var sensors = DiagnosticSensor.KnownSensors().Where(s => s.DeclaringType == typeof(TestSensors));
 
-            Assert.That(sensors.Count(), Is.AtLeast(1));
+            sensors.Count().Should().BeGreaterOrEqualTo(1);
         }
 
-        [Test]
+        [Fact]
         public void Sensor_info_can_be_queried_based_on_sensor_declaring_type()
         {
-            var sensors = DiagnosticSensor.KnownSensors().Where(s => s.DeclaringType == typeof (TestSensors));
+            var sensors = DiagnosticSensor.KnownSensors().Where(s => s.DeclaringType == typeof(TestSensors));
 
-            Assert.That(sensors.Count(), Is.AtLeast(2));
+            sensors.Count().Should().BeGreaterOrEqualTo(2);
         }
 
-        [Test]
+        [Fact]
         public void Sensors_can_be_queried_based_on_return_type()
         {
-            var sensors = DiagnosticSensor.KnownSensors().Where(s => s.ReturnType == typeof (FileInfo));
+            var sensors = DiagnosticSensor.KnownSensors().Where(s => s.ReturnType == typeof(FileInfo));
 
-            Assert.That(sensors.Count(), Is.EqualTo(1));
+            sensors.Should().HaveCount(1);
         }
 
-        [Test]
+        [Fact]
         public void Sensor_names_can_be_specified_using_DisplayNameAttribute()
         {
             DiagnosticSensor.KnownSensors()
@@ -95,37 +89,37 @@ namespace Peaky
                             .Should().Be(1);
         }
 
-        [Test]
+        [Fact]
         public void Sensor_methods_are_invoked_per_Read_call()
         {
             var first = DiagnosticSensor.KnownSensors().Single(s => s.Name == "CounterSensor").Read();
             var second = DiagnosticSensor.KnownSensors().Single(s => s.Name == "CounterSensor").Read();
 
-            Assert.That(first, Is.Not.EqualTo(second));
+            first.Should().NotBe(second);
         }
 
-        [Test]
+        [Fact]
         public void When_sensor_throws_an_exception_then_the_exception_is_returned()
         {
             var result = DiagnosticSensor.KnownSensors().Single(s => s.Name == "ExceptionSensor").Read();
 
-            Assert.That(result, Is.InstanceOf<Exception>());
+            result.Should().BeOfType<Exception>();
         }
 
-        [Test]
+        [Fact]
         public void Sensors_can_be_registered_at_runtime()
         {
-            var sensorName = MethodBase.GetCurrentMethod().Name;
+            var sensorName = nameof(Sensors_can_be_registered_at_runtime);
             DiagnosticSensor.Register(() => "hello", sensorName);
 
             var sensor = DiagnosticSensor.KnownSensors().Single(s => s.Name == sensorName);
 
-            Assert.That(sensor.DeclaringType, Is.EqualTo(GetType()));
-            Assert.That(sensor.ReturnType, Is.EqualTo(typeof (string)));
-            Assert.That(sensor.Read(), Is.EqualTo("hello"));
+            sensor.DeclaringType.Should().Be(GetType());
+            sensor.ReturnType.Should().Be(typeof(string));
+            sensor.Read().Should().Be("hello");
         }
 
-        [Test]
+        [Fact]
         public void When_registered_sensor_is_anonymous_then_default_name_is_derived_from_method_doing_registration()
         {
             var newGuid = Guid.NewGuid();
@@ -133,20 +127,18 @@ namespace Peaky
 
             var sensor = DiagnosticSensor.KnownSensors().Single(s => s.Read().Equals(newGuid));
 
-            Assert.That(sensor.Name, Is.StringContaining(MethodBase.GetCurrentMethod().Name));
+            sensor.Name.Should().Contain(nameof(When_registered_sensor_is_anonymous_then_default_name_is_derived_from_method_doing_registration));
         }
 
-        [Test]
+        [Fact]
         public void When_registered_sensor_is_a_method_then_name_is_derived_from_its_name()
         {
             DiagnosticSensor.Register(SensorNameTester);
 
-            Assert.That(
-                DiagnosticSensor.KnownSensors().Count(s => s.Name == "SensorNameTester"),
-                Is.EqualTo(1));
+            DiagnosticSensor.KnownSensors().Count(s => s.Name == "SensorNameTester").Should().Be(1);
         }
 
-        [Test]
+        [Fact]
         public void When_registered_sensor_is_anonymous_then_DeclaringType_is_the_containing_type()
         {
             var newGuid = Guid.NewGuid();
@@ -154,56 +146,46 @@ namespace Peaky
 
             var sensor = DiagnosticSensor.KnownSensors().Single(s => s.Read().Equals(newGuid));
 
-            Assert.That(sensor.DeclaringType, Is.EqualTo(GetType()));
+            sensor.DeclaringType.Should().Be(GetType());
         }
 
-        [Test]
+        [Fact]
         public void When_registered_sensor_is_a_method_then_DeclaringType_is_the_containing_type()
         {
             DiagnosticSensor.Register(StaticTestSensors.ExceptionSensor);
 
             var sensor = DiagnosticSensor.KnownSensors().Single(s => s.Name == "ExceptionSensor");
 
-            Assert.That(
-                sensor.DeclaringType,
-                Is.EqualTo(typeof (StaticTestSensors)));
+            sensor.DeclaringType.Should().Be(typeof(StaticTestSensors));
         }
 
-        [Test]
+        [Fact]
         public void Registered_sensors_can_be_removed_at_runtime()
         {
             DiagnosticSensor.Register(SensorNameTester);
 
-            Assert.That(
-                DiagnosticSensor.KnownSensors().Count(s => s.Name == "SensorNameTester"),
-                Is.EqualTo(1));
+            DiagnosticSensor.KnownSensors().Count(s => s.Name == "SensorNameTester").Should().Be(1);
 
             DiagnosticSensor.Remove("SensorNameTester");
 
-            Assert.That(
-                DiagnosticSensor.KnownSensors().Count(s => s.Name == "SensorNameTester"),
-                Is.EqualTo(0));
+            DiagnosticSensor.KnownSensors().Count(s => s.Name == "SensorNameTester").Should().Be(0);
         }
 
-        [Test]
+        [Fact]
         public void Discovered_sensors_can_be_removed_at_runtime()
         {
-            Assert.That(
-                DiagnosticSensor.KnownSensors().Count(s => s.Name == "Sensor_for_Discovered_sensors_can_be_removed_at_runtime"),
-                Is.EqualTo(1));
+            DiagnosticSensor.KnownSensors().Count(s => s.Name == "Sensor_for_Discovered_sensors_can_be_removed_at_runtime").Should().Be(1);
 
             DiagnosticSensor.Remove("Sensor_for_Discovered_sensors_can_be_removed_at_runtime");
 
-            Assert.That(
-                DiagnosticSensor.KnownSensors().Count(s => s.Name == "Sensor_for_Discovered_sensors_can_be_removed_at_runtime"),
-                Is.EqualTo(0));
+            DiagnosticSensor.KnownSensors().Count(s => s.Name == "Sensor_for_Discovered_sensors_can_be_removed_at_runtime").Should().Be(0);
         }
 
-        [Test]
+        [Fact]
         public void KnownSensors_is_safe_to_modify_while_being_enumerated()
         {
             StaticTestSensors.Barrier = new Barrier(2);
-            DiagnosticSensor.Register(() => "hello", MethodBase.GetCurrentMethod().Name);
+            DiagnosticSensor.Register(() => "hello", nameof(KnownSensors_is_safe_to_modify_while_being_enumerated));
             new Thread(() =>
             {
                 DiagnosticSensor.KnownSensors().Select(s =>
@@ -216,10 +198,10 @@ namespace Peaky
             StaticTestSensors.Barrier.SignalAndWait();
 
             DiagnosticSensor.Register(SensorNameTester);
-            DiagnosticSensor.Remove(MethodBase.GetCurrentMethod().Name);
+            DiagnosticSensor.Remove(nameof(KnownSensors_is_safe_to_modify_while_being_enumerated));
         }
 
-        [Test]
+        [Fact]
         public void When_a_sensor_returns_a_Task_then_its_IsAsync_Property_returns_true()
         {
             var sensorName = Any.Paragraph(5);
@@ -230,7 +212,7 @@ namespace Peaky
             sensor.IsAsync.Should().BeTrue();
         }
 
-        [Test]
+        [Fact]
         public void When_a_sensor_does_not_return_a_Task_then_its_IsAsync_Property_returns_false()
         {
             var sensorName = Any.Paragraph(5);
@@ -239,32 +221,6 @@ namespace Peaky
             var sensor = DiagnosticSensor.KnownSensors().Single(s => s.Name == sensorName);
 
             sensor.IsAsync.Should().BeFalse();
-        }
-
-        [Test]
-        public void Missing_assemblies_do_not_cause_sensor_discovery_to_fail()
-        {
-            // force loading of the problem assembly. this assembly has a dependency which is deliberately not included in the project so that unprotected MEF usage will trigger a TypeLoadException. sensor discovery is intended to ignore this issue and swallow the exception. 
-            var o = new ClassWithoutReferenceToMissingAssembly();
-
-            DiagnosticSensor.Discover().Count().Should().BeGreaterThan(0);
-        }
-
-        [Test]
-        public void ReflectionTypeLoadException_due_to_missing_assembly_is_signalled_by_sensor_output()
-        {
-            // force loading of the problem assembly. this assembly has a dependency which is deliberately not included in the project so that unprotected MEF usage will trigger a TypeLoadException. sensor discovery is intended to ignore this issue and swallow the exception. 
-            var o = new ClassWithoutReferenceToMissingAssembly();
-
-            dynamic reading = DiagnosticSensor.Discover()
-                                              .Values
-                                              .Select(s => s.Read())
-                                              .OfType<ReflectionTypeLoadException>()
-                                              .First();
-
-            var loaderException = ((IEnumerable<Exception>) reading.LoaderExceptions).Single();
-
-            loaderException.Message.Should().Contain("Could not load file or assembly 'MissingDependency, Version=1.0.0.0, Culture=neutral, PublicKeyToken=e9ed0c9abcf549e2' or one of its dependencies. The system cannot find the file specified.");
         }
 
         public static async Task<dynamic> AsyncTask()
@@ -310,7 +266,7 @@ namespace Peaky
 
         public static Barrier Barrier;
 
-        [Export("DiagnosticSensor")]
+        [DiagnosticSensor]
         internal static object InternalSensor()
         {
             return new object();

@@ -6,12 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Formatting;
+using Microsoft.AspNetCore.Mvc;
+using System.Reflection;
 using System.Threading.Tasks;
-using System.Web.Http;
-using Its.Log.Instrumentation;
 using Its.Recipes;
-using Microsoft.Its.Recipes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -21,23 +19,18 @@ namespace Peaky
     /// Exposes sensors discovered in all loaded assemblies via HTTP endpoints.
     /// </summary>
     [AuthorizeSensors]
-    public class SensorController : ApiController
+    public class SensorController : Controller
     {
         private static readonly JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
 
-        private readonly MediaTypeFormatter formatter = new JsonMediaTypeFormatter
-        {
-            SerializerSettings = jsonSerializerSettings
-        };
-
         /// <summary>
         /// Reads all sensors.
         /// </summary>
         /// <returns>The values returned by all sensors.</returns>
-        public async Task<HttpResponseMessage> Get()
+        public async Task<IActionResult> Get()
         {
             var readings = DiagnosticSensor.KnownSensors().ToDictionary(s => s.Name, s => s.Read());
 
@@ -54,7 +47,7 @@ namespace Peaky
             }
 
             // add a self link
-            var localPath = ControllerContext.Request.RequestUri.LocalPath;
+            var localPath = Request.Path;
             var links = new Dictionary<string, string>
             {
                 { "self", localPath }
@@ -62,12 +55,12 @@ namespace Peaky
 
             foreach (var sensorName in readings.Keys)
             {
-                links.Add(sensorName, localPath.AppendSegment(sensorName.ToLowerInvariant()));
+                links.Add(sensorName, localPath.Add(sensorName.ToLowerInvariant()));
             }
 
             readings["_links"] = links;
 
-            return ControllerContext.Request.CreateResponse(HttpStatusCode.OK, readings, formatter);
+            return Ok(readings);
         }
 
         /// <summary>
@@ -75,7 +68,7 @@ namespace Peaky
         /// </summary>
         /// <param name="name">The name of the sensor to read.</param>
         /// <returns>The value returned by the sensor.</returns>
-        public async Task<HttpResponseMessage> Get(string name)
+        public async Task<IActionResult> Get(string name)
         {
             var sensor = DiagnosticSensor
                 .KnownSensors()
@@ -83,7 +76,7 @@ namespace Peaky
 
             if (sensor == null)
             {
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+                return NotFound();
             }
 
             var reading = sensor.Read();
@@ -92,7 +85,7 @@ namespace Peaky
             if (readingTask != null)
             {
                 await readingTask;
-                if (readingTask.GetType().GetGenericArguments().First().IsVisible)
+                if (readingTask.GetType().GetTypeInfo().GetGenericArguments().First().GetTypeInfo().IsVisible)
                 {
                     reading = ((dynamic) readingTask).Result;
                 }
@@ -104,12 +97,8 @@ namespace Peaky
                 }
             }
 
-            var responseCode = reading is Exception
-                                   ? HttpStatusCode.InternalServerError
-                                   : HttpStatusCode.OK;
-
             // add a self link
-            var localPath = ControllerContext.Request.RequestUri.LocalPath;
+            var localPath = Request.Path;
             reading
                 .IfTypeIs<IDictionary<string, object>>()
                 .ThenDo(d => d["_links"] = new { self = localPath })
@@ -129,7 +118,13 @@ namespace Peaky
 
                     reading = jtoken;
                 });
-            return ControllerContext.Request.CreateResponse(responseCode, reading, formatter);
+
+            if (reading is Exception)
+            {
+                throw new Exception();
+            }
+
+            return Ok(reading);
         }
     }
 }

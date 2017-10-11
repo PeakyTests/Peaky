@@ -2,14 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Web.Http.Routing;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 
 namespace Peaky
 {
-    public class AmongConstraint : IHttpRouteConstraint
+    public class AmongConstraint : IRouteConstraint
     {
         public readonly string[] AllowedValues;
 
@@ -18,20 +17,21 @@ namespace Peaky
             AllowedValues = value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
         }
 
-        public bool Match(HttpRequestMessage request,
-                          IHttpRoute route,
-                          string parameterName,
-                          IDictionary<string, object> values,
-                          HttpRouteDirection routeDirection)
+        public bool Match(HttpContext httpContext, 
+                          IRouter route, 
+                          string routeKey, 
+                          RouteValueDictionary values, 
+                          RouteDirection routeDirection)
         {
             object value;
 
-            if (values.TryGetValue(parameterName, out value) && value != null)
+            if (values.TryGetValue(routeKey, out value) && value != null)
             {
                 return AllowedValues.Any(allowed => string.Equals(allowed,
                                                                   value.ToString(),
                                                                   StringComparison.OrdinalIgnoreCase));
             }
+
             return false;
         }
     }

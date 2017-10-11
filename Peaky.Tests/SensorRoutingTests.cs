@@ -7,45 +7,36 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Http;
 using FluentAssertions;
-using Its.Log.Instrumentation;
 using Its.Recipes;
-using NUnit.Framework;
 using Newtonsoft.Json.Linq;
+using Xunit;
 
 namespace Peaky.Tests
 {
-    [TestFixture]
-    public class SensorRoutingTests
+    public class SensorRoutingTests : IDisposable
     {
         private static HttpClient apiClient;
-        private static HttpConfiguration configuration;
         private string sensorName;
 
         public SensorRoutingTests()
         {
-            configuration = new HttpConfiguration();
-            configuration.MapSensorRoutes(ctx => true);
-            var server = new HttpServer(configuration);
-            apiClient = new HttpClient(server);
+            // FIX: (SensorRoutingTests) 
+//            configuration = new HttpConfiguration();
+//            configuration.MapSensorRoutes(ctx => true);
+//            var server = new HttpServer(configuration);
+//            apiClient = new HttpClient(server);
+//            configuration.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Default;
+//            sensorName = Any.AlphanumericString(10, 20);
         }
 
-        [SetUp]
-        public void SetUp()
-        {
-            configuration.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Default;
-            sensorName = Any.AlphanumericString(10, 20);
-        }
-
-        [TearDown]
-        public void TearDown()
+        public void Dispose()
         {
             DiagnosticSensor.Remove(sensorName);
             TestSensor.GetSensorValue = null;
         }
 
-        [Test]
+        [Fact]
         public void Sensors_are_available_by_name()
         {
             var words = Any.Paragraph(5);
@@ -59,7 +50,7 @@ namespace Peaky.Tests
             response.Should().Contain(words);
         }
 
-        [Test]
+        [Fact]
         public void All_sensors_can_be_queried_at_once()
         {
             var value = Any.AlphanumericString(20, 100);
@@ -72,7 +63,7 @@ namespace Peaky.Tests
             response.Should().Contain(value);
         }
 
-        [Test]
+        [Fact]
         public void Sensor_root_content_includes_link_to_sensors_root()
         {
             var response = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
@@ -84,7 +75,7 @@ namespace Peaky.Tests
             selfLink.Should().Be("/sensors/");
         }
 
-        [Test]
+        [Fact]
         public void Sensor_root_content_contains_links_to_all_sensors()
         {
             dynamic result = JObject.Parse(apiClient.GetStringAsync("http://blammo.com/sensors/").Result);
@@ -95,7 +86,7 @@ namespace Peaky.Tests
                 .Should().Be("/sensors/application");
         }
 
-        [Test]
+        [Fact]
         public void Specific_sensor_content_includes_link_to_sensor_when_sensor_is_dictionary()
         {
             DiagnosticSensor.Register(() => "hello!", sensorName);
@@ -108,7 +99,7 @@ namespace Peaky.Tests
             selfLink.Should().Be("/sensors/" + sensorName);
         }
 
-        [Test]
+        [Fact]
         public void Specific_sensor_content_includes_link_to_sensor_when_sensor_is_object()
         {
             DiagnosticSensor.Register(() => new FileInfo("c:\\temp\\foo.txt"), sensorName);
@@ -121,7 +112,7 @@ namespace Peaky.Tests
             selfLink.Should().Be("/sensors/" + sensorName);
         }
 
-        [Test]
+        [Fact]
         public void When_a_sensor_name_is_unknown_then_the_api_returns_404()
         {
             var sensorName = Guid.NewGuid();
@@ -131,7 +122,7 @@ namespace Peaky.Tests
             response.Result.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
 
-        [Test]
+        [Fact]
         public void Sensor_routes_are_case_insensitive()
         {
             apiClient.GetAsync("http://blammo.com/sensors/application").Result
@@ -140,11 +131,9 @@ namespace Peaky.Tests
                      .Be(HttpStatusCode.OK);
         }
 
-        [Test]
+        [Fact]
         public void Sensors_that_return_arrays_are_correctly_serialized()
         {
-            configuration.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Always;
-
             var value = new
             {
                 Name = Any.FullName(),
@@ -166,10 +155,10 @@ namespace Peaky.Tests
             email.Should().Be(value.Email);
         }
 
-        [Test]
+        [Fact]
         public async Task When_one_sensor_throws_then_other_sensors_are_not_affected()
         {
-            TestSensor.GetSensorValue = () => { throw new ApplicationException("oops!"); };
+            TestSensor.GetSensorValue = () => throw new Exception("oops!");
 
             var response = await apiClient.GetAsync("http://blammo.com/sensors/sensormethod");
 

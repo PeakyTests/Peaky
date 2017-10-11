@@ -1,13 +1,16 @@
-// Copyright (c) Microsoft. All rights reserved. 
+﻿// Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 // THIS FILE IS NOT INTENDED TO BE EDITED. 
+// 
+// It has been imported using NuGet from the PocketContainer project (https://github.com/jonsequitur/PocketContainer). 
 // 
 // This file can be updated in-place using the Package Manager Console. To check for updates, run the following command:
 // 
 // PM> Get-Package -Updates
 
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 
 namespace Pocket
@@ -16,31 +19,56 @@ namespace Pocket
     {
         public PocketContainer AfterResolve<T>(Func<PocketContainer, T, T> then)
         {
-            Func<Func<PocketContainer, object>> getRegistration = () => this.Where(f => f.Key == typeof (T))
-                                                                            .Select(pair => pair.Value)
-                                                                            .SingleOrDefault();
+            var pipeline = new AfterResolvePipeline<T>(this, GetResolver<T>());
+            pipeline.Transforms.Enqueue(then);
+            Register(typeof (T), c => pipeline.Resolve());
+            return this;
+        }
 
-            var originalRegistration = getRegistration();
+        private class AfterResolvePipeline<T>
+        {
+            public readonly ConcurrentQueue<Func<PocketContainer, T, T>> Transforms = new ConcurrentQueue<Func<PocketContainer, T, T>>();
+            private readonly PocketContainer container;
+            private readonly Func<PocketContainer, object> originalRegistration;
 
-            if (originalRegistration == null)
+            public AfterResolvePipeline(
+                PocketContainer container, 
+                Func<PocketContainer, object> originalResolver)
             {
-                // trigger the creation of a registration
-                Resolve<T>();
-
-                originalRegistration = getRegistration();
+                if (container == null)
+                {
+                    throw new ArgumentNullException("container");
+                }
+                this.container = container;
+                originalRegistration = originalResolver;
             }
 
-            Register(typeof (T), c =>
+            public T Resolve()
             {
-                var value = (T) originalRegistration(c);
-                if (singletons.ContainsKey(typeof (T)))
-                {
-                    return value;
-                }
-                return then(c, value);
-            });
+                var instance = originalRegistration(container);
 
-            return this;
+                var transformed = (T) Transforms.Aggregate(instance,
+                                                           (current, transform) => transform(container, (T) current));
+
+                return transformed;
+            }
+        }
+
+        private Func<PocketContainer, object> GetResolver<T>()
+        {
+            var existing = this.Where(f => f.Key == typeof (T))
+                               .Select(pair => pair.Value)
+                               .SingleOrDefault();
+
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            // trigger the creation of one:
+            var instance = Resolve<T>();
+
+            return GetResolver<T>();
         }
     }
 }

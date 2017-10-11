@@ -13,7 +13,6 @@ namespace System.Collections.Generic
 {
 #if !RecipesProject
     [System.Diagnostics.DebuggerStepThrough]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
     internal static class DictionaryExtensions
     {

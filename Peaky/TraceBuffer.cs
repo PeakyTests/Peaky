@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System.Runtime.Remoting.Messaging;
 using System.Text;
+using System.Threading;
 
 namespace Peaky
 {
@@ -11,6 +11,8 @@ namespace Peaky
         private const string TraceBufferKey = "Peaky.TraceBuffer";
 
         private readonly StringBuilder buffer = new StringBuilder();
+
+        private static readonly AsyncLocal<TraceBuffer> current = new AsyncLocal<TraceBuffer>();
 
         public void Write(string message)
         {
@@ -22,13 +24,17 @@ namespace Peaky
 
         public override string ToString() => buffer.ToString();
 
-        public static TraceBuffer Current =>
-            CallContext.LogicalGetData(TraceBufferKey) as TraceBuffer;
+        public static TraceBuffer Current
+        {
+            get
+            {
+                if (current.Value == null)
+                {
+                    current.Value = new TraceBuffer();
+                }
 
-        internal static void Initialize() =>
-            CallContext.LogicalSetData(TraceBufferKey, new TraceBuffer());
-
-        internal static void Clear() =>
-            CallContext.LogicalSetData(TraceBufferKey, null);
+                return current.Value;
+            }
+        }
     }
 }
