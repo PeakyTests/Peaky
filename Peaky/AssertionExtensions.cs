@@ -10,7 +10,6 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web.Http;
 using Its.Log.Instrumentation;
-using Its.Recipes;
 using Microsoft.Its.Recipes;
 
 namespace Peaky

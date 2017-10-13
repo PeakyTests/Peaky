@@ -33,6 +33,7 @@ namespace Peaky.Tests
             Console.WriteLine(result);
 
             string environment = JsonConvert.DeserializeObject<dynamic>(result)
+                                            .ReturnValue
                                             .Environment;
 
             environment.Should().Be("staging");
@@ -96,7 +97,7 @@ namespace Peaky.Tests
 
             message.Should()
                    .Contain(
-                       "ArgumentException: Message = PocketContainer can't construct a System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.Nullable`1[System.DateTimeOffset],System.Collections.Generic.HashSet`1[System.Guid]]] unless you register it first. ☹");
+                       "{\"ClassName\":\"System.ArgumentException\",\"Message\":\"PocketContainer can\'t construct a System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.Nullable`1[System.DateTimeOffset],System.Collections.Generic.HashSet`1[System.Guid]]] unless you register it first. ☹\"");
         }
 
         [Test]

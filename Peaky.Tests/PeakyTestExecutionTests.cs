@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Log.Instrumentation;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Peaky.Tests
@@ -20,12 +21,6 @@ namespace Peaky.Tests
 
         public PeakyTestExecutionTests()
         {
-            Formatter<TraceBuffer>.Register(b => new
-            {
-                b.HasContent,
-                HashCode = b.GetHashCode()
-            }.ToLogString());
-
             api = new TestApi(targets => targets
                                              .Add("production", "widgetapi", new Uri("http://widgets.com"),
                                                   dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
@@ -78,9 +73,9 @@ namespace Peaky.Tests
         {
             var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct").Result;
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = JsonConvert.DeserializeObject<TestResult>( response.Content.ReadAsStringAsync().Result);
 
-            result.Should().Be("true");
+            result.Passed.Should().BeTrue();
         }
 
         [Test]
@@ -163,7 +158,7 @@ namespace Peaky.Tests
             var result = response.Content.ReadAsStringAsync().Result;
 
             result.Should().Contain("Application = widgetapi | Environment = production");
-            result.Should().EndWith("...and the response\"");
+            result.Should().Contain("...and the response\"");
         }
 
         [Test]
@@ -176,7 +171,7 @@ namespace Peaky.Tests
             Console.WriteLine(result);
 
             result.Should().Contain("Application = widgetapi | Environment = production");
-            result.Should().EndWith("...and the response\"");
+            result.Should().Contain("...and the response\"");
         }
 
         [Test]
