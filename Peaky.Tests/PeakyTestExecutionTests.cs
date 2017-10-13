@@ -20,12 +20,6 @@ namespace Peaky.Tests
 
         public PeakyTestExecutionTests()
         {
-            Formatter<TraceBuffer>.Register(b => new
-            {
-                b.HasContent,
-                HashCode = b.GetHashCode()
-            }.ToLogString());
-
             api = new TestApi(targets => targets
                                              .Add("production", "widgetapi", new Uri("http://widgets.com"),
                                                   dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
@@ -163,7 +157,7 @@ namespace Peaky.Tests
             var result = response.Content.ReadAsStringAsync().Result;
 
             result.Should().Contain("Application = widgetapi | Environment = production");
-            result.Should().EndWith("...and the response\"");
+            result.Should().Contain("...and the response\"");
         }
 
         [Test]
@@ -176,7 +170,7 @@ namespace Peaky.Tests
             Console.WriteLine(result);
 
             result.Should().Contain("Application = widgetapi | Environment = production");
-            result.Should().EndWith("...and the response\"");
+            result.Should().Contain("...and the response\"");
         }
 
         [Test]

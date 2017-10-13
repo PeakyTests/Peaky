@@ -34,23 +34,36 @@ namespace Peaky
 
             if (buffer.HasContent)
             {
-                string originalContent;
+                object testReturnValue;
                 HttpStatusCode statusCode;
 
                 if (actionExecutedContext.Exception == null)
                 {
-                    originalContent = await actionExecutedContext.Response.Content.ReadAsStringAsync();
+                    var objectContent = actionExecutedContext.Response.Content as ObjectContent;
+                    if (objectContent != null)
+                    {
+                        testReturnValue = objectContent.Value;
+                    }
+                    else
+                    {
+                        testReturnValue = await actionExecutedContext.Response.Content.ReadAsStringAsync();
+                    }
+
                     statusCode = actionExecutedContext.Response.StatusCode;
                 }
                 else
                 {
-                    originalContent = actionExecutedContext.Exception.ToLogString();
+                    testReturnValue = actionExecutedContext.Exception.ToLogString();
                     statusCode = HttpStatusCode.InternalServerError;
                 }
 
                 actionExecutedContext.Response = new HttpResponseMessage(statusCode)
                 {
-                    Content = new StringContent($"{buffer}\n\n{originalContent}".Trim())
+                    Content = new JsonContent(new
+                    {
+                        ReturnValue =  testReturnValue,
+                        Log = buffer.ToString()
+                    })
                 };
             }
         }
