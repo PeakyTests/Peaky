@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
-using Its.Log.Instrumentation;
 
 namespace Peaky
 {
@@ -25,45 +24,34 @@ namespace Peaky
         {
             var buffer = TraceBuffer.Current;
 
-            if (buffer == null)
-            {
-                return;
-            }
-
             TraceBuffer.Clear();
 
-            if (buffer.HasContent)
+            if (actionExecutedContext.Exception == null)
             {
+                var objectContent = actionExecutedContext.Response.Content as ObjectContent;
                 object testReturnValue;
-                HttpStatusCode statusCode;
 
-                if (actionExecutedContext.Exception == null)
+                if (objectContent != null)
                 {
-                    var objectContent = actionExecutedContext.Response.Content as ObjectContent;
-                    if (objectContent != null)
-                    {
-                        testReturnValue = objectContent.Value;
-                    }
-                    else
-                    {
-                        testReturnValue = await actionExecutedContext.Response.Content.ReadAsStringAsync();
-                    }
-
-                    statusCode = actionExecutedContext.Response.StatusCode;
+                    testReturnValue = objectContent.Value;
                 }
                 else
                 {
-                    testReturnValue = actionExecutedContext.Exception.ToLogString();
-                    statusCode = HttpStatusCode.InternalServerError;
+                    var responseContent = actionExecutedContext.Response.Content;
+
+                    testReturnValue = responseContent != null ? await responseContent.ReadAsStringAsync() : null;
                 }
 
-                actionExecutedContext.Response = new HttpResponseMessage(statusCode)
+                actionExecutedContext.Response = new HttpResponseMessage(actionExecutedContext.Response.StatusCode)
                 {
-                    Content = new JsonContent(new
-                    {
-                        ReturnValue =  testReturnValue,
-                        Log = buffer.ToString()
-                    })
+                    Content = new JsonContent(TestResult.Pass(testReturnValue, buffer.ToString()))
+                };
+            }
+            else if (!(actionExecutedContext.Exception is MonitorParameterFormatException))
+            {
+                actionExecutedContext.Response = new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                {
+                    Content = new JsonContent(TestResult.Fail(actionExecutedContext.Exception, buffer.ToString()))
                 };
             }
         }

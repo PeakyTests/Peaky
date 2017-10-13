@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Log.Instrumentation;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Peaky.Tests
@@ -72,9 +73,9 @@ namespace Peaky.Tests
         {
             var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct").Result;
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = JsonConvert.DeserializeObject<TestResult>( response.Content.ReadAsStringAsync().Result);
 
-            result.Should().Be("true");
+            result.Passed.Should().BeTrue();
         }
 
         [Test]

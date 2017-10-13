@@ -126,9 +126,11 @@
     <Compile Include="TargetBasedTestConstraintTests.cs" />
     <Compile Include="TelemetryMonitorTests.cs" />
     <Compile Include="TestApi.cs" />
+    <Compile Include="TestResult.cs" />
     <Compile Include="TestSensor.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

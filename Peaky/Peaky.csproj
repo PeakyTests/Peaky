@@ -102,6 +102,8 @@
     <Compile Include="CacheExtensions.cs" />
     <Compile Include="EnvironmentConstraint.cs" />
     <Compile Include="DefaultJsonFormatterAttribute.cs" />
+    <Compile Include="TestErrorFilter.cs" />
+    <Compile Include="TestResult.cs" />
     <Compile Include="TestUiHtmlConfigurationAttribute.cs" />
     <Compile Include="TestUiScriptFormatter.cs" />
     <Compile Include="HttpConfigurationExtensions.cs" />
@@ -124,7 +126,6 @@
     <Compile Include="TestDefinition.cs" />
     <Compile Include="TestDefinition{T}.cs" />
     <Compile Include="TestDiscovery.cs" />
-    <Compile Include="TestErrorFilter.cs" />
     <Compile Include="TraceBuffer.cs" />
     <Compile Include="TracingFilter.cs" />
   </ItemGroup>
