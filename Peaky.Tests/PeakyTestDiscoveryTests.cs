@@ -3,13 +3,12 @@
 
 using System;
 using System.ComponentModel;
+using FluentAssertions;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Its.Recipes;
-using Microsoft.AspNetCore.TestHost;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -22,16 +21,16 @@ namespace Peaky.Tests
 
         public PeakyTestDiscoveryTests()
         {
-            apiClient = new TestApi(targets => targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
-                                                      .Add("production", "widgetapi", new Uri("http://widgets.com"))
-                                                      .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
-                                                      .Add("production", "sprocketapi", new Uri("http://sprockets.com"))).CreateHttpClient();
+            apiClient = new PeakyService(
+                    targets =>
+                        targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
+                               .Add("production", "widgetapi", new Uri("http://widgets.com"))
+                               .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
+                               .Add("production", "sprocketapi", new Uri("http://sprockets.com")))
+                .CreateHttpClient();
         }
 
-        public void Dispose()
-        {
-            apiClient.Dispose();
-        }
+        public void Dispose() => apiClient.Dispose();
 
         [Fact]
         public void API_exposes_void_methods()
@@ -139,7 +138,7 @@ namespace Peaky.Tests
             JArray tests = json.Tests;
 
             tests.Should().Contain(o =>
-                                   o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/TEST_NAME_COLLISION_1");
+                                       o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/TEST_NAME_COLLISION_1");
         }
 
         [Fact]
@@ -183,17 +182,17 @@ namespace Peaky.Tests
 
             tests.Should()
                  .Contain(o =>
-                          o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/is_reachable");
+                              o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/is_reachable");
             tests.Should()
                  .Contain(o =>
-                          o.Value<string>("Url") == "http://blammo.com/tests/production/sprocketapi/is_reachable");
+                              o.Value<string>("Url") == "http://blammo.com/tests/production/sprocketapi/is_reachable");
 
             tests.Should()
                  .NotContain(o =>
-                             o.Value<string>("Url") == "http://blammo.com/tests/staging/widgetapi/is_reachable");
+                                 o.Value<string>("Url") == "http://blammo.com/tests/staging/widgetapi/is_reachable");
             tests.Should()
                  .NotContain(o =>
-                             o.Value<string>("Url") == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
+                                 o.Value<string>("Url") == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
         }
 
         [Fact]
@@ -209,25 +208,25 @@ namespace Peaky.Tests
 
             tests.Should()
                  .Contain(o =>
-                          o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/is_reachable");
+                              o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/is_reachable");
             tests.Should()
                  .Contain(o =>
-                          o.Value<string>("Url") == "http://blammo.com/tests/production/sprocketapi/is_reachable");
+                              o.Value<string>("Url") == "http://blammo.com/tests/production/sprocketapi/is_reachable");
 
             tests.Should()
                  .Contain(o =>
-                          o.Value<string>("Url") == "http://blammo.com/tests/staging/widgetapi/is_reachable");
+                              o.Value<string>("Url") == "http://blammo.com/tests/staging/widgetapi/is_reachable");
             tests.Should()
                  .Contain(o =>
-                          o.Value<string>("Url") == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
+                              o.Value<string>("Url") == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
         }
 
         [Fact]
         public void Specific_tests_can_be_routed_using_the_testTypes_argument()
         {
-            var api = new TestApi(configureTargets: targets =>
-                                      targets.Add("production", "widgetapi", new Uri("http://widgets.com")),
-                                  testTypes: new[] { typeof(WidgetApiTests) });
+            var api = new PeakyService(configureTargets: targets =>
+                                           targets.Add("production", "widgetapi", new Uri("http://widgets.com")),
+                                       testTypes: new[] { typeof(WidgetApiTests) });
 
             var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/").Result;
 
@@ -512,7 +511,6 @@ namespace Peaky.Tests
 
             content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/passing_test_returns_object")
                    .Parameters.Should().BeNull();
-
         }
     }
 
@@ -582,7 +580,7 @@ namespace Peaky.Tests
                     OperationName = Any.CamelCaseName(),
                     Succeeded = false,
                     UserIdentifier = Any.Email(),
-                    Properties = {{"StatusCode", "500"}}
+                    Properties = { { "StatusCode", "500" } }
                 },
                 new Telemetry
                 {
@@ -590,7 +588,7 @@ namespace Peaky.Tests
                     OperationName = Any.CamelCaseName(),
                     Succeeded = true,
                     UserIdentifier = Any.Email(),
-                    Properties = {{"StatusCode", "200"}}
+                    Properties = { { "StatusCode", "200" } }
                 }
             };
 
@@ -607,7 +605,7 @@ namespace Peaky.Tests
                     OperationName = Any.CamelCaseName(),
                     Succeeded = true,
                     UserIdentifier = Any.Email(),
-                    Properties = {{"StatusCode", "200"}}
+                    Properties = { { "StatusCode", "200" } }
                 },
                 new Telemetry
                 {
@@ -615,7 +613,7 @@ namespace Peaky.Tests
                     OperationName = Any.CamelCaseName(),
                     Succeeded = true,
                     UserIdentifier = Any.Email(),
-                    Properties = {{"StatusCode", "200"}}
+                    Properties = { { "StatusCode", "200" } }
                 }
             };
 

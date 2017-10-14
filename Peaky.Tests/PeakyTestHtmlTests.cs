@@ -64,7 +64,7 @@ namespace Peaky.Tests
 //            configuration.MapTestRoutes(testUiScriptUrl: testUiScript, testUiLibraryUrls: testUiLibraryUrls);
 //            configuration.EnsureInitialized();
 
-         var   apiClient = new TestApi().CreateHttpClient();
+         var   apiClient = new PeakyService().CreateHttpClient();
             
             var request = new HttpRequestMessage(HttpMethod.Get, "http://blammo.com/tests/");
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));

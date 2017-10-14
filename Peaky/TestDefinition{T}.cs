@@ -6,7 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Peaky
 {
@@ -29,42 +30,41 @@ namespace Peaky
 
         public override string TestName => methodInfo.Name;
 
-        internal override dynamic Run(ActionContext context, Func<Type, object> resolver)
+        internal override async Task<object> Run(HttpContext context, Func<Type, object> resolve)
         {
             var executeTestMethod = defaultExecuteTestMethod;
             var methodParameters = methodInfo.GetParameters();
 
-            var queryParameters = context.HttpContext.Request.Query;
+            var queryParameters = context.Request.Query;
 
             if (queryParameters.Keys.Any(p => methodParameters.Select(pp => pp.Name).Contains(p)))
             {
-                executeTestMethod = BuildTestMethodExpression(methodInfo,
-                                                              methodParameters
-                                                                  .Select(p =>
-                                                                  {
-                                                                      var value = queryParameters[p.Name].FirstOrDefault() ??
-                                                                                  p.DefaultValue;
-                                                                      try
-                                                                      {
-                                                                          var castedValue = Convert.ChangeType(value, p.ParameterType);
-                                                                          return Expression.Constant(castedValue);
-                                                                      }
-                                                                      catch (FormatException e)
-                                                                      {
-                                                                          throw new MonitorParameterFormatException(p.Name, p.ParameterType, e);
-                                                                      }
-                                                                  }));
+                executeTestMethod = BuildTestMethodExpression(
+                    methodInfo,
+                    methodParameters
+                        .Select(p =>
+                        {
+                            var value = queryParameters[p.Name].FirstOrDefault() ??
+                                        p.DefaultValue;
+                            try
+                            {
+                                var castedValue = Convert.ChangeType(value, p.ParameterType);
+                                return Expression.Constant(castedValue);
+                            }
+                            catch (FormatException e)
+                            {
+                                throw new ParameterFormatException(p.Name, p.ParameterType, e);
+                            }
+                        }));
             }
 
-            var testClassInstance = (T) resolver(typeof(T));
+            var testClassInstance = (T) resolve(typeof(T));
 
             return executeTestMethod(testClassInstance);
         }
 
-        public override string ToString()
-        {
-            return $"{base.ToString()} ({methodInfo.DeclaringType}.{methodInfo.Name})";
-        }
+        public override string ToString() =>
+            $"{base.ToString()} ({methodInfo.DeclaringType}.{methodInfo.Name})";
 
         private static Func<T, dynamic> BuildTestMethodExpression(MethodInfo methodInfo, IEnumerable<ConstantExpression> parameters)
         {
@@ -72,13 +72,16 @@ namespace Peaky
 
             if (methodInfo.ReturnType != typeof(void))
             {
-                if (methodInfo.ReturnType.GetTypeInfo().IsClass)
+                if (methodInfo.ReturnType.IsClass)
                 {
-                    return Expression.Lambda<Func<T, dynamic>>(Expression.Call(test,
-                                                                               methodInfo,
-                                                                               parameters),
-                                                               test).Compile();
+                    return Expression.Lambda<Func<T, dynamic>>(
+                        Expression.Call(
+                            test,
+                            methodInfo,
+                            parameters),
+                        test).Compile();
                 }
+
                 dynamic testMethod = Expression.Lambda(typeof(Func<,>)
                                                            .MakeGenericType(typeof(T), methodInfo.ReturnType),
                                                        Expression.Call(test,

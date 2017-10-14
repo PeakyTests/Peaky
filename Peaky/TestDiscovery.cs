@@ -2,27 +2,42 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Pocket;
 
 namespace Peaky
 {
-    internal static class TestDiscovery
+    public class TestDefinitionRegistry : IEnumerable<TestDefinition>
     {
-        public static IDictionary<string, TestDefinition> GetTestDefinitions(
-            this IEnumerable<Type> concreteTestClasses)
+        private readonly Dictionary<string, TestDefinition> tests;
+
+        public TestDefinitionRegistry()
+        {
+            tests = GetTestDefinitions(Discover.ConcreteTypes()
+                                               .DerivedFrom(typeof(IPeakyTest)));
+        }
+
+        public TestDefinition Get(string testName)
+        {
+            return tests[testName];
+        }
+
+        public static Dictionary<string, TestDefinition> GetTestDefinitions(
+            IEnumerable<Type> concreteTestClasses)
         {
             var definitions =
                 concreteTestClasses
                     .SelectMany(
                         t => t
-                              .GetMethods(BindingFlags.Public |
-                                          BindingFlags.Instance |
-                                          BindingFlags.DeclaredOnly)
-                              .Where(m => m.GetParameters().All(p => p.HasDefaultValue))
-                              .Where(m => !m.IsSpecialName)
-                              .Select(TestDefinition.Create));
+                            .GetMethods(BindingFlags.Public |
+                                        BindingFlags.Instance |
+                                        BindingFlags.DeclaredOnly)
+                            .Where(m => m.GetParameters().All(p => p.HasDefaultValue))
+                            .Where(m => !m.IsSpecialName)
+                            .Select(TestDefinition.Create));
 
             var dictionary = new Dictionary<string, TestDefinition>();
             var collisionCount = 0;
@@ -41,5 +56,9 @@ namespace Peaky
 
             return dictionary;
         }
+
+        public IEnumerator<TestDefinition> GetEnumerator() => tests.Values.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

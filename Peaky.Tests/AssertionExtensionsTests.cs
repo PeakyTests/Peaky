@@ -54,10 +54,7 @@ namespace Peaky.Tests
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.BadRequest));
 
-            Action assert = () =>
-            {
-                var x = response.ShouldSucceedAsync().Result;
-            };
+            Func<Task> assert = () => response.ShouldSucceedAsync();
 
             assert.ShouldThrow<AssertionFailedException>();
         }
@@ -67,10 +64,7 @@ namespace Peaky.Tests
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.OK));
 
-            Action assert = () =>
-            {
-                var x = response.ShouldFailWithAsync(HttpStatusCode.Forbidden).Result;
-            };
+            Func<Task> assert = () => response.ShouldFailWithAsync(HttpStatusCode.Forbidden);
 
             assert.ShouldThrow<AssertionFailedException>();
         }

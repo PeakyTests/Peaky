@@ -3,14 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq;
 
 namespace Peaky
 {
@@ -20,8 +14,7 @@ namespace Peaky
 
         public TestUiScriptFormatter(string scriptUrl, IEnumerable<string> libraryUrls, IEnumerable<string> styleSheets)
         {
-            var version = typeof(TestUiScriptFormatter).GetTypeInfo()
-                                                       .Assembly
+            var version = typeof(TestUiScriptFormatter).Assembly
                                                        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                                                        .InformationalVersion;
             var libraryScriptRefs = string.Join("\n", libraryUrls.Select(u => $@"<script src=""{u}""></script>"));
@@ -42,29 +35,29 @@ namespace Peaky
     </body>
 </html>";
 
-//            MediaTypeMappings.Add(
-//                new RequestHeaderMapping("Accept",
-//                                         "text/html",
-//                                         StringComparison.InvariantCultureIgnoreCase,
-//                                         false,
-//                                         "text/html"));
+            //            MediaTypeMappings.Add(
+            //                new RequestHeaderMapping("Accept",
+            //                                         "text/html",
+            //                                         StringComparison.InvariantCultureIgnoreCase,
+            //                                         false,
+            //                                         "text/html"));
         }
 
-//        public override bool CanReadType(Type type) => false;
-//
-//        public override bool CanWriteType(Type type) => true;
-//
-//        public override async Task WriteToStreamAsync(
-//            Type type,
-//            object value,
-//            Stream writeStream,
-//            HttpContent content,
-//            TransportContext transportContext,
-//            CancellationToken cancellationToken)
-//        {
-//            var writer = new StreamWriter(writeStream);
-//            await writer.WriteAsync(bootstrapHtml);
-//            await writer.FlushAsync();
-//        }
+        //        public override bool CanReadType(Type type) => false;
+        //
+        //        public override bool CanWriteType(Type type) => true;
+        //
+        //        public override async Task WriteToStreamAsync(
+        //            Type type,
+        //            object value,
+        //            Stream writeStream,
+        //            HttpContent content,
+        //            TransportContext transportContext,
+        //            CancellationToken cancellationToken)
+        //        {
+        //            var writer = new StreamWriter(writeStream);
+        //            await writer.WriteAsync(bootstrapHtml);
+        //            await writer.FlushAsync();
+        //        }
     }
 }

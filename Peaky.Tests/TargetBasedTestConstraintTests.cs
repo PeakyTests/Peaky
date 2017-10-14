@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,39 +15,32 @@ namespace Peaky.Tests
 {
     public class TargetBasedTestConstraintTests
     {
-        private readonly ITestOutputHelper output;
         private readonly CompositeDisposable disposables;
 
         public TargetBasedTestConstraintTests(ITestOutputHelper output)
         {
-            this.output = output;
             disposables = new CompositeDisposable
             {
-                LogEvents.Subscribe(e => Console.WriteLine(e.ToLogString()))
+                LogEvents.Subscribe(e => output.WriteLine(e.ToLogString()))
             };
         }
 
         private HttpClient CreateApiClient(Func<HttpClient, bool> buildChecker)
         {
-            var testApi = new TestApi(targets =>
+            var testApi = new PeakyService(targets =>
                                           targets.Add("staging",
                                                       "widgetapi",
                                                       new Uri("http://staging.widgets.com"),
                                                       dependencies =>
                                                           dependencies
                                                               .Register(() => buildChecker)),
-                                      typeof(TestsConstrainedToTarget));
+                                      testTypes: typeof(TestsConstrainedToTarget));
 
             disposables.Add(testApi);
             return testApi.CreateHttpClient();
         }
 
-        public void Dispose()
-        {
-           
-
-            disposables.Dispose();
-        }
+        public void Dispose() => disposables.Dispose();
 
         [Fact]
         public async Task A_test_can_be_hidden_based_on_the_target_application_build_date_sensor()

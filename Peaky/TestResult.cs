@@ -1,5 +1,4 @@
 using System;
-using Its.Log.Instrumentation;
 
 namespace Peaky
 {
@@ -17,7 +16,7 @@ namespace Peaky
 
         public Exception Exception { get; private set; }
 
-        public static TestResult Pass(object returnValue, string log)
+        public static TestResult Pass(object returnValue, string log = "")
         {
             return new TestResult
             {
@@ -27,7 +26,7 @@ namespace Peaky
             };
         }
 
-        public static TestResult Fail(Exception exception, string log)
+        public static TestResult Fail(Exception exception, string log = "")
         {
             if (exception == null)
             {

@@ -336,7 +336,7 @@ namespace Its.Recipes
         public static TEnum EnumValue<TEnum>()
             where TEnum : struct
         {
-            if (!typeof(TEnum).GetTypeInfo().IsEnum)
+            if (!typeof(TEnum).IsEnum)
             {
                 throw new ArgumentException(string.Format("TEnum must be an enum type ({0} is not).", typeof(TEnum).FullName));
             }

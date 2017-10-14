@@ -15,17 +15,18 @@ namespace Peaky.Tests
     public class SensorAsyncTests : IDisposable
     {
         private static HttpClient apiClient;
-        private string sensorName;
+        private readonly string sensorName;
+        private SensorRegistry registry;
 
         public SensorAsyncTests()
         {
-            apiClient = new TestApi().CreateHttpClient();
+            apiClient = new PeakyService().CreateHttpClient();
             sensorName = Any.AlphanumericString(10, 20);
+            registry = new SensorRegistry();
         }
 
         public void Dispose()
         {
-            DiagnosticSensor.Remove(sensorName);
             TestSensor.GetSensorValue = null;
         }
 
@@ -37,7 +38,7 @@ namespace Peaky.Tests
             {
                 words
             };
-            DiagnosticSensor.Register(() => Task.Run(() => sensorResult), sensorName);
+            registry.Register(() => Task.Run(() => sensorResult), sensorName);
 
             dynamic result = JObject.Parse(apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result);
 
@@ -50,7 +51,7 @@ namespace Peaky.Tests
         public void When_a_sensor_returning_a_Task_is_requested_specifically_then_the_Result_is_returned()
         {
             var words = Any.Paragraph(5);
-            DiagnosticSensor.Register(() => Task.Run(() => words), sensorName);
+            registry.Register(() => Task.Run(() => words), sensorName);
 
             dynamic result = JObject.Parse(apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result);
 
@@ -85,7 +86,9 @@ namespace Peaky.Tests
                 return testSensor;
             });
 
-            DiagnosticSensor.Register(() => Task.Run(() =>
+            var registry = new SensorRegistry();
+
+            registry.Register(() => Task.Run(() =>
             {
                 Thread.Sleep(Any.Int(3000, 5000));
                 return dynamicSensor;

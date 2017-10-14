@@ -8,14 +8,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
-<<<<<<< HEAD
-using Its.Log.Instrumentation;
-using Newtonsoft.Json;
-using NUnit.Framework;
-=======
 using Pocket;
 using Xunit;
->>>>>>> initial cutover - build succeeds, tests fail
 
 namespace Peaky.Tests
 {

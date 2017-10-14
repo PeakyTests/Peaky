@@ -5,7 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Peaky
 {
@@ -22,12 +23,12 @@ namespace Peaky
 
         internal Type TestType { get; set; }
 
-        internal abstract dynamic Run(ActionContext actionContext, Func<Type, object> resolver);
+        internal abstract Task<object> Run(HttpContext httpContext, Func<Type, object> resolve);
 
         internal static TestDefinition Create(MethodInfo methodInfo)
         {
             var testType = methodInfo.DeclaringType;
-            var testDefinitionType = typeof (TestDefinition<>).MakeGenericType(testType);
+            var testDefinitionType = typeof(TestDefinition<>).MakeGenericType(testType);
             var testDefinition = (TestDefinition) Activator.CreateInstance(
                 testDefinitionType,
                 BindingFlags.NonPublic | BindingFlags.Instance,
@@ -37,7 +38,7 @@ namespace Peaky
             testDefinition.TestType = testType;
             testDefinition.Parameters = methodInfo.GetParameters()
                                                   .Select(p =>
-                                                          new Parameter(p.Name, p.DefaultValue));
+                                                              new Parameter(p.Name, p.DefaultValue));
             return testDefinition;
         }
 

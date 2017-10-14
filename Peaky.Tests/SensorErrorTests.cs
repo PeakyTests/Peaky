@@ -14,24 +14,28 @@ namespace Peaky.Tests
     public class SensorErrorTests : IDisposable
     {
         private static HttpClient apiClient;
-        private string sensorName;
+        private readonly string sensorName;
+        private readonly PeakyService peakyService;
+        private readonly SensorRegistry registry;
 
         public SensorErrorTests()
         {
-            apiClient = new TestApi().CreateHttpClient();
+            registry = new SensorRegistry();
+            peakyService = new PeakyService();
             sensorName = Any.AlphanumericString(10, 20);
+            apiClient = peakyService.CreateHttpClient();
         }
-      
+
         public void Dispose()
         {
-            DiagnosticSensor.Remove(sensorName);
+            peakyService.Dispose();
             TestSensor.GetSensorValue = null;
         }
 
         [Fact]
         public void when_a_specific_sensor_is_requested_and_it_throws_then_it_returns_500_and_the_exception_text_is_in_the_response_body()
         {
-            DiagnosticSensor.Register<string>(() => throw new Exception("oops!"), sensorName);
+            registry.Register<string>(() => throw new Exception("oops!"), sensorName);
 
             var result = apiClient.GetAsync("http://blammo.com/sensors/" + sensorName).Result;
 
@@ -45,7 +49,7 @@ namespace Peaky.Tests
         [Fact]
         public void when_all_sensors_are_requested_and_one_throws_then_it_returns_200_and_the_exception_text_is_in_the_response_body()
         {
-            DiagnosticSensor.Register<string>(() => throw new Exception("oops!"), sensorName);
+            registry.Register<string>(() => throw new Exception("oops!"), sensorName);
 
             var result = apiClient.GetAsync("http://blammo.com/sensors/").Result;
 
@@ -59,7 +63,8 @@ namespace Peaky.Tests
         [Fact]
         public void Cyclical_references_in_object_graphs_do_not_cause_serialization_errors()
         {
-            DiagnosticSensor.Register(() =>
+            var registry = new SensorRegistry();
+            registry.Register(() =>
             {
                 var parent = new Node();
                 parent.ChildNodes.Add(new Node

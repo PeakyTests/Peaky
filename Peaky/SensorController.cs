@@ -3,13 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using Microsoft.AspNetCore.Mvc;
-using System.Reflection;
-using System.Threading.Tasks;
 using Its.Recipes;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -21,10 +18,17 @@ namespace Peaky
     [AuthorizeSensors]
     public class SensorController : Controller
     {
+        private readonly SensorRegistry sensorRegistry;
+
         private static readonly JsonSerializerSettings jsonSerializerSettings = new JsonSerializerSettings
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
+
+        public SensorController(SensorRegistry sensorRegistry)
+        {
+            this.sensorRegistry = sensorRegistry;
+        }
 
         /// <summary>
         /// Reads all sensors.
@@ -32,7 +36,7 @@ namespace Peaky
         /// <returns>The values returned by all sensors.</returns>
         public async Task<IActionResult> Get()
         {
-            var readings = DiagnosticSensor.KnownSensors().ToDictionary(s => s.Name, s => s.Read());
+            var readings = sensorRegistry.ToDictionary(s => s.Name, s => s.Read());
 
             var asyncSensors = readings.Where(pair => pair.Value is Task).ToArray();
 
@@ -68,10 +72,10 @@ namespace Peaky
         /// </summary>
         /// <param name="name">The name of the sensor to read.</param>
         /// <returns>The value returned by the sensor.</returns>
+        [Route("/sensors/{name}")]
         public async Task<IActionResult> Get(string name)
         {
-            var sensor = DiagnosticSensor
-                .KnownSensors()
+            var sensor = sensorRegistry
                 .SingleOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
 
             if (sensor == null)
@@ -85,7 +89,7 @@ namespace Peaky
             if (readingTask != null)
             {
                 await readingTask;
-                if (readingTask.GetType().GetTypeInfo().GetGenericArguments().First().GetTypeInfo().IsVisible)
+                if (readingTask.GetType().GetGenericArguments().First().IsVisible)
                 {
                     reading = ((dynamic) readingTask).Result;
                 }

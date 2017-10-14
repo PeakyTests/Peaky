@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
@@ -32,7 +31,11 @@ namespace Peaky
             ValidateAndInitialize();
         }
 
-        private DiagnosticSensor(MethodInfo methodInfo) : this(methodInfo.ReturnType, methodInfo.Name, methodInfo.DeclaringType, methodInfo.CreateDelegate(typeof(Func<object>)))
+        private DiagnosticSensor(MethodInfo methodInfo) : this(
+            methodInfo.ReturnType,
+            methodInfo.Name,
+            methodInfo.DeclaringType,
+            methodInfo.CreateDelegate(typeof(Func<object>), null))
         {
         }
 
@@ -95,37 +98,42 @@ namespace Peaky
             {
                 return @delegate.DynamicInvoke();
             }
+            catch (TargetInvocationException exception)
+            {
+                return exception.InnerException;
+            }
             catch (Exception exception)
             {
                 return exception;
             }
         }
 
-        private static readonly Lazy<ConcurrentDictionary<string, DiagnosticSensor>> allSensors =
-            new Lazy<ConcurrentDictionary<string, DiagnosticSensor>>(Discover);
-
         /// <summary>
         /// Discovers sensors found in all loaded assemblies.
         /// </summary>
-        public static ConcurrentDictionary<string, DiagnosticSensor> Discover()
+        public static IReadOnlyCollection<DiagnosticSensor> DiscoverSensors()
         {
-            var enumerable = Pocket.Discover
-                                   .ConcreteTypes()
-                                   .SelectMany(t => t.GetTypeInfo()
-                                                     .GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
-                                                                 BindingFlags.Static)
-                                                     .Where(m => m.CustomAttributes
-                                                                  .Any(a => a.GetType().Name.Equals("DiagnosticSensor") || a.GetType().Name.Equals("DiagnosticSensorAttribute"))))
-                                   .Select(m => new DiagnosticSensor(m));
-            return enumerable
-                .OrderBy(sensor => sensor.Name)
-                .ThenBy(sensor => sensor.DeclaringType.GetTypeInfo().Assembly.FullName)
-                .Aggregate(new ConcurrentDictionary<string, DiagnosticSensor>(), (sensors, sensor) =>
-                {
-                    // FIX: (Discover) we should be graceful about collisions or deterministic about ordering
-                    sensors[sensor.Name] = sensor;
-                    return sensors;
-                });
+            return Pocket.Discover
+                         .Types()
+                         .SelectMany(t =>
+                         {
+                             return t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
+                                                 BindingFlags.Static)
+                                     .Where(m =>
+                                     {
+                                         return m.GetCustomAttributes()
+                                                 .Any(a =>
+                                                 {
+                                                     return a.GetType().Name.Equals("DiagnosticSensor") ||
+                                                            a.GetType().Name.Equals("DiagnosticSensorAttribute");
+                                                 });
+                                     });
+                         })
+                         .Select(m =>
+                         {
+                             return new DiagnosticSensor(m);
+                         })
+                         .ToArray();
         }
 
         /// <summary>
@@ -134,7 +142,7 @@ namespace Peaky
         /// <param name="sensorMethod">The sensor method.</param>
         /// <returns>The sensor's name</returns>
         /// <remarks>The sensor name can be set by decorating the sensor method with <see cref="DisplayNameAttribute" />. Otherwise, the name of the method is used.</remarks>
-        public static string GetName(MethodInfo sensorMethod)
+        internal static string GetName(MethodInfo sensorMethod)
         {
             var displayName = sensorMethod
                 .GetCustomAttributes(typeof(DisplayNameAttribute), false)
@@ -145,31 +153,5 @@ namespace Peaky
                        ? displayName.DisplayName
                        : sensorMethod.Name;
         }
-
-        /// <summary>
-        ///   Returns all of the diagnostic sensors found in the application.
-        /// </summary>
-        public static IEnumerable<DiagnosticSensor> KnownSensors() => allSensors.Value.Values.ToArray();
-
-        /// <summary>
-        ///   Registers the specified sensor.
-        /// </summary>
-        /// <param name="sensor"> A function that returns the sensor result. </param>
-        /// <param name="name"> The name of the sensor. </param>
-        public static void Register<T>(Func<T> sensor, string name = null)
-        {
-            name = name ?? sensor.GetMethodInfo().Name;
-            allSensors.Value[name] = new DiagnosticSensor(
-                @delegate: sensor,
-                returnType: typeof(T),
-                name: name,
-                declaringType: sensor.GetMethodInfo().DeclaringType);
-        }
-
-        /// <summary>
-        ///   Removes any sensor having the specified name.
-        /// </summary>
-        /// <param name="name"> The sensor name. </param>
-        public static void Remove(string name) => allSensors.Value.TryRemove(name, out DiagnosticSensor _);
     }
 }

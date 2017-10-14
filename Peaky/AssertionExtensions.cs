@@ -119,7 +119,7 @@ namespace Peaky
             var message = string.Format("{0}{1}{1}{2}",
                                         response,
                                         Environment.NewLine,
-                                        response.Content.ToString());
+                                        response?.ToString());
             throw new AssertionFailedException(message);
         }
     }

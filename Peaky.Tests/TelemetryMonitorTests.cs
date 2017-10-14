@@ -10,15 +10,15 @@ namespace Peaky.Tests
     public class TelemetryMonitorTests : IDisposable
     {
         private static HttpClient apiClient;
-        private readonly TestApi testApi;
+        private readonly PeakyService peakyService;
 
         public TelemetryMonitorTests()
         {
-            testApi = new TestApi(targets => targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com")));
-            apiClient = testApi.CreateHttpClient();
+            peakyService = new PeakyService(targets => targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com")));
+            apiClient = peakyService.CreateHttpClient();
         }
 
-        public void Dispose() => testApi.Dispose();
+        public void Dispose() => peakyService.Dispose();
 
         [Fact]
         public void a_request_to_a_telemetry_api_with_a_failed_result_should_contain_the_correct_message()

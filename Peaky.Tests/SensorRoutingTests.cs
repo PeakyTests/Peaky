@@ -3,11 +3,11 @@
 
 using System;
 using System.IO;
+using FluentAssertions;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Its.Recipes;
 using Newtonsoft.Json.Linq;
 using Xunit;
@@ -16,23 +16,22 @@ namespace Peaky.Tests
 {
     public class SensorRoutingTests : IDisposable
     {
-        private static HttpClient apiClient;
-        private string sensorName;
+        private static HttpClient httpClient;
+        private readonly string sensorName;
+        private readonly PeakyService peakyService;
+        private readonly SensorRegistry registry;
 
         public SensorRoutingTests()
         {
-            // FIX: (SensorRoutingTests) 
-//            configuration = new HttpConfiguration();
-//            configuration.MapSensorRoutes(ctx => true);
-//            var server = new HttpServer(configuration);
-//            apiClient = new HttpClient(server);
-//            configuration.IncludeErrorDetailPolicy = IncludeErrorDetailPolicy.Default;
-//            sensorName = Any.AlphanumericString(10, 20);
+            registry = new SensorRegistry();
+            peakyService = new PeakyService();
+            sensorName = Any.AlphanumericString(10, 20);
+            httpClient = peakyService.CreateHttpClient();
         }
 
         public void Dispose()
         {
-            DiagnosticSensor.Remove(sensorName);
+            peakyService.Dispose();
             TestSensor.GetSensorValue = null;
         }
 
@@ -41,11 +40,9 @@ namespace Peaky.Tests
         {
             var words = Any.Paragraph(5);
 
-            DiagnosticSensor.Register(() => new { words }, sensorName);
+            registry.Register(() => new { words }, sensorName);
 
-            var response = apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
-
-            Console.WriteLine(response);
+            var response = httpClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
 
             response.Should().Contain(words);
         }
@@ -56,7 +53,7 @@ namespace Peaky.Tests
             var value = Any.AlphanumericString(20, 100);
             TestSensor.GetSensorValue = () => value;
 
-            var response = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
+            var response = httpClient.GetStringAsync("http://blammo.com/sensors/").Result;
 
             Console.WriteLine(response);
 
@@ -66,7 +63,7 @@ namespace Peaky.Tests
         [Fact]
         public void Sensor_root_content_includes_link_to_sensors_root()
         {
-            var response = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
+            var response = httpClient.GetStringAsync("http://blammo.com/sensors/").Result;
 
             dynamic sensorValue = JObject.Parse(response);
             Console.WriteLine(response);
@@ -78,7 +75,7 @@ namespace Peaky.Tests
         [Fact]
         public void Sensor_root_content_contains_links_to_all_sensors()
         {
-            dynamic result = JObject.Parse(apiClient.GetStringAsync("http://blammo.com/sensors/").Result);
+            dynamic result = JObject.Parse(httpClient.GetStringAsync("http://blammo.com/sensors/").Result);
 
             Console.WriteLine(result);
 
@@ -89,8 +86,8 @@ namespace Peaky.Tests
         [Fact]
         public void Specific_sensor_content_includes_link_to_sensor_when_sensor_is_dictionary()
         {
-            DiagnosticSensor.Register(() => "hello!", sensorName);
-            var response = apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
+            registry.Register(() => "hello!", sensorName);
+            var response = httpClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
 
             dynamic sensorValue = JObject.Parse(response);
             Console.WriteLine(response);
@@ -102,11 +99,11 @@ namespace Peaky.Tests
         [Fact]
         public void Specific_sensor_content_includes_link_to_sensor_when_sensor_is_object()
         {
-            DiagnosticSensor.Register(() => new FileInfo("c:\\temp\\foo.txt"), sensorName);
-            var response = apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
+            registry.Register(() => new FileInfo("c:\\temp\\foo.txt"), sensorName);
+            var response = httpClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
 
             dynamic sensorValue = JObject.Parse(response);
-            Console.WriteLine(response);
+
             string selfLink = sensorValue._links.self;
 
             selfLink.Should().Be("/sensors/" + sensorName);
@@ -117,7 +114,7 @@ namespace Peaky.Tests
         {
             var sensorName = Guid.NewGuid();
 
-            var response = apiClient.GetAsync("http://blammo.com/sensors/" + sensorName);
+            var response = httpClient.GetAsync("http://blammo.com/sensors/" + sensorName);
 
             response.Result.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
@@ -125,7 +122,7 @@ namespace Peaky.Tests
         [Fact]
         public void Sensor_routes_are_case_insensitive()
         {
-            apiClient.GetAsync("http://blammo.com/sensors/application").Result
+            httpClient.GetAsync("http://blammo.com/sensors/application").Result
                      .StatusCode
                      .Should()
                      .Be(HttpStatusCode.OK);
@@ -141,7 +138,7 @@ namespace Peaky.Tests
             };
             TestSensor.GetSensorValue = () => new object[] { value };
 
-            var response = apiClient.GetAsync("http://blammo.com/sensors/sensormethod").Result;
+            var response = httpClient.GetAsync("http://blammo.com/sensors/sensormethod").Result;
 
             response.ShouldSucceed();
 
@@ -160,7 +157,7 @@ namespace Peaky.Tests
         {
             TestSensor.GetSensorValue = () => throw new Exception("oops!");
 
-            var response = await apiClient.GetAsync("http://blammo.com/sensors/sensormethod");
+            var response = await httpClient.GetAsync("http://blammo.com/sensors/sensormethod");
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
 

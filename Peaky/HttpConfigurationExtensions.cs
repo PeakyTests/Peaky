@@ -3,53 +3,15 @@
 
 using System;
 using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.Routing;
 
 namespace Peaky
 {
-    public static class ApplicationBuilderExtensions
-    {
-        public static IApplicationBuilder method(this IApplicationBuilder builder)
-        {
-
-
-
-            return builder;
-        }
-    }
-
     /// <summary>
     /// Provides methods for configuring Web API to expose sensors.
     /// </summary>
     public static class HttpConfigurationExtensions
     {
         internal const string TestRootRouteName = "Peaky-Tests";
-
-        public static IRouteBuilder MapSensorRoutes(
-            this IRouteBuilder configuration,
-            Func<AuthorizationFilterContext, bool> authorizeRequest,
-            string baseUri = "sensors",
-            HttpMessageHandler handler = null)
-        {
-            if (configuration == null)
-            {
-                throw new ArgumentNullException(nameof(configuration));
-            }
-            if (authorizeRequest == null)
-            {
-                throw new ArgumentNullException(nameof(authorizeRequest));
-            }
-
-            AuthorizeSensorsAttribute.AuthorizeRequest = authorizeRequest;
-
-            configuration.Routes.Add(new SensorRouter());
-
-            return configuration;
-        }
 
         //        /// <summary>
         //        /// Discovers tests in the application and maps routes to allow them to be called over HTTP.
@@ -212,17 +174,5 @@ namespace Peaky
         //
         //        internal static TestTargetRegistry TestTargets(this HttpConfiguration configuration) =>
         //            (TestTargetRegistry) configuration.Properties["Peaky.TestTargets"];
-    }
-
-    public class SensorRouter : IRouter
-    {
-        public async Task RouteAsync(RouteContext context)
-        {
-        }
-
-        public VirtualPathData GetVirtualPath(VirtualPathContext context)
-        {
-            return null;
-        }
     }
 }

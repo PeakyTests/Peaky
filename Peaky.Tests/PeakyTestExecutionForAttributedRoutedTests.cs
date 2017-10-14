@@ -7,30 +7,22 @@ using System.Net.Http;
 using FluentAssertions;
 using Its.Recipes;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
 using Xunit;
 
 namespace Peaky.Tests
 {
-    public class PeakyTestExecutionForAttributedRoutedTests
+    public class PeakyTestExecutionForAttributedRoutedTests : IDisposable
     {
-        private static HttpClient apiClient;
+        private readonly HttpClient apiClient;
+        private readonly PeakyService server;
 
         public PeakyTestExecutionForAttributedRoutedTests()
         {
-//            configuration = new HttpConfiguration();
-//            var constraintResolver = new DefaultInlineConstraintResolver();
-//            constraintResolver.ConstraintMap.Add("among", typeof (AmongConstraint));
-//            configuration.MapHttpAttributeRoutes(constraintResolver);
-//            configuration.MapTestRoutes();
-//            configuration.EnsureInitialized();
-//
-//            var server = new HttpServer(configuration);
-
-
-            var server = new PeakyServer();
-            apiClient = server.CreateTestServer().CreateClient();
+            server = new PeakyService();
+            apiClient = server.CreateHttpClient();
         }
+
+        public void Dispose() => server.Dispose();
 
         [Fact]
         public void When_a_test_passes_then_a_200_is_returned()

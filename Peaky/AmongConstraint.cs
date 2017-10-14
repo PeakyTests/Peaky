@@ -23,9 +23,7 @@ namespace Peaky
                           RouteValueDictionary values, 
                           RouteDirection routeDirection)
         {
-            object value;
-
-            if (values.TryGetValue(routeKey, out value) && value != null)
+            if (values.TryGetValue(routeKey, out var value) && value != null)
             {
                 return AllowedValues.Any(allowed => string.Equals(allowed,
                                                                   value.ToString(),

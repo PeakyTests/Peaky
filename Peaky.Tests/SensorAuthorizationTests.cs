@@ -3,11 +3,6 @@
 
 using System;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
-using FluentAssertions;
 using Its.Recipes;
 using Xunit;
 
@@ -15,16 +10,17 @@ namespace Peaky.Tests
 {
     public class SensorAuthorizationTests : IDisposable
     {
-        private string sensorName;
+        private readonly string sensorName;
+        private readonly SensorRegistry registry;
 
         public SensorAuthorizationTests()
         {
             sensorName = Any.AlphanumericString(10, 20);
+            registry=new SensorRegistry();
         }
 
         public void Dispose()
         {
-            DiagnosticSensor.Remove(sensorName);
             TestSensor.GetSensorValue = null;
         }
 
