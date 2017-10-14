@@ -8,6 +8,8 @@ build:
   project: Peaky.sln
   publish_nuget: true
 
+image: Visual Studio 2017
+
 test:
   assemblies:
     - '**\*Tests.dll'

@@ -42,7 +42,9 @@ namespace Peaky
 
             switch (segments.Length)
             {
-                case 0 - 2:
+                case 0:
+                case 1:
+                case 2:
                     ListTests(
                         segments.ElementAtOrDefault(0),
                         segments.ElementAtOrDefault(1),
