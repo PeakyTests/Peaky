@@ -34,8 +34,7 @@ namespace Peaky.Tests
             ((string)result.Exception.Message).Should().Be("Expected a value less than or equal to 10% , but found 50%.");
         }
 
-        [Ignore]
-        [Test]
+        [Fact]
         public void a_request_to_a_telemetry_api_with_a_failed_result_should_contain_the_related_telemetry_events()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/no_more_than_10_percent_of_calls_have_failed").Result;

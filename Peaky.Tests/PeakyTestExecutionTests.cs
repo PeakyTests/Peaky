@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Newtonsoft.Json;
 using Pocket;
 using Xunit;
 
@@ -19,14 +20,22 @@ namespace Peaky.Tests
 
         public PeakyTestExecutionTests()
         {
-            api = new TestApi(targets => targets
-                                             .Add("production", "widgetapi", new Uri("http://widgets.com"),
-                                                  dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
-                                             .Add("staging", "widgetapi", new Uri("http://widgets.com"),
-                                                  dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
-                                             .Add("production", "sprocketapi", new Uri("http://widgets.com"),
-                                                  dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))).CreateHttpClient();
-       
+            api = new PeakyService(
+                    targets => targets
+                        .Add("production",
+                             "widgetapi",
+                             new Uri("http://widgets.com"),
+                             dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
+                        .Add("staging",
+                             "widgetapi",
+                             new Uri("http://widgets.com"),
+                             dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
+                        .Add("production",
+                             "sprocketapi",
+                             new Uri("http://widgets.com"),
+                             dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK)))))
+                .CreateHttpClient();
+
             TestsWithTraceOutput.GetResponse = () => "...and the response";
         }
 
