@@ -11,6 +11,8 @@ namespace Peaky
 {
     internal class EnvironmentConstraint : TestConstraint
     {
+        // FIX: (EnvironmentConstraint) delete this
+
         private readonly ConcurrentDictionary<TestTarget, bool> cachedResults = new ConcurrentDictionary<TestTarget, bool>();
 
         public EnvironmentConstraint(TestDefinition testDefinition)

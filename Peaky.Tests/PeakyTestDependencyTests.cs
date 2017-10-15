@@ -77,18 +77,18 @@ namespace Peaky.Tests
         [Fact]
         public async Task When_a_test_cannot_be_instantiated_due_to_missing_dependencies_then_the_URL_is_still_displayed()
         {
-            var api = new PeakyService(configureTargets: targets => targets.Add("production", "widgetapi", new Uri("http://localhost:81")));
+            var api = new PeakyService(targets => targets.Add("production", "widgetapi", new Uri("http://localhost:81")));
 
             var response = await api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi");
 
             response.ShouldSucceed();
 
-            var json = response.JsonContent();
+            var testList = await response.AsTestList();
 
-            JArray tests = json.Tests;
-
-            tests.Should().Contain(o =>
-                                       o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/unsatisfiable_dependencies_test");
+            testList.Tests
+                    .Should()
+                    .Contain(o =>
+                                 o.Url == "http://blammo.com/tests/production/widgetapi/unsatisfiable_dependencies_test");
         }
 
         [Fact]

@@ -48,5 +48,7 @@ namespace Peaky
                    (testParameters = System.Linq.Enumerable.Empty<Parameter>());
             set => testParameters = value;
         }
+
+        public abstract bool AppliesTo(TestTarget target);
     }
 }

@@ -1,15 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26606.0
+VisualStudioVersion = 15.0.26923.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Unit tests", "Unit tests", "{6EEAB5F0-597E-43CF-9A7C-1842292E9C2E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "source", "source", "{9C803CA4-398F-4747-98AE-8B12D40A5A35}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Peaky", "Peaky\Peaky.csproj", "{16720C36-CC74-4884-B13F-E19D9DE7D96A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Peaky", "Peaky\Peaky.csproj", "{16720C36-CC74-4884-B13F-E19D9DE7D96A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Peaky.Tests", "Peaky.Tests\Peaky.Tests.csproj", "{23B1A4D6-6FB3-4FDB-BC35-A4F5A3B87063}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Peaky.Tests", "Peaky.Tests\Peaky.Tests.csproj", "{23B1A4D6-6FB3-4FDB-BC35-A4F5A3B87063}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{A6016020-E65A-4D55-B1A3-82F4BF1B43CD}"
 	ProjectSection(SolutionItems) = preProject
@@ -20,9 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{A60160
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sample", "Sample", "{CE4A4BEF-36B0-4AEE-A618-59D4E886458E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Peaky.SampleWebApplication", "Sample\Peaky.SampleWebApplication\Peaky.SampleWebApplication.csproj", "{D5098611-09A4-4083-919D-97E536A39C80}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Peaky.UI", "Peaky.UI\Peaky.UI.csproj", "{3671D877-6D82-44A0-A24D-CDE86BFF75A0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Peaky.SampleWebApplication", "Sample\Peaky.SampleWebApplication\Peaky.SampleWebApplication.csproj", "{D5098611-09A4-4083-919D-97E536A39C80}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,12 +47,6 @@ Global
 		{D5098611-09A4-4083-919D-97E536A39C80}.Development|Any CPU.Build.0 = Debug|Any CPU
 		{D5098611-09A4-4083-919D-97E536A39C80}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5098611-09A4-4083-919D-97E536A39C80}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3671D877-6D82-44A0-A24D-CDE86BFF75A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3671D877-6D82-44A0-A24D-CDE86BFF75A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3671D877-6D82-44A0-A24D-CDE86BFF75A0}.Development|Any CPU.ActiveCfg = Debug|Any CPU
-		{3671D877-6D82-44A0-A24D-CDE86BFF75A0}.Development|Any CPU.Build.0 = Debug|Any CPU
-		{3671D877-6D82-44A0-A24D-CDE86BFF75A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3671D877-6D82-44A0-A24D-CDE86BFF75A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -63,6 +55,8 @@ Global
 		{16720C36-CC74-4884-B13F-E19D9DE7D96A} = {9C803CA4-398F-4747-98AE-8B12D40A5A35}
 		{23B1A4D6-6FB3-4FDB-BC35-A4F5A3B87063} = {6EEAB5F0-597E-43CF-9A7C-1842292E9C2E}
 		{D5098611-09A4-4083-919D-97E536A39C80} = {CE4A4BEF-36B0-4AEE-A618-59D4E886458E}
-		{3671D877-6D82-44A0-A24D-CDE86BFF75A0} = {9C803CA4-398F-4747-98AE-8B12D40A5A35}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CD6549AC-34F7-4BE4-B086-25D854FA4240}
 	EndGlobalSection
 EndGlobal

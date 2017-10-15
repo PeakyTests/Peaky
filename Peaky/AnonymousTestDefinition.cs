@@ -9,6 +9,7 @@ namespace Peaky
 {
     internal class AnonymousTestDefinition : TestDefinition
     {
+        // FIX: (AnonymousTestDefinition) given this is only used in one place, it could be changed to something like InvalidTestDefinition
         private readonly string testName;
         private readonly Func<HttpContext, Task<object>> run;
 
@@ -24,5 +25,7 @@ namespace Peaky
 
         internal override async Task<object> Run(HttpContext _, Func<Type, object> resolve) =>
             await run(_);
+
+        public override bool AppliesTo(TestTarget target) => false;
     }
 }

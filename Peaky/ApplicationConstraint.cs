@@ -10,6 +10,7 @@ namespace Peaky
 {
     internal class ApplicationConstraint : TestConstraint
     {
+        // FIX: (ApplicationConstraint) delete this
         private readonly ConcurrentDictionary<TestTarget, bool> cachedResults = new ConcurrentDictionary<TestTarget, bool>();
 
         public ApplicationConstraint(TestDefinition testDefinition)

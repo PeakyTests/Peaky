@@ -8,6 +8,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Pocket;
+using static Pocket.Logger<Peaky.TestDefinition>;
 
 namespace Peaky
 {
@@ -29,6 +31,42 @@ namespace Peaky
         }
 
         public override string TestName => methodInfo.Name;
+
+        public override bool AppliesTo(TestTarget target)
+        {
+            // TODO: (AppliesTo) cache the result per target
+
+            object testClassInstance;
+            try
+            {
+                testClassInstance = target.ResolveDependency(typeof(T));
+            }
+            catch (Exception exception)
+            {
+                Log.Warning(exception);
+                return false;
+            }
+
+            if (target.Environment != null &&
+                testClassInstance is IApplyToEnvironment e)
+            {
+                if (!e.AppliesToEnvironment(target.Environment))
+                {
+                    return false;
+                }
+            }
+
+            if (target.Application != null &&
+                testClassInstance is IApplyToApplication a)
+            {
+                if (!a.AppliesToApplication(target.Application))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         internal override async Task<object> Run(HttpContext context, Func<Type, object> resolve)
         {

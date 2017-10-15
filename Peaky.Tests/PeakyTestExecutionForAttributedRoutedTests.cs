@@ -24,7 +24,7 @@ namespace Peaky.Tests
 
         public void Dispose() => server.Dispose();
 
-        [Fact]
+        [Fact(Skip = "Under renovation")]
         public void When_a_test_passes_then_a_200_is_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/pass").Result;
@@ -32,7 +32,7 @@ namespace Peaky.Tests
             response.ShouldSucceed(HttpStatusCode.OK);
         }
 
-        [Fact]
+        [Fact(Skip = "Under renovation")]
         public void When_a_test_passes_then_the_response_contains_the_test_output()
         {
             var value = Any.CamelCaseName();
@@ -44,7 +44,7 @@ namespace Peaky.Tests
             result.Should().Contain(value);
         }
 
-        [Fact]
+        [Fact(Skip = "Under renovation")]
         public void When_a_test_throws_then_a_500_Test_Failed_is_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/fail").Result;
@@ -52,7 +52,7 @@ namespace Peaky.Tests
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
         }
 
-        [Fact]
+        [Fact(Skip = "Under renovation")]
         public void When_a_test_fails_then_the_response_contains_the_test_output_and_exception_details()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/fail").Result;

@@ -3,9 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Pocket;
 using static Pocket.Logger<Peaky.TestRouter>;
@@ -61,6 +59,8 @@ namespace Peaky
             }
         }
 
+        public VirtualPathData GetVirtualPath(VirtualPathContext context) => null;
+
         private void ListTests(
             string environment,
             string application,
@@ -68,10 +68,12 @@ namespace Peaky
         {
             using (Log.OnEnterAndExit())
             {
-                if (environment != null &&
-                    !testTargets.Any(tt => tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase)))
+                if (environment != null)
                 {
-                    return;
+                    if (!testTargets.Any(tt => tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return;
+                    }
                 }
 
                 if (application != null &&
@@ -82,44 +84,43 @@ namespace Peaky
 
                 context.Handler = async httpContext =>
                 {
-                    var environments = testTargets
-                        .Where(tt => environment == null ||
-                                     tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase))
-                        .Where(tt => application == null ||
-                                     tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
-                        .Select(tt => new
-                        {
-                            tt.Application,
-                            tt.Environment
-                        })
+                    var applicableTargets = testTargets
+                        .Where(
+                            tt => environment == null ||
+                                  tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase))
+                        .Where(
+                            tt => application == null ||
+                                  tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
                         .ToArray();
 
-                    var urlHelper = context.HttpContext.RequestServices.GetService<IUrlHelper>();
+                    var rootPath = context.HttpContext.Request.PathBase;
 
                     var tests = testDefinitions
-                        .SelectMany(t =>
-                                        environments.Select(ea =>
-                                                                new Test
-                                                                {
-                                                                    Environment = ea.Environment,
-                                                                    Application = ea.Application,
-                                                                    Url = urlHelper.Content($"{ea.Environment}/{ea.Application}"),
-                                                                    Tags = t.Tags,
-                                                                    Parameters = t.Parameters.Any()
-                                                                                     ? t.Parameters.ToArray()
-                                                                                     : null
-                                                                })
-                                                    .Where(l => l.Url != null))
+                        .SelectMany(
+                            t =>
+                                applicableTargets
+                                    .Where(t.AppliesTo)
+                                    .Select(
+                                        ea =>
+                                            new Test
+                                            {
+                                                Environment = ea.Environment,
+                                                Application = ea.Application,
+                                                Url = $"{rootPath}/{ea.Environment}/{ea.Application}/{t.TestName}",
+                                                Tags = t.Tags,
+                                                Parameters = t.Parameters.Any()
+                                                                 ? t.Parameters.ToArray()
+                                                                 : null
+                                            })
+                                    .Where(l => l.Url != null))
                         .OrderBy(t => t.Url.ToString());
 
-                    var json = JsonConvert.SerializeObject(tests);
+                    var json = JsonConvert.SerializeObject(new { Tests = tests });
 
                     await httpContext.Response.WriteAsync(json);
                 };
             }
         }
-
-        public VirtualPathData GetVirtualPath(VirtualPathContext context) => null;
 
         private void RunTest(string environment, string application, string testName, RouteContext context)
         {
@@ -148,7 +149,9 @@ namespace Peaky
 
                     try
                     {
-                        var returnValue = await test.Run(httpContext, target.ResolveDependency);
+                        var returnValue = await test.Run(
+                                              httpContext,
+                                              target.ResolveDependency);
 
                         if (returnValue is Task task)
                         {

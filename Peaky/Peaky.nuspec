@@ -4,16 +4,15 @@
     <id>Peaky</id>
     <authors>jonsequitur, phillippruett, cynicaloptimist, ckurt</authors>
     <title>Peaky</title>
-    <version>2.1.0</version>
+    <version>3.0.0-beta</version>
     <owners>jonsequitur, phillippruett, cynicaloptimist, ckurt</owners>
     <projectUrl>https://github.com/PhillipPruett/Peaky</projectUrl>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Expose peaky tests and sensors via HTTP for health monitoring, testing in production, integration testing, functionality testing, and smoke testing.</description>
-    <tags>logging telemetry monitoring sensors diagnostics TiP testing</tags>
+    <description>Expose tests and sensors via HTTP for health monitoring, testing in production, integration testing, functionality testing, and smoke testing. Stand up a service to host a suite of tests-as-a-service for multiple applications or environments, or use Peaky in your own service to expose self-tests and health checks.</description>
+    <tags>telemetry monitoring sensors diagnostics TiP testing tests-as-a-service</tags>
     <dependencies>
-      <dependency id="Its.Log" version="[2.9.13,3.0.0)" />
-      <dependency id="Microsoft.AspNet.WebApi" version="[5.2.3,)" />
+
     </dependencies>
   </metadata>
 </package>

@@ -11,16 +11,22 @@ using System.Threading.Tasks;
 using Its.Recipes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Pocket;
 using Xunit;
+using Xunit.Abstractions;
+using static Pocket.Logger;
 
 namespace Peaky.Tests
 {
     public class PeakyTestDiscoveryTests : IDisposable
     {
         private readonly HttpClient apiClient;
+        private readonly CompositeDisposable disposables = new CompositeDisposable();
 
-        public PeakyTestDiscoveryTests()
+        public PeakyTestDiscoveryTests(ITestOutputHelper output)
         {
+            disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
+
             apiClient = new PeakyService(
                     targets =>
                         targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
@@ -28,9 +34,11 @@ namespace Peaky.Tests
                                .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
                                .Add("production", "sprocketapi", new Uri("http://sprockets.com")))
                 .CreateHttpClient();
+
+            disposables.Add(apiClient);
         }
 
-        public void Dispose() => apiClient.Dispose();
+        public void Dispose() => disposables.Dispose();
 
         [Fact]
         public void API_exposes_void_methods()
@@ -99,17 +107,17 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_tests_are_queried_by_application_then_tests_not_valid_for_that_application_are_not_returned()
+        public async Task When_tests_are_queried_by_application_then_tests_not_valid_for_that_application_are_not_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/sprocketapi/").Result;
 
             response.ShouldSucceed();
 
-            var json = response.JsonContent();
+            var testList = await response.AsTestList();
 
-            JArray tests = json.Tests;
+            var tests = testList.Tests;
 
-            tests.Should().NotContain(o => o.Value<string>("Url").Contains("widgetapi_only_test"));
+            tests.Should().NotContain(o => o.Url.Contains("widgetapi_only_test"));
         }
 
         [Fact]
