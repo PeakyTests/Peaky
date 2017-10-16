@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using Microsoft.AspNetCore.Builder;
@@ -21,7 +22,7 @@ namespace Peaky.Tests
         public PeakyService(
             Action<TestTargetRegistry> configureTargets = null,
             Action<IServiceCollection> configureServices = null,
-            params Type[] testTypes)
+            Type[] testTypes = null)
         {
             testServer = Configure(
                 configureTargets,
@@ -32,7 +33,7 @@ namespace Peaky.Tests
         private static TestServer Configure(
             Action<TestTargetRegistry> configureTargets = null,
             Action<IServiceCollection> configureServices = null,
-            params Type[] testTypes)
+            IReadOnlyCollection<Type> testTypes = null)
         {
             var webHostBuilder = new WebHostBuilder();
 
@@ -44,7 +45,7 @@ namespace Peaky.Tests
             webHostBuilder.ConfigureServices(services =>
             {
                 services.AddPeakySensors();
-                services.AddPeakyTests(configureTargets);
+                services.AddPeakyTests(configureTargets, testTypes);
             });
 
             return new TestServer(

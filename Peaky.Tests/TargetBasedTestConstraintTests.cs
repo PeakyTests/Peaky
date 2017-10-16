@@ -34,7 +34,7 @@ namespace Peaky.Tests
                                                       dependencies =>
                                                           dependencies
                                                               .Register(() => buildChecker)),
-                                      testTypes: typeof(TestsConstrainedToTarget));
+                                           testTypes: new[] { typeof(TestsConstrainedToTarget) });
 
             disposables.Add(testApi);
             return testApi.CreateHttpClient();
@@ -47,9 +47,11 @@ namespace Peaky.Tests
         {
             var response = await CreateApiClient(BuildDateAfter(DateTime.Now.AddDays(10))).GetAsync("http://tests.com/tests");
 
-            JArray tests = response.JsonContent().Tests;
+            var testList = await response.AsTestList();
 
-            tests.Should().NotContain(t => t.Value<string>("Url").Contains("target_based_constraint_test"));
+            testList.Tests
+                .Should()
+                .NotContain(t => t.Url.Contains("target_based_constraint_test"));
         }
 
         [Fact]
@@ -84,10 +86,10 @@ namespace Peaky.Tests
         {
             return httpClient =>
             {
-                var sensorResult = httpClient.GetAsync("/sensors").Result.JsonContent();
-                Console.WriteLine(new { sensorResult });
+                var sensorResult = httpClient.GetAsync("/sensors")
+                                             .Result
+                                             .JsonContent();
                 DateTime buildDate = sensorResult.Version["Build date"];
-                Console.WriteLine(new { buildDate, buildDateAfter });
                 return buildDate > buildDateAfter;
             };
         }

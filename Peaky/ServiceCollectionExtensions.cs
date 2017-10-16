@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +45,8 @@ namespace Peaky
     {
         public static IServiceCollection AddPeakyTests(
             this IServiceCollection builder,
-            Action<TestTargetRegistry> configure = null)
+            Action<TestTargetRegistry> configure = null,
+            IEnumerable<Type> testTypes = null)
         {
             builder.Configure<RouteOptions>(options =>
             {
@@ -62,7 +64,7 @@ namespace Peaky
 
             builder.AddSingleton(c =>
             {
-                return new TestDefinitionRegistry();
+                return new TestDefinitionRegistry(testTypes);
             });
 
             return builder;

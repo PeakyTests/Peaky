@@ -14,7 +14,6 @@ using Newtonsoft.Json.Linq;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;
-using static Pocket.Logger;
 
 namespace Peaky.Tests
 {
@@ -93,17 +92,15 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_tests_are_queried_by_environment_then_tests_not_valid_for_that_enviroment_are_not_returned()
+        public async Task When_tests_are_queried_by_environment_then_tests_not_valid_for_that_enviroment_are_not_returned()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi").Result;
 
             response.ShouldSucceed();
 
-            var json = response.JsonContent();
+            var testList = await response.AsTestList();
 
-            JArray tests = json.Tests;
-
-            tests.Should().NotContain(o => o.Value<string>("Url") == "internal_only_test");
+            testList.Tests.Should().NotContain(o => o.Url == "internal_only_test");
         }
 
         [Fact]
@@ -115,38 +112,35 @@ namespace Peaky.Tests
 
             var testList = await response.AsTestList();
 
-            var tests = testList.Tests;
-
-            tests.Should().NotContain(o => o.Url.Contains("widgetapi_only_test"));
+            testList.Tests
+                    .Should().NotContain(o => o.Url.Contains("widgetapi_only_test"));
         }
 
         [Fact]
-        public void When_tests_are_queried_by_environment_then_routes_are_returned_with_the_environment_filled_in()
+        public async Task When_tests_are_queried_by_environment_then_routes_are_returned_with_the_environment_filled_in()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi").Result;
 
             response.ShouldSucceed();
 
-            var json = response.JsonContent();
+            var testList = await response.AsTestList();
 
-            JArray tests = json.Tests;
-
-            tests.Should().Contain(o => o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/passing_test_returns_object");
+            testList.Tests
+                    .Should().Contain(o => o.Url == "http://blammo.com/tests/production/widgetapi/passing_test_returns_object");
         }
 
         [Fact]
-        public void When_two_tests_have_the_same_name_then_an_informative_error_URL_is_displayed()
+        public async Task When_two_tests_have_the_same_name_then_an_informative_error_URL_is_displayed()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi").Result;
 
             response.ShouldSucceed();
 
-            var json = response.JsonContent();
+            var testList = await response.AsTestList();
 
-            JArray tests = json.Tests;
-
-            tests.Should().Contain(o =>
-                                       o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/TEST_NAME_COLLISION_1");
+            testList.Tests
+                    .Should().Contain(o =>
+                                          o.Url == "http://blammo.com/tests/production/widgetapi/TEST_NAME_COLLISION_1");
         }
 
         [Fact]
@@ -178,78 +172,78 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_tests_are_queried_by_environment_but_not_application_then_tests_for_all_applications_are_shown()
+        public async Task When_tests_are_queried_by_environment_but_not_application_then_tests_for_all_applications_are_shown()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production").Result;
 
-            response.ShouldSucceed();
+            var testList = await response.AsTestList();
 
-            var json = response.JsonContent();
-
-            JArray tests = json.Tests;
+            var tests = testList.Tests;
 
             tests.Should()
                  .Contain(o =>
-                              o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/is_reachable");
+                              o.Url == "http://blammo.com/tests/production/widgetapi/is_reachable");
             tests.Should()
                  .Contain(o =>
-                              o.Value<string>("Url") == "http://blammo.com/tests/production/sprocketapi/is_reachable");
+                              o.Url == "http://blammo.com/tests/production/sprocketapi/is_reachable");
 
             tests.Should()
                  .NotContain(o =>
-                                 o.Value<string>("Url") == "http://blammo.com/tests/staging/widgetapi/is_reachable");
+                                 o.Url == "http://blammo.com/tests/staging/widgetapi/is_reachable");
             tests.Should()
                  .NotContain(o =>
-                                 o.Value<string>("Url") == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
+                                 o.Url == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
         }
 
         [Fact]
-        public void When_tests_are_queried_with_no_environment_or_application_then_all_tests_are_shown()
+        public async Task When_tests_are_queried_with_no_environment_or_application_then_all_tests_are_shown()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/").Result;
 
             response.ShouldSucceed();
 
-            var json = response.JsonContent();
+            var testList = await response.AsTestList();
 
-            JArray tests = json.Tests;
-
-            tests.Should()
-                 .Contain(o =>
-                              o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/is_reachable");
-            tests.Should()
-                 .Contain(o =>
-                              o.Value<string>("Url") == "http://blammo.com/tests/production/sprocketapi/is_reachable");
+            var tests = testList.Tests;
 
             tests.Should()
                  .Contain(o =>
-                              o.Value<string>("Url") == "http://blammo.com/tests/staging/widgetapi/is_reachable");
+                              o.Url == "http://blammo.com/tests/production/widgetapi/is_reachable");
             tests.Should()
                  .Contain(o =>
-                              o.Value<string>("Url") == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
+                              o.Url == "http://blammo.com/tests/production/sprocketapi/is_reachable");
+
+            tests.Should()
+                 .Contain(o =>
+                              o.Url == "http://blammo.com/tests/staging/widgetapi/is_reachable");
+            tests.Should()
+                 .Contain(o =>
+                              o.Url == "http://blammo.com/tests/staging/sprocketapi/is_reachable");
         }
 
         [Fact]
-        public void Specific_tests_can_be_routed_using_the_testTypes_argument()
+        public async Task Specific_tests_can_be_routed_using_the_testTypes_argument()
         {
-            var api = new PeakyService(configureTargets: targets =>
-                                           targets.Add("production", "widgetapi", new Uri("http://widgets.com")),
+            var api = new PeakyService(targets =>
+                                           targets.Add("production",
+                                                       "widgetapi",
+                                                       new Uri("http://widgets.com")),
                                        testTypes: new[] { typeof(WidgetApiTests) });
 
             var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/").Result;
 
             response.ShouldSucceed();
 
-            var json = response.JsonContent();
+            var testList = await response.AsTestList();
 
-            JArray tests = json.Tests;
-
-            tests.Should()
-                 .Contain(o =>
-                              o.Value<string>("Url").Contains("widgetapi_only_test"));
-            tests.Should()
-                 .NotContain(o =>
-                                 o.Value<string>("Url").Contains("passing_test_returns_object"));
+            testList.Tests
+                    .Should()
+                    .Contain(o =>
+                                 o.Url.Contains("widgetapi_only_test"));
+            testList.Tests
+                    .Should()
+                    .NotContain(o =>
+                                    o.Url.Contains("passing_test_returns_object"));
         }
 
         [Category("Tags")]
@@ -451,6 +445,7 @@ namespace Peaky.Tests
                                               "string_returning_test_with_optional_parameters?count=gronk").Result;
 
             response.ShouldFailWith(HttpStatusCode.BadRequest);
+
             response.Content.ReadAsStringAsync().Result.Should().Contain("The value specified for parameter 'count' could not be parsed as System.Int32");
         }
 

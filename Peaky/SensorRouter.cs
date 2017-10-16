@@ -1,7 +1,11 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Newtonsoft.Json;
+using Pocket;
+using static Pocket.Logger<Peaky.SensorRouter>;
 
 namespace Peaky
 {
@@ -17,14 +21,56 @@ namespace Peaky
 
         public async Task RouteAsync(RouteContext context)
         {
-            if (!context.HttpContext.Request.Path.StartsWithSegments(new PathString("/sensors")))
+            var path = context.HttpContext.Request.Path;
+
+            var testRootPath = "/sensors";
+
+            if (!path.StartsWithSegments(new PathString(testRootPath)))
             {
                 return;
             }
-            context.Handler = async httpContext =>
+
+            var segments = path.Value
+                               .Substring(testRootPath.Length)
+                               .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            switch (segments.Length)
             {
-                //                httpContext.Response.WriteAsync(sensor.Read());
-            };
+                case 0:
+                    ListSensors(context);
+                    break;
+
+                case 1:
+                    ReadSensor(segments[0], context);
+                    break;
+            }
+        }
+
+        private void ReadSensor(string sensorName, RouteContext context)
+        {
+            using (Log.OnEnterAndExit())
+            {
+                if (!sensors.TryGet(sensorName, out var sensor))
+                {
+                    return;
+                }
+
+                context.Handler = async httpContext =>
+                {
+                    var reading = sensor.Read();
+
+                    var json = JsonConvert.SerializeObject(reading);
+
+                    await httpContext.Response.WriteAsync(json);
+                };
+            }
+        }
+
+        private void ListSensors(RouteContext context)
+        {
+            using (Log.OnEnterAndExit())
+            {
+            }
         }
 
         public VirtualPathData GetVirtualPath(VirtualPathContext context)

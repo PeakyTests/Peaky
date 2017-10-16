@@ -93,23 +93,21 @@ namespace Peaky
                                   tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
                         .ToArray();
 
-                    var rootPath = context.HttpContext.Request.PathBase;
-
                     var tests = testDefinitions
                         .SelectMany(
-                            t =>
+                            definition =>
                                 applicableTargets
-                                    .Where(t.AppliesTo)
+                                    .Where(definition.AppliesTo)
                                     .Select(
-                                        ea =>
+                                        target =>
                                             new Test
                                             {
-                                                Environment = ea.Environment,
-                                                Application = ea.Application,
-                                                Url = $"{rootPath}/{ea.Environment}/{ea.Application}/{t.TestName}",
-                                                Tags = t.Tags,
-                                                Parameters = t.Parameters.Any()
-                                                                 ? t.Parameters.ToArray()
+                                                Environment = target.Environment,
+                                                Application = target.Application,
+                                                Url = context.HttpContext.Request.GetLink(target, definition),
+                                                Tags = definition.Tags,
+                                                Parameters = definition.Parameters.Any()
+                                                                 ? definition.Parameters.ToArray()
                                                                  : null
                                             })
                                     .Where(l => l.Url != null))
@@ -122,7 +120,11 @@ namespace Peaky
             }
         }
 
-        private void RunTest(string environment, string application, string testName, RouteContext context)
+        private void RunTest(
+            string environment, 
+            string application, 
+            string testName, 
+            RouteContext context)
         {
             using (Log.OnEnterAndExit())
             {
@@ -141,7 +143,13 @@ namespace Peaky
                     return;
                 }
 
-                var test = testDefinitions.Get(testName);
+                var testDefinition = testDefinitions.Get(testName);
+
+                if (!testDefinition.AppliesTo(target))
+                {
+                    Console.WriteLine();
+                    return;
+                }
 
                 context.Handler = async httpContext =>
                 {
@@ -149,7 +157,7 @@ namespace Peaky
 
                     try
                     {
-                        var returnValue = await test.Run(
+                        var returnValue = await testDefinition.Run(
                                               httpContext,
                                               target.ResolveDependency);
 
@@ -164,6 +172,11 @@ namespace Peaky
                         }
 
                         result = TestResult.Pass(returnValue);
+                    }
+                    catch (ParameterFormatException exception)
+                    {
+                        result = TestResult.Fail(exception);
+                        httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                     }
                     catch (Exception exception)
                     {

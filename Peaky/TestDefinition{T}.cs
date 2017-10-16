@@ -35,7 +35,6 @@ namespace Peaky
         public override bool AppliesTo(TestTarget target)
         {
             // TODO: (AppliesTo) cache the result per target
-
             object testClassInstance;
             try
             {
@@ -43,26 +42,28 @@ namespace Peaky
             }
             catch (Exception exception)
             {
-                Log.Warning(exception);
-                return false;
+                Log.Warning("Dependency resolution error while trying to instantiate {type}", exception, typeof(T));
+                return true;
             }
 
             if (target.Environment != null &&
-                testClassInstance is IApplyToEnvironment e)
+                testClassInstance is IApplyToEnvironment e && 
+                !e.AppliesToEnvironment(target.Environment))
             {
-                if (!e.AppliesToEnvironment(target.Environment))
-                {
-                    return false;
-                }
+                return false;
             }
 
             if (target.Application != null &&
-                testClassInstance is IApplyToApplication a)
+                testClassInstance is IApplyToApplication a && 
+                !a.AppliesToApplication(target.Application))
             {
-                if (!a.AppliesToApplication(target.Application))
-                {
-                    return false;
-                }
+                return false;
+            }
+
+            if (testClassInstance is IApplyToTarget t && 
+                !t.AppliesToTarget(target))
+            {
+                return false;
             }
 
             return true;

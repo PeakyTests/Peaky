@@ -14,16 +14,22 @@ namespace Peaky
     {
         private readonly Dictionary<string, TestDefinition> tests;
 
-        public TestDefinitionRegistry()
+        public TestDefinitionRegistry(IEnumerable<Type> testTypes = null)
         {
-            tests = GetTestDefinitions(Discover.ConcreteTypes()
-                                               .DerivedFrom(typeof(IPeakyTest)));
+            testTypes = testTypes ??
+                        Discover.ConcreteTypes()
+                                .DerivedFrom(typeof(IPeakyTest));
+
+            tests = GetTestDefinitions(testTypes);
         }
 
         public TestDefinition Get(string testName)
         {
             return tests[testName];
         }
+
+        public bool TryGet(string testName, out TestDefinition testDefinition) => 
+            tests.TryGetValue(testName, out testDefinition);
 
         public static Dictionary<string, TestDefinition> GetTestDefinitions(
             IEnumerable<Type> concreteTestClasses)

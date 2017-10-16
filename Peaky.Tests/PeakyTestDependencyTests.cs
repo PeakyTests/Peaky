@@ -8,7 +8,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;
@@ -94,12 +93,11 @@ namespace Peaky.Tests
         [Fact]
         public async Task When_a_test_cannot_be_instantiated_due_to_missing_dependencies_then_calling_the_error_test_returns_500_with_details()
         {
-            var api = new PeakyService(configureTargets: targets => targets.Add("production", "widgetapi", new Uri("http://localhost:81")));
+            var api = new PeakyService(targets => targets.Add("production", "widgetapi", new Uri("http://localhost:81")));
 
             var response = await api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/unsatisfiable_dependencies_test");
 
-            var message = response.Content.ReadAsStringAsync().Result;
-            Console.WriteLine(message);
+            var message = await response.Content.ReadAsStringAsync();
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
 
