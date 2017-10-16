@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Recipes;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,7 +27,6 @@ namespace Peaky.Tests
                 configureServices: s => s.AddSingleton(registry));
             apiClient = peakyService.CreateHttpClient();
             sensorName = Any.AlphanumericString(10, 20);
-            apiClient = peakyService.CreateHttpClient();
         }
 
         public void Dispose()
@@ -36,13 +36,13 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void when_a_specific_sensor_is_requested_and_it_throws_then_it_returns_500_and_the_exception_text_is_in_the_response_body()
+        public async Task when_a_specific_sensor_is_requested_and_it_throws_then_it_returns_500_and_the_exception_text_is_in_the_response_body()
         {
             registry.Add<string>(() => throw new Exception("oops!"), sensorName);
 
-            var result = apiClient.GetAsync("http://blammo.com/sensors/" + sensorName).Result;
+            var result =await apiClient.GetAsync("http://blammo.com/sensors/" + sensorName);
 
-            var body = result.Content.ReadAsStringAsync().Result;
+            var body = await result.Content.ReadAsStringAsync();
 
             result.StatusCode
                   .Should()
@@ -52,23 +52,24 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void when_all_sensors_are_requested_and_one_throws_then_it_returns_200_and_the_exception_text_is_in_the_response_body()
+        public async Task when_all_sensors_are_requested_and_one_throws_then_it_returns_200_and_the_exception_text_is_in_the_response_body()
         {
             registry.Add<string>(() => throw new Exception("oops!"), sensorName);
 
-            var result = apiClient.GetAsync("http://blammo.com/sensors/").Result;
+            var result = await apiClient.GetAsync("http://blammo.com/sensors/");
 
             var body = result.Content.ReadAsStringAsync().Result;
 
             result.StatusCode
-                  .Should().Be(HttpStatusCode.OK);
-            body.Should().Contain("oops!");
+                  .Should()
+                  .Be(HttpStatusCode.OK);
+            body.Should()
+                .Contain("oops!");
         }
 
         [Fact]
         public void Cyclical_references_in_object_graphs_do_not_cause_serialization_errors()
         {
-            var registry = new SensorRegistry();
             registry.Add(() =>
             {
                 var parent = new Node();

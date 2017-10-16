@@ -29,7 +29,7 @@ namespace Peaky
 
             var testRootPath = "/tests";
 
-            if (!path.StartsWithSegments(new PathString(testRootPath)))
+            if (!path.StartsWithSegments(new PathString(testRootPath), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }

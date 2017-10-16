@@ -71,7 +71,7 @@ namespace Peaky
         [DiagnosticSensor]
         private static object ConcurrencySensor()
         {
-            Barrier.SignalAndWait();
+            Barrier?.SignalAndWait();
             return new object();
         }
     }

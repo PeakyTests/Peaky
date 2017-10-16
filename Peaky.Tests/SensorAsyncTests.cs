@@ -8,28 +8,32 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Recipes;
 using Microsoft.Extensions.DependencyInjection;
+using Pocket;
 using Xunit;
 
 namespace Peaky.Tests
 {
     public class SensorAsyncTests : IDisposable
     {
-        private static HttpClient peakyService;
+        private static HttpClient apiClient;
         private readonly string sensorName;
         private readonly SensorRegistry registry;
+        private readonly CompositeDisposable disposables = new CompositeDisposable();
 
         public SensorAsyncTests()
         {
             registry = new SensorRegistry(DiagnosticSensor.DiscoverSensors());
 
-            peakyService = new PeakyService(
-                configureServices: s => s.AddSingleton(registry)).CreateHttpClient();
+            var peaky = new PeakyService(configureServices: s => s.AddSingleton(registry));
+
+            apiClient = peaky.CreateHttpClient();
 
             sensorName = Any.AlphanumericString(10, 20);
         }
 
         public void Dispose()
         {
+            disposables.Dispose();
             TestSensor.GetSensorValue = null;
         }
 
@@ -43,7 +47,7 @@ namespace Peaky.Tests
             };
             registry.Add(() => Task.Run(() => sensorResult), sensorName);
 
-            var result = await peakyService.GetStringAsync("http://blammo.com/sensors/" + sensorName);
+            var result = await apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName);
 
             result.Should().Contain("words");
             result.Should().Contain(words);
@@ -55,7 +59,7 @@ namespace Peaky.Tests
             var words = Any.Paragraph(5);
             registry.Add(() => Task.Run(() => words), sensorName);
 
-            var result = await peakyService.GetStringAsync("http://blammo.com/sensors/" + sensorName);
+            var result = await apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName);
 
             result.Should()
                   .Contain(words);
@@ -70,10 +74,10 @@ namespace Peaky.Tests
                 return Task.Run(() => words);
             };
 
-            var result = await peakyService.GetStringAsync("http://blammo.com/sensors/");
+            var result = await apiClient.GetStringAsync("http://blammo.com/sensors/");
 
             result.Should()
-                  .Contain(string.Format("\"SensorMethod\":\"{0}\"", words));
+                  .Contain(string.Format("\"SensorMethod\":{{\"Value\":\"{0}\"", words));
         }
 
         [Fact]
@@ -94,12 +98,12 @@ namespace Peaky.Tests
                 return dynamicSensor;
             }), sensorName);
 
-            var result = peakyService.GetStringAsync("http://blammo.com/sensors/").Result;
+            var result = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
 
             result.Should()
-                  .Contain(string.Format("\"SensorMethod\":\"{0}\"", testSensor))
+                  .Contain(string.Format("\"SensorMethod\":{{\"Value\":\"{0}\"", testSensor))
                   .And
-                  .Contain(string.Format("\"{0}\":\"{1}\"", sensorName, dynamicSensor));
+                  .Contain(string.Format("\"{0}\":{{\"Value\":\"{1}\"", sensorName, dynamicSensor));
         }
     }
 }

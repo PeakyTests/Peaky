@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using FluentAssertions;
 using System.Linq;
@@ -9,29 +10,34 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Its.Recipes;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
+using Pocket;
 using Xunit;
 
 namespace Peaky.Tests
 {
     public class SensorRoutingTests : IDisposable
     {
-        private static HttpClient httpClient;
+        private static HttpClient apiClient;
         private readonly string sensorName;
-        private readonly PeakyService peakyService;
         private readonly SensorRegistry registry;
+        private readonly CompositeDisposable disposables = new CompositeDisposable();
 
         public SensorRoutingTests()
         {
-            registry = new SensorRegistry();
-            peakyService = new PeakyService();
+            registry = new SensorRegistry(DiagnosticSensor.DiscoverSensors());
+
+            var peaky = new PeakyService(configureServices: s => s.AddSingleton(registry));
+
+            apiClient = peaky.CreateHttpClient();
+
             sensorName = Any.AlphanumericString(10, 20);
-            httpClient = peakyService.CreateHttpClient();
         }
 
         public void Dispose()
         {
-            peakyService.Dispose();
+            disposables.Dispose();
             TestSensor.GetSensorValue = null;
         }
 
@@ -42,7 +48,7 @@ namespace Peaky.Tests
 
             registry.Add(() => new { words }, sensorName);
 
-            var response = httpClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
+            var response = apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
 
             response.Should().Contain(words);
         }
@@ -53,7 +59,7 @@ namespace Peaky.Tests
             var value = Any.AlphanumericString(20, 100);
             TestSensor.GetSensorValue = () => value;
 
-            var response = httpClient.GetStringAsync("http://blammo.com/sensors/").Result;
+            var response = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
 
             Console.WriteLine(response);
 
@@ -63,10 +69,10 @@ namespace Peaky.Tests
         [Fact]
         public void Sensor_root_content_includes_link_to_sensors_root()
         {
-            var response = httpClient.GetStringAsync("http://blammo.com/sensors/").Result;
+            var response = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
 
             dynamic sensorValue = JObject.Parse(response);
-            Console.WriteLine(response);
+
             string selfLink = sensorValue._links.self;
 
             selfLink.Should().Be("/sensors/");
@@ -75,19 +81,23 @@ namespace Peaky.Tests
         [Fact]
         public void Sensor_root_content_contains_links_to_all_sensors()
         {
-            dynamic result = JObject.Parse(httpClient.GetStringAsync("http://blammo.com/sensors/").Result);
+            dynamic result = JObject.Parse(apiClient.GetStringAsync("http://blammo.com/sensors/").Result);
 
-            Console.WriteLine(result);
-
-            ((string) result._links.Application)
-                .Should().Be("/sensors/application");
+            ((IEnumerable<dynamic>) result._links)
+                .Select(l => l.Name)
+                .Should()
+                .BeEquivalentTo(registry.Select(s => s.Name).Concat(new[] { "self" }));
         }
 
         [Fact]
         public void Specific_sensor_content_includes_link_to_sensor_when_sensor_is_dictionary()
         {
-            registry.Add(() => "hello!", sensorName);
-            var response = httpClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
+            registry.Add(() => new Dictionary<string,object>
+            {
+                ["key"] = "value"
+            }, sensorName);
+
+            var response = apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
 
             dynamic sensorValue = JObject.Parse(response);
             Console.WriteLine(response);
@@ -100,7 +110,7 @@ namespace Peaky.Tests
         public void Specific_sensor_content_includes_link_to_sensor_when_sensor_is_object()
         {
             registry.Add(() => new FileInfo("c:\\temp\\foo.txt"), sensorName);
-            var response = httpClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
+            var response = apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
 
             dynamic sensorValue = JObject.Parse(response);
 
@@ -114,7 +124,7 @@ namespace Peaky.Tests
         {
             var sensorName = Guid.NewGuid();
 
-            var response = httpClient.GetAsync("http://blammo.com/sensors/" + sensorName);
+            var response = apiClient.GetAsync("http://blammo.com/sensors/" + sensorName);
 
             response.Result.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
@@ -122,14 +132,16 @@ namespace Peaky.Tests
         [Fact]
         public void Sensor_routes_are_case_insensitive()
         {
-            httpClient.GetAsync("http://blammo.com/sensors/application").Result
-                     .StatusCode
-                     .Should()
-                     .Be(HttpStatusCode.OK);
+            registry.Add(() => "hi", "APPLICATION");
+
+            apiClient.GetAsync("http://blammo.com/sensors/application").Result
+                      .StatusCode
+                      .Should()
+                      .Be(HttpStatusCode.OK);
         }
 
         [Fact]
-        public void Sensors_that_return_arrays_are_correctly_serialized()
+        public async Task Sensors_that_return_arrays_are_correctly_serialized()
         {
             var value = new
             {
@@ -138,15 +150,15 @@ namespace Peaky.Tests
             };
             TestSensor.GetSensorValue = () => new object[] { value };
 
-            var response = httpClient.GetAsync("http://blammo.com/sensors/sensormethod").Result;
+            var response = apiClient.GetAsync("http://blammo.com/sensors/sensormethod").Result;
 
             response.ShouldSucceed();
 
-            Console.WriteLine(response);
+            Console.WriteLine(await response.Content.ReadAsStringAsync());
 
             var values = response.JsonContent();
-            string name = values[0].Name;
-            string email = values[0].Email;
+            string name = values.Value[0].Name;
+            string email = values.Value[0].Email;
 
             name.Should().Be(value.Name);
             email.Should().Be(value.Email);
@@ -157,7 +169,7 @@ namespace Peaky.Tests
         {
             TestSensor.GetSensorValue = () => throw new Exception("oops!");
 
-            var response = await httpClient.GetAsync("http://blammo.com/sensors/sensormethod");
+            var response = await apiClient.GetAsync("http://blammo.com/sensors/sensormethod");
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
 

@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using Its.Recipes;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Pocket;
+using static Peaky.DiagnosticSensor;
 using static Pocket.Logger<Peaky.SensorRouter>;
 
 namespace Peaky
@@ -15,15 +14,6 @@ namespace Peaky
     public class SensorRouter : IRouter
     {
         private readonly AuthorizeSensors authorizeSensors;
-
-        private static readonly JsonSerializerSettings serializerSettings = new JsonSerializerSettings
-        {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            Error = (sender, args) =>
-            {
-                args.ErrorContext.Handled = true;
-            }
-        };
 
         private readonly SensorRegistry sensors;
 
@@ -48,7 +38,7 @@ namespace Peaky
 
             var testRootPath = "/sensors";
 
-            if (!path.StartsWithSegments(new PathString(testRootPath)))
+            if (!path.StartsWithSegments(new PathString(testRootPath), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
@@ -82,50 +72,11 @@ namespace Peaky
                 {
                     var reading = await sensor.Read();
 
-                    if (reading.Value is Task valueTask)
-                    {
-                        await valueTask;
+                    var sensorResponse = new SensorResponse(reading, httpContext.Request.Path.Value);
 
-                        if (valueTask.GetType().GetGenericArguments().First().IsVisible)
-                        {
-                            reading.Value = ((dynamic) valueTask).Result;
-                        }
-                        else
-                        {
-                            // this is required to work around the fact that internal types cause dynamic calls to Result to fail. JSON.NET however will happily serialize them, at which point we can retrieve the Result property.
-                            var serialized = JsonConvert.SerializeObject(reading, serializerSettings);
-                            Log.Trace(serialized);
-                            reading.Value = JsonConvert.DeserializeObject<dynamic>(serialized).Result;
-                        }
-                    }
+                    httpContext.Response.StatusCode = sensorResponse.StatusCode;
 
-                    // add a self link
-                    var localPath = httpContext.Request.Path.Value;
-                    reading
-                        .IfTypeIs<IDictionary<string, object>>()
-                        .ThenDo(d => d["_links"] = new { self = localPath })
-                        .ElseDo(() =>
-                        {
-                            var json = JsonConvert.SerializeObject(reading, serializerSettings);
-
-                            if (!json.Contains("{"))
-                            {
-                                json = @"{""value"":" + json + @"}";
-                            }
-
-                            var jtoken = JsonConvert.DeserializeObject<JToken>(json);
-
-                            jtoken.IfTypeIs<JObject>()
-                                  .ThenDo(o => o.Add("_links", new JObject(new JProperty("self", localPath))));
-
-                            reading = new SensorResult
-                            {
-                                SensorName = reading.SensorName,
-                                Value = jtoken
-                            };
-                        });
-
-                    var readingJson = JsonConvert.SerializeObject(reading, serializerSettings);
+                    var readingJson = JsonConvert.SerializeObject(sensorResponse, SerializerSettings);
 
                     await httpContext.Response.WriteAsync(readingJson);
                 };
@@ -138,11 +89,9 @@ namespace Peaky
             {
                 context.Handler = async httpContext =>
                 {
-                    var results = sensors.Select(s => s.Read());
+                    var results = await Task.WhenAll(sensors.Select(s => s.Read()));
 
-                    await Task.WhenAll(results);
-
-                    var readings = new Dictionary<string, object>();
+                    var readings = results.ToDictionary(s => s.SensorName, s => (object) s);
 
                     // add a self link
                     var localPath = httpContext.Request.Path;
@@ -160,16 +109,13 @@ namespace Peaky
 
                     readings["_links"] = links;
 
-                    var readingJson = JsonConvert.SerializeObject(readings, serializerSettings);
+                    var readingJson = JsonConvert.SerializeObject(readings, SerializerSettings);
 
                     await httpContext.Response.WriteAsync(readingJson);
                 };
             }
         }
 
-        public VirtualPathData GetVirtualPath(VirtualPathContext context)
-        {
-            return null;
-        }
+        public VirtualPathData GetVirtualPath(VirtualPathContext context) => null;
     }
 }

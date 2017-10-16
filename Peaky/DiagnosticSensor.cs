@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Pocket;
 
 namespace Peaky
@@ -97,10 +98,28 @@ namespace Peaky
         {
             try
             {
+                var value = @delegate.DynamicInvoke();
+
+                if (value is Task valueTask)
+                {
+                    await valueTask;
+
+                    if (valueTask.GetType().GetGenericArguments().First().IsVisible)
+                    {
+                        value = ((dynamic) valueTask).Result;
+                    }
+                    else
+                    {
+                        // this is required to work around the fact that internal types cause dynamic calls to Result to fail. JSON.NET however will happily serialize them, at which point we can retrieve the Result property.
+                        var serialized = JsonConvert.SerializeObject(value, SerializerSettings);
+                        value = JsonConvert.DeserializeObject<dynamic>(serialized).Result;
+                    }
+                }
+
                 return new SensorResult
                 {
                     SensorName = Name,
-                    Value = @delegate.DynamicInvoke()
+                    Value = value
                 };
             }
             catch (TargetInvocationException exception)
@@ -166,5 +185,14 @@ namespace Peaky
                        ? displayName.DisplayName
                        : sensorMethod.Name;
         }
+
+        internal static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            Error = (sender, args) =>
+            {
+                args.ErrorContext.Handled = true;
+            }
+        };
     }
 }

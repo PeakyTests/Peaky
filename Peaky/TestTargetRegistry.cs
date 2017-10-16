@@ -12,7 +12,7 @@ namespace Peaky
 {
     public class TestTargetRegistry : IEnumerable<TestTarget>
     {
-        private readonly IDictionary<string, Lazy<TestTarget>> targets = new Dictionary<string, Lazy<TestTarget>>();
+        private readonly IDictionary<string, Lazy<TestTarget>> targets = new Dictionary<string, Lazy<TestTarget>>(StringComparer.OrdinalIgnoreCase);
 
         public TestTargetRegistry Add(
             string environment,
@@ -73,7 +73,6 @@ namespace Peaky
 
             if (!targets.Any(t => t.Value.Value.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase)))
             {
-
                 throw new TestNotDefinedException($"Environment '{environment}' has not been defined.");
             }
 
