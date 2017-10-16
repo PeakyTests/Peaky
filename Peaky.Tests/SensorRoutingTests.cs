@@ -40,7 +40,7 @@ namespace Peaky.Tests
         {
             var words = Any.Paragraph(5);
 
-            registry.Register(() => new { words }, sensorName);
+            registry.Add(() => new { words }, sensorName);
 
             var response = httpClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
 
@@ -86,7 +86,7 @@ namespace Peaky.Tests
         [Fact]
         public void Specific_sensor_content_includes_link_to_sensor_when_sensor_is_dictionary()
         {
-            registry.Register(() => "hello!", sensorName);
+            registry.Add(() => "hello!", sensorName);
             var response = httpClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
 
             dynamic sensorValue = JObject.Parse(response);
@@ -99,7 +99,7 @@ namespace Peaky.Tests
         [Fact]
         public void Specific_sensor_content_includes_link_to_sensor_when_sensor_is_object()
         {
-            registry.Register(() => new FileInfo("c:\\temp\\foo.txt"), sensorName);
+            registry.Add(() => new FileInfo("c:\\temp\\foo.txt"), sensorName);
             var response = httpClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result;
 
             dynamic sensorValue = JObject.Parse(response);

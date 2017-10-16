@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -6,12 +7,20 @@ namespace Peaky
 {
     public class SensorRegistry : Collection<DiagnosticSensor>
     {
+        public SensorRegistry()
+        {
+        }
+
+        public SensorRegistry(IEnumerable<DiagnosticSensor> list) : base(list.ToList())
+        {
+        }
+
         /// <summary>
         ///   Registers the specified sensor.
         /// </summary>
         /// <param name="sensor"> A function that returns the sensor result. </param>
         /// <param name="name"> The name of the sensor. </param>
-        public void Register<T>(Func<T> sensor, string name = null)
+        public void Add<T>(Func<T> sensor, string name = null)
         {
             var anonymousMethodInfo = sensor.GetAnonymousMethodInfo();
 

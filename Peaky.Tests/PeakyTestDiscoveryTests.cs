@@ -26,15 +26,17 @@ namespace Peaky.Tests
         {
             disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
 
-            apiClient = new PeakyService(
-                    targets =>
-                        targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
-                               .Add("production", "widgetapi", new Uri("http://widgets.com"))
-                               .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
-                               .Add("production", "sprocketapi", new Uri("http://sprockets.com")))
-                .CreateHttpClient();
+            var peakyService = new PeakyService(
+                targets =>
+                    targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
+                           .Add("production", "widgetapi", new Uri("http://widgets.com"))
+                           .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
+                           .Add("production", "sprocketapi", new Uri("http://sprockets.com")));
+
+            apiClient = peakyService.CreateHttpClient();
 
             disposables.Add(apiClient);
+            disposables.Add(peakyService);
         }
 
         public void Dispose() => disposables.Dispose();

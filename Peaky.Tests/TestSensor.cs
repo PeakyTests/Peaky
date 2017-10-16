@@ -12,7 +12,7 @@ namespace Peaky.Tests
         [DiagnosticSensor]
         public static object SensorMethod()
         {
-            return GetSensorValue == null ? null : GetSensorValue();
+            return GetSensorValue?.Invoke();
         }
     }
 }

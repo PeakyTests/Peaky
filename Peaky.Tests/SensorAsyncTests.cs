@@ -7,22 +7,25 @@ using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Recipes;
-using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Peaky.Tests
 {
     public class SensorAsyncTests : IDisposable
     {
-        private static HttpClient apiClient;
+        private static HttpClient peakyService;
         private readonly string sensorName;
-        private SensorRegistry registry;
+        private readonly SensorRegistry registry;
 
         public SensorAsyncTests()
         {
-            apiClient = new PeakyService().CreateHttpClient();
+            registry = new SensorRegistry(DiagnosticSensor.DiscoverSensors());
+
+            peakyService = new PeakyService(
+                configureServices: s => s.AddSingleton(registry)).CreateHttpClient();
+
             sensorName = Any.AlphanumericString(10, 20);
-            registry = new SensorRegistry();
         }
 
         public void Dispose()
@@ -31,44 +34,43 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_a_sensor_returning_a_Task_of_anonymous_type_is_requested_specifically_then_the_Result_is_returned()
+        public async Task When_a_sensor_returning_a_Task_of_anonymous_type_is_requested_specifically_then_the_Result_is_returned()
         {
             var words = Any.Paragraph(5);
             var sensorResult = new
             {
                 words
             };
-            registry.Register(() => Task.Run(() => sensorResult), sensorName);
+            registry.Add(() => Task.Run(() => sensorResult), sensorName);
 
-            dynamic result = JObject.Parse(apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result);
+            var result = await peakyService.GetStringAsync("http://blammo.com/sensors/" + sensorName);
 
-            ((string) result.words)
-                .Should()
-                .Be(words);
+            result.Should().Contain("words");
+            result.Should().Contain(words);
         }
 
         [Fact]
-        public void When_a_sensor_returning_a_Task_is_requested_specifically_then_the_Result_is_returned()
+        public async Task When_a_sensor_returning_a_Task_is_requested_specifically_then_the_Result_is_returned()
         {
             var words = Any.Paragraph(5);
-            registry.Register(() => Task.Run(() => words), sensorName);
+            registry.Add(() => Task.Run(() => words), sensorName);
 
-            dynamic result = JObject.Parse(apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result);
+            var result = await peakyService.GetStringAsync("http://blammo.com/sensors/" + sensorName);
 
-            ((string) result.value)
-                .Should()
-                .Be(words);
+            result.Should()
+                  .Contain(words);
         }
 
         [Fact]
-        public void When_all_sensors_are_requested_then_the_Result_values_are_returned_for_those_that_return_Tasks()
+        public async Task When_all_sensors_are_requested_then_the_Result_values_are_returned_for_those_that_return_Tasks()
         {
             var words = Any.Paragraph(5);
-            TestSensor.GetSensorValue = () => Task.Run(() => words);
+            TestSensor.GetSensorValue = () =>
+            {
+                return Task.Run(() => words);
+            };
 
-            var result = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
-
-            Console.WriteLine(result);
+            var result = await peakyService.GetStringAsync("http://blammo.com/sensors/");
 
             result.Should()
                   .Contain(string.Format("\"SensorMethod\":\"{0}\"", words));
@@ -78,25 +80,21 @@ namespace Peaky.Tests
         public void When_all_sensors_are_requested_and_some_are_slow_async_they_are_combined_with_synchronous_sensors()
         {
             var testSensor = Any.Paragraph(5);
-            var dynamicSensor = Any.Paragraph(7);
+            var dynamicSensor = Any.Paragraph(5);
 
             TestSensor.GetSensorValue = () => Task.Run(() =>
             {
-                Thread.Sleep(Any.Int(3000, 5000));
+                Thread.Sleep(Any.Int(1000, 2000));
                 return testSensor;
             });
 
-            var registry = new SensorRegistry();
-
-            registry.Register(() => Task.Run(() =>
+            registry.Add(() => Task.Run(() =>
             {
                 Thread.Sleep(Any.Int(3000, 5000));
                 return dynamicSensor;
             }), sensorName);
 
-            var result = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
-
-            Console.WriteLine(result);
+            var result = peakyService.GetStringAsync("http://blammo.com/sensors/").Result;
 
             result.Should()
                   .Contain(string.Format("\"SensorMethod\":\"{0}\"", testSensor))

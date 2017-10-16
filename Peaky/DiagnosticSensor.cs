@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Linq;
 using System.Threading.Tasks;
+using Pocket;
 
 namespace Peaky
 {
@@ -92,19 +93,31 @@ namespace Peaky
         /// <remarks>
         ///   If the sensor throws an exception, the exception is returned.
         /// </remarks>
-        public object Read()
+        public async Task<SensorResult> Read()
         {
             try
             {
-                return @delegate.DynamicInvoke();
+                return new SensorResult
+                {
+                    SensorName = Name,
+                    Value = @delegate.DynamicInvoke()
+                };
             }
             catch (TargetInvocationException exception)
             {
-                return exception.InnerException;
+                return new SensorResult
+                {
+                    SensorName = Name,
+                    Exception = exception.InnerException
+                };
             }
             catch (Exception exception)
             {
-                return exception;
+                return new SensorResult
+                {
+                    SensorName = Name,
+                    Exception = exception
+                };
             }
         }
 
@@ -113,27 +126,27 @@ namespace Peaky
         /// </summary>
         public static IReadOnlyCollection<DiagnosticSensor> DiscoverSensors()
         {
-            return Pocket.Discover
-                         .Types()
-                         .SelectMany(t =>
-                         {
-                             return t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
-                                                 BindingFlags.Static)
-                                     .Where(m =>
-                                     {
-                                         return m.GetCustomAttributes()
-                                                 .Any(a =>
-                                                 {
-                                                     return a.GetType().Name.Equals("DiagnosticSensor") ||
-                                                            a.GetType().Name.Equals("DiagnosticSensorAttribute");
-                                                 });
-                                     });
-                         })
-                         .Select(m =>
-                         {
-                             return new DiagnosticSensor(m);
-                         })
-                         .ToArray();
+            return Discover
+                .Types()
+                .SelectMany(t =>
+                {
+                    return t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
+                                        BindingFlags.Static)
+                            .Where(m =>
+                            {
+                                return m.GetCustomAttributes()
+                                        .Any(a =>
+                                        {
+                                            return a.GetType().Name.Equals("DiagnosticSensor") ||
+                                                   a.GetType().Name.Equals("DiagnosticSensorAttribute");
+                                        });
+                            });
+                })
+                .Select(m =>
+                {
+                    return new DiagnosticSensor(m);
+                })
+                .ToArray();
         }
 
         /// <summary>

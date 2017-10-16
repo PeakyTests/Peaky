@@ -2,12 +2,9 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using FluentAssertions;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Its.Recipes;
 using Xunit;
@@ -84,8 +81,8 @@ namespace Peaky
         [Fact]
         public void Sensor_methods_are_invoked_per_Read_call()
         {
-            var first = DiagnosticSensor.DiscoverSensors().Single(s => s.Name == "CounterSensor").Read();
-            var second = DiagnosticSensor.DiscoverSensors().Single(s => s.Name == "CounterSensor").Read();
+            var first = DiagnosticSensor.DiscoverSensors().Single(s => s.Name == "CounterSensor").Read().Result;
+            var second = DiagnosticSensor.DiscoverSensors().Single(s => s.Name == "CounterSensor").Read().Result;
 
             first.Should().NotBe(second);
         }
@@ -95,23 +92,26 @@ namespace Peaky
         {
             var result = DiagnosticSensor.DiscoverSensors()
                                          .Single(s => s.Name == "ExceptionSensor")
-                                         .Read();
+                                         .Read()
+                                         .Result
+                                         .Exception;
 
             result.Should().BeOfType<DataMisalignedException>();
         }
 
         [Fact]
-        public void Sensors_can_be_registered_at_runtime()
+        public async Task Sensors_can_be_registered_at_runtime()
         {
             var sensorName = nameof(Sensors_can_be_registered_at_runtime);
             var registry = new SensorRegistry();
-            registry.Register(() => "hello", sensorName);
+            registry.Add(() => "hello", sensorName);
 
             var sensor = registry.Single(s => s.Name == sensorName);
 
             sensor.DeclaringType.Should().Be(GetType());
             sensor.ReturnType.Should().Be(typeof(string));
-            sensor.Read().Should().Be("hello");
+            var reading = await sensor.Read();
+            reading.Value.Should().Be("hello");
         }
 
         [Fact]
@@ -121,9 +121,9 @@ namespace Peaky
 
             var registry = new SensorRegistry();
 
-            registry.Register(() => newGuid);
+            registry.Add(() => newGuid);
 
-            var sensor = registry.Single(s => s.Read().Equals(newGuid));
+            var sensor = registry.Single(s => s.Read().Result.Value.Equals(newGuid));
 
             sensor.Name.Should().Contain(nameof(When_registered_sensor_is_anonymous_then_default_name_is_derived_from_method_doing_registration));
         }
@@ -133,7 +133,7 @@ namespace Peaky
         {
             var registry = new SensorRegistry();
 
-            registry.Register(SensorNameTester);
+            registry.Add(SensorNameTester);
 
             registry.Count(s => s.Name == "SensorNameTester").Should().Be(1);
         }
@@ -145,9 +145,9 @@ namespace Peaky
 
             var registry = new SensorRegistry();
 
-            registry.Register(() => newGuid);
+            registry.Add(() => newGuid);
 
-            var sensor = registry.Single(s => s.Read().Equals(newGuid));
+            var sensor = registry.Single(s => s.Read().Result.Value.Equals(newGuid));
 
             sensor.DeclaringType.Should().Be(GetType());
         }
@@ -157,7 +157,7 @@ namespace Peaky
         {
             var registry = new SensorRegistry();
 
-            registry.Register(StaticTestSensors.ExceptionSensor);
+            registry.Add(StaticTestSensors.ExceptionSensor);
 
             var sensor = registry.Single(s => s.Name == "ExceptionSensor");
 
@@ -169,7 +169,7 @@ namespace Peaky
         {
             var sensorName = Any.Paragraph(5);
             var registry = new SensorRegistry();
-            registry.Register(AsyncTask, sensorName);
+            registry.Add(AsyncTask, sensorName);
 
             var sensor = registry.Single(s => s.Name == sensorName);
 
@@ -183,7 +183,7 @@ namespace Peaky
 
             var registry = new SensorRegistry();
 
-            registry.Register(() => "hi!", sensorName);
+            registry.Add(() => "hi!", sensorName);
 
             var sensor = registry.Single(s => s.Name == sensorName);
 
@@ -205,75 +205,6 @@ namespace Peaky
 
         private object SensorNameTester()
         {
-            return new object();
-        }
-    }
-
-    public class TestSensors
-    {
-        [DiagnosticSensor]
-        public IDictionary<string, object> DictionarySensor()
-        {
-            return new Dictionary<string, object>
-            {
-                { "an int", 42 }
-            };
-        }
-
-        [DiagnosticSensor]
-        public FileInfo FileInfoSensor()
-        {
-            return new FileInfo(@"c:\somefile.txt");
-        }
-    }
-
-    public static class StaticTestSensors
-    {
-        private static int callCount = 0;
-
-        public static Barrier Barrier;
-
-        [DiagnosticSensor]
-        internal static object InternalSensor()
-        {
-            return new object();
-        }
-
-        [DiagnosticSensor]
-        private static object PrivateSensor()
-        {
-            return new object();
-        }
-
-        [DiagnosticSensor]
-        internal static object CounterSensor()
-        {
-            return callCount++;
-        }
-
-        [DiagnosticSensor]
-        [DisplayName("custom-name")]
-        public static object CustomNamedSensor()
-        {
-            return new object();
-        }
-
-        [DiagnosticSensor]
-        public static object ExceptionSensor()
-        {
-            throw new DataMisalignedException();
-        }
-
-        [DiagnosticSensor]
-        private static object Sensor_for_Discovered_sensors_can_be_removed_at_runtime()
-        {
-            return new object();
-        }
-
-        [DiagnosticSensor]
-        private static object ConcurrencySensor()
-        {
-            Barrier.SignalAndWait();
             return new object();
         }
     }
