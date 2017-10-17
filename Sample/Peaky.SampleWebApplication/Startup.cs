@@ -20,6 +20,7 @@ namespace Peaky.SampleWebApplication
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+
             services.AddPeakyTests(RegisterTargets);
             services.AddPeakySensors();
         }
@@ -29,6 +30,7 @@ namespace Peaky.SampleWebApplication
         {
             app.UseDeveloperExceptionPage();
             app.UseMvc();
+            app.UsePeaky();
         }
 
         private void RegisterTargets(TestTargetRegistry targets)
