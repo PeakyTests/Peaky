@@ -14,9 +14,16 @@ namespace Peaky
     {
         private readonly TestTargetRegistry testTargets;
         private readonly TestDefinitionRegistry testDefinitions;
+        private readonly string pathBase;
 
-        public TestRouter(TestTargetRegistry testTargets, TestDefinitionRegistry testDefinitions)
+        public TestRouter(
+            TestTargetRegistry testTargets,
+            TestDefinitionRegistry testDefinitions,
+            string pathBase = "/tests")
         {
+            this.pathBase = pathBase ??
+                            throw new ArgumentNullException(nameof(pathBase));
+
             this.testDefinitions = testDefinitions ??
                                    throw new ArgumentNullException(nameof(testDefinitions));
             this.testTargets = testTargets ??
@@ -25,18 +32,17 @@ namespace Peaky
 
         public async Task RouteAsync(RouteContext context)
         {
-            var path = context.HttpContext.Request.Path;
-
-            var testRootPath = "/tests";
-
-            if (!path.StartsWithSegments(new PathString(testRootPath), StringComparison.OrdinalIgnoreCase))
+            if (!context.HttpContext.Request.Path.StartsWithSegments(new PathString(pathBase), StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
-            var segments = path.Value
-                               .Substring(testRootPath.Length)
-                               .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var segments = context.HttpContext
+                                  .Request
+                                  .Path
+                                  .Value
+                                  .Substring(pathBase.Length)
+                                  .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
             switch (segments.Length)
             {
@@ -125,9 +131,9 @@ namespace Peaky
         }
 
         private void RunTest(
-            string environment, 
-            string application, 
-            string testName, 
+            string environment,
+            string application,
+            string testName,
             RouteContext context)
         {
             using (Log.OnEnterAndExit())
@@ -140,10 +146,7 @@ namespace Peaky
                 }
                 catch (TestNotDefinedException)
                 {
-                    context.Handler = async httpContext =>
-                    {
-                        httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
-                    };
+                    context.Handler = async httpContext => { httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound; };
                     return;
                 }
 

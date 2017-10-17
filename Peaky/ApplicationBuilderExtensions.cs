@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Net.Http.Headers;
 
 namespace Peaky
 {
@@ -13,7 +14,7 @@ namespace Peaky
             if (!Trace.Listeners.OfType<PeakyTraceListener>().Any())
             {
                 Trace.Listeners.Add(new PeakyTraceListener());
-;            }
+            }
 
             app.UseRouter(builder =>
             {
@@ -35,13 +36,15 @@ namespace Peaky
                 if (testTargets != null &&
                     testDefinitions != null)
                 {
-                    builder.Routes.Add(
-                        new TestRouter(
-                            testTargets,
-                            testDefinitions));
+                    var uiRouter = new TestUIRouter()
+                        .AllowVerbs("GET")
+                        .Accept(new MediaTypeHeaderValue("text/html"));
+                    builder.Routes.Add(uiRouter);
+
+                    var testRouter = new TestRouter(testTargets, testDefinitions)
+                        .AllowVerbs("GET", "POST");
+                    builder.Routes.Add(testRouter);
                 }
-
-
             });
 
             return app;

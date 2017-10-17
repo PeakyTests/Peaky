@@ -4,6 +4,7 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Pocket;
 using Xunit;
@@ -46,37 +47,16 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_HTML_is_requested_then_it_contains_a_semantically_versioned_script_link()
+        public async Task When_HTML_is_requested_then_it_contains_a_semantically_versioned_script_link()
         {
             var response = RequestTestsHtml();
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = await response.Content.ReadAsStringAsync();
 
-            result.Should().Contain(@"<script src=""https://itsmonitoringux.azurewebsites.net/its.log.monitoring.js?monitoringVersion=");
+            result.Should().Contain(@"<script src=""//phillippruett.github.io/Peaky/javascripts/peaky.js?version=");
         }
 
-        [Fact]
-        public void The_script_location_for_the_UI_can_be_configured()
-        {
-            var response = RequestTestsHtml("//itscdn.azurewebsites.net/monitoring/1.0.0/monitoring.js");
-
-            var result = response.Content.ReadAsStringAsync().Result;
-
-            result.Should().Contain(@"<script src=""//itscdn.azurewebsites.net/monitoring/1.0.0/monitoring.js?monitoringVersion=");
-        }
-
-        [Fact]
-        public void The_library_script_locations_for_the_UI_can_be_configured()
-        {
-            var response = RequestTestsHtml(testUiLibraryUrls: new []{ "/jquery.js", "/knockout.js" });
-
-            var result = response.Content.ReadAsStringAsync().Result;
-
-            result.Should().Contain(@"<script src=""/jquery.js""></script>");
-            result.Should().Contain(@"<script src=""/knockout.js""></script>");
-        }
-
-        private HttpResponseMessage RequestTestsHtml(string testUiScript = null, string[] testUiLibraryUrls = null)
+        private HttpResponseMessage RequestTestsHtml()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, "http://blammo.com/tests/");
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
