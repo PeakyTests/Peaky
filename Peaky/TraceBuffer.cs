@@ -6,35 +6,18 @@ using System.Threading;
 
 namespace Peaky
 {
-    public class TraceBuffer
+    internal class TraceBuffer
     {
-        private const string TraceBufferKey = "Peaky.TraceBuffer";
-
         private readonly StringBuilder buffer = new StringBuilder();
 
         private static readonly AsyncLocal<TraceBuffer> current = new AsyncLocal<TraceBuffer>();
 
-        public void Write(string message)
-        {
-            HasContent = true;
-            buffer.AppendLine(message);
-        }
-
-        public bool HasContent { get; private set; }
+        public void Write(string message) => buffer.Append(message);
 
         public override string ToString() => buffer.ToString();
 
-        public static TraceBuffer Current
-        {
-            get
-            {
-                if (current.Value == null)
-                {
-                    current.Value = new TraceBuffer();
-                }
+        public static void Initialize() => current.Value = new TraceBuffer();
 
-                return current.Value;
-            }
-        }
+        public static TraceBuffer Current => current.Value;
     }
 }

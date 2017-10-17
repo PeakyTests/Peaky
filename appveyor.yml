@@ -5,7 +5,7 @@ build:
   project: Peaky.sln
 
 test_script:
-  - cmd: dotnet test .\Pocket.Logger\Pocket.Logger.csproj
+  - cmd: dotnet test .\Peaky.Tests\Peaky.Tests.csproj
 
 artifacts:
   - path: '**\*.nupkg'

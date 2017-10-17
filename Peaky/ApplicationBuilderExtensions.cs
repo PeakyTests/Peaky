@@ -1,3 +1,6 @@
+using System;
+using System.Diagnostics;
+using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -7,6 +10,11 @@ namespace Peaky
     {
         public static IApplicationBuilder UsePeaky(this IApplicationBuilder app)
         {
+            if (!Trace.Listeners.OfType<PeakyTraceListener>().Any())
+            {
+                Trace.Listeners.Add(new PeakyTraceListener());
+;            }
+
             app.UseRouter(builder =>
             {
                 var sensorRegistry = builder.ServiceProvider.GetService<SensorRegistry>();
@@ -32,6 +40,8 @@ namespace Peaky
                             testTargets,
                             testDefinitions));
                 }
+
+
             });
 
             return app;

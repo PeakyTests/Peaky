@@ -194,31 +194,37 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_a_test_fails_then_the_response_contains_trace_output_written_by_the_test()
+        public async Task When_a_test_fails_then_the_response_contains_trace_output_written_by_the_test()
         {
-            TestsWithTraceOutput.GetResponse = () => { throw new Exception("Doh!"); };
+            TestsWithTraceOutput.GetResponse = () =>
+            {
+                throw new Exception("Doh!");
+            };
 
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace").Result;
+            var response = await api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = await response.AsTestResult();
 
-            Console.WriteLine(result);
-
-            result.Should().Contain("Application = widgetapi | Environment = production");
-            result.Should().Contain("Doh!");
+            result.Log.Should().Contain("Doh!");
+            result.Log.Should().Contain("Application = widgetapi | Environment = production");
         }
 
-        [Fact(Skip="Coming soon")]
+        [Fact(Skip = "Coming soon")]
         public async Task When_a_test_fails_then_the_response_contains_PocketLogger_output_written_by_the_test()
         {
-            TestsWithTraceOutput.GetResponse = () => { throw new Exception("Doh!"); };
+            TestsWithTraceOutput.GetResponse = () =>
+            {
+                Logger.Log.Info("Doh!");
+                throw new Exception("oops!");
+            };
 
             var response = await api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
 
             var result = await response.Content.ReadAsStringAsync();
 
-            result.Should().Contain("Application = widgetapi | Environment = production");
             result.Should().Contain("Doh!");
+
+            result.Should().Contain("Application = widgetapi | Environment = production");
 
             throw new NotImplementedException();
         }
@@ -227,7 +233,7 @@ namespace Peaky.Tests
         public async Task When_a_test_fails_then_the_response_does_not_contains_trace_output_written_by_other_tests()
         {
             TestsWithTraceOutput.Barrier = new Barrier(2);
-            TestsWithTraceOutput.GetResponse = () => { throw new Exception("oh noes!"); };
+            TestsWithTraceOutput.GetResponse = () => throw new Exception("oh noes!");
 
             var productionResponse = api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
             var stagingResponse = api.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
@@ -262,15 +268,12 @@ namespace Peaky.Tests
             if (Barrier != null)
             {
                 Console.WriteLine("before barrier: " + target);
-                Console.WriteLine(new { TraceBuffer.Current }.ToLogString());
-
                 await Task.Yield();
-                Barrier.SignalAndWait(TimeSpan.FromSeconds(5));
+                Barrier.SignalAndWait(TimeSpan.FromSeconds(2));
                 Console.WriteLine("after barrier: " + target);
-                Console.WriteLine(new { TraceBuffer.Current }.ToLogString());
             }
 
-            Trace.WriteLine(target.ToLogString());
+            Trace.WriteLine($"Application = {target.Application} | Environment = {target.Environment}");
 
             return GetResponse();
         }

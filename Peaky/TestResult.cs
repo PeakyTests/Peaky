@@ -16,29 +16,33 @@ namespace Peaky
 
         public Exception Exception { get; private set; }
 
-        public static TestResult Pass(object returnValue, string log = "")
+        public static TestResult Pass(object returnValue)
         {
-            return new TestResult
+            var testResult = new TestResult
             {
                 ReturnValue = returnValue,
-                Log = log,
+                Log = TraceBuffer.Current?.ToString(),
                 Passed = true
             };
+
+            return testResult;
         }
 
-        public static TestResult Fail(Exception exception, string log = "")
+        public static TestResult Fail(Exception exception)
         {
             if (exception == null)
             {
                 throw new ArgumentNullException(nameof(exception));
             }
 
-            return new TestResult
+            var testResult = new TestResult
             {
-                Log = log,
+                Log = TraceBuffer.Current?.ToString(),
                 Passed = false,
                 Exception = exception
             };
+
+            return testResult;
         }
     }
 }

@@ -160,6 +160,8 @@ namespace Peaky
 
                     try
                     {
+                        TraceBuffer.Initialize();
+
                         var returnValue = await testDefinition.Run(
                                               httpContext,
                                               target.ResolveDependency);
