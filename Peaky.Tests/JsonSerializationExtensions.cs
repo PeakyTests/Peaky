@@ -34,9 +34,12 @@ namespace Peaky.Tests
         internal static async Task<TestResult> AsTestResult(this HttpResponseMessage response)
         {
             var content = response.Content;
+
             var json = await content.ReadAsStringAsync();
 
+            Console.WriteLine();
             Console.WriteLine(json);
+            Console.WriteLine();
 
             return JsonConvert.DeserializeObject<TestResult>(json);
         }

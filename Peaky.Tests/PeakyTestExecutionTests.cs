@@ -170,8 +170,6 @@ namespace Peaky.Tests
 
             var result = response.Content.ReadAsStringAsync().Result;
 
-            Console.WriteLine(result);
-
             result.Should().Contain("Application = widgetapi | Environment = production");
             result.Should().Contain("...and the response\"");
         }
@@ -205,7 +203,6 @@ namespace Peaky.Tests
 
             var result = await response.AsTestResult();
 
-            result.Log.Should().Contain("Doh!");
             result.Log.Should().Contain("Application = widgetapi | Environment = production");
         }
 
@@ -221,8 +218,6 @@ namespace Peaky.Tests
             var response = await api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
 
             var result = await response.Content.ReadAsStringAsync();
-
-            result.Should().Contain("Doh!");
 
             result.Should().Contain("Application = widgetapi | Environment = production");
 

@@ -14,7 +14,7 @@ namespace Peaky
 
         public void Write(string message) => buffer.Append(message);
 
-        public override string ToString() => buffer.ToString();
+        public override string ToString() => buffer.ToString().Trim();
 
         public static void Initialize() => current.Value = new TraceBuffer();
 

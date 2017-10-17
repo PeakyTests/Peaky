@@ -8,6 +8,6 @@ namespace Peaky.Tests
 
         public string Log { get; set; }
 
-        public string Exception { get; set; }
+        public object Exception { get; set; }
     }
 }
