@@ -98,6 +98,10 @@ namespace Peaky
                             definition =>
                                 applicableTargets
                                     .Where(definition.AppliesTo)
+                                    .Where(_ =>
+                                               MatchesFilter(
+                                                   definition.Tags,
+                                                   context.HttpContext.Request.Query))
                                     .Select(
                                         target =>
                                             new Test
@@ -147,7 +151,6 @@ namespace Peaky
 
                 if (!testDefinition.AppliesTo(target))
                 {
-                    Console.WriteLine();
                     return;
                 }
 
@@ -189,6 +192,32 @@ namespace Peaky
                     await httpContext.Response.WriteAsync(json);
                 };
             }
+        }
+
+        private static bool MatchesFilter(
+            string[] testTags,
+            IQueryCollection query)
+        {
+            //If no tags were requested, then then it is a match
+            if (!query.Any())
+            {
+                return true;
+            }
+
+            var includeTags = query.Where(t => string.Equals(
+                                              t.Value.FirstOrDefault(),
+                                              "true",
+                                              StringComparison.OrdinalIgnoreCase))
+                                   .Select(t => t.Key)
+                                   .ToArray();
+
+            var excludeTags = query.Where(t =>
+                                              string.Equals(t.Value.FirstOrDefault(), "false", StringComparison.OrdinalIgnoreCase))
+                                   .Select(t => t.Key)
+                                   .ToArray();
+
+            return !excludeTags.Intersect(testTags, StringComparer.OrdinalIgnoreCase).Any() &&
+                   includeTags.Intersect(testTags, StringComparer.OrdinalIgnoreCase).Count() == includeTags.Length;
         }
     }
 }

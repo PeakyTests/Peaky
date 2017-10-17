@@ -163,7 +163,7 @@ namespace Peaky.Tests
             result.Should().Contain("...and the response\"");
         }
 
-        [Fact]
+        [Fact(Skip = "Coming soon")]
         public void When_a_test_passes_then_the_response_contains_its_log_output_written_by_the_test()
         {
             var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_its_log").Result;
@@ -208,8 +208,8 @@ namespace Peaky.Tests
             result.Should().Contain("Doh!");
         }
 
-        [Fact]
-        public async Task When_a_test_fails_then_the_response_contains_its_log_output_written_by_the_test()
+        [Fact(Skip="Coming soon")]
+        public async Task When_a_test_fails_then_the_response_contains_PocketLogger_output_written_by_the_test()
         {
             TestsWithTraceOutput.GetResponse = () => { throw new Exception("Doh!"); };
 
@@ -217,10 +217,10 @@ namespace Peaky.Tests
 
             var result = await response.Content.ReadAsStringAsync();
 
-            Console.WriteLine(result);
-
             result.Should().Contain("Application = widgetapi | Environment = production");
             result.Should().Contain("Doh!");
+
+            throw new NotImplementedException();
         }
 
         [Fact]

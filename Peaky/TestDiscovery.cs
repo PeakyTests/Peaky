@@ -48,15 +48,12 @@ namespace Peaky
             var dictionary = new Dictionary<string, TestDefinition>();
             var collisionCount = 0;
 
-            foreach (var testDefinition in definitions)
+            foreach (var definition in definitions)
             {
-                if (!dictionary.TryAdd(testDefinition.TestName, testDefinition))
+                if (!dictionary.TryAdd(definition.TestName, definition))
                 {
-                    var name = "TEST_NAME_COLLISION_" + ++collisionCount;
-                    var definition = testDefinition;
-                    dictionary.Add(name,
-                                   new AnonymousTestDefinition(name,
-                                                               _ => throw new InvalidOperationException($"Test could not be routed:\n{definition}")));
+                    definition.TestName = $"{definition.TestName}__{++collisionCount}";
+                    dictionary.Add(definition.TestName, definition);
                 }
             }
 

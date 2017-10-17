@@ -10,7 +10,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Its.Recipes;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;
@@ -141,20 +140,9 @@ namespace Peaky.Tests
             var testList = await response.AsTestList();
 
             testList.Tests
-                    .Should().Contain(o =>
-                                          o.Url == "http://blammo.com/tests/production/widgetapi/TEST_NAME_COLLISION_1");
-        }
-
-        [Fact]
-        public void When_two_tests_have_the_same_name_then_calling_the_error_test_returns_500_and_details()
-        {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/TEST_NAME_COLLISION_1").Result;
-
-            var message = response.Content.ReadAsStringAsync().Result;
-
-            response.ShouldFailWith(HttpStatusCode.InternalServerError);
-            message.Should().Contain("Test could not be routed");
-            message.Should().Contain("CollisionTest2.name_collision");
+                    .Should()
+                    .Contain(o =>
+                                 o.Url == "http://blammo.com/tests/production/widgetapi/name_collision__1");
         }
 
         [Fact]
@@ -265,6 +253,7 @@ namespace Peaky.Tests
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=true").Result;
 
             response.ShouldSucceed();
+
             response.Content.ReadAsStringAsync().Result.Should().NotContain("passing_test");
         }
 
@@ -275,6 +264,7 @@ namespace Peaky.Tests
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=true").Result;
 
             response.ShouldSucceed();
+
             response.Content.ReadAsStringAsync().Result.Should().NotContain("tangerine");
         }
 
@@ -285,17 +275,27 @@ namespace Peaky.Tests
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
 
             response.ShouldSucceed();
-            response.Content.ReadAsStringAsync().Result.Should().Contain("honeycrisp");
+
+            var tests = response.AsTestList()
+                                .Result
+                                .Tests;
+
+            tests.Should().Contain(test => test.Url.EndsWith( "honeycrisp"));
         }
 
         [Category("Tags")]
         [Fact]
-        public void when_a_tag_is_specified_that_multiple_tests_share_then_both_are_returned()
+        public async Task when_a_tag_is_specified_that_multiple_tests_share_then_both_are_returned()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?fruit=true").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?fruit=true");
 
             response.ShouldSucceed();
-            response.Content.ReadAsStringAsync().Result.Should().Contain("honeycrisp");
+
+            var tests = response.AsTestList()
+                                .Result
+                                .Tests;
+
+            tests.Should().Contain(test => test.Url.EndsWith( "honeycrisp"));
         }
 
         [Category("Tags")]
@@ -315,7 +315,11 @@ namespace Peaky.Tests
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/?apple=false").Result;
 
             response.ShouldSucceed();
-            response.Content.ReadAsStringAsync().Result.Should().Contain("tangerine");
+            var tests = response.AsTestList()
+                                .Result
+                                .Tests;
+
+            tests.Should().Contain(test => test.Url.EndsWith( "tangerine"));
         }
 
         [Category("Tags")]
@@ -336,16 +340,16 @@ namespace Peaky.Tests
 
             await response.ShouldSucceedAsync();
 
-            JArray tests = response.Result.JsonContent().Tests;
+            var testList = await response.Result.AsTestList();
 
-            var honeycrisps = tests.Where(t => t.Value<string>("Url").EndsWith("honeycrisp")).ToArray();
+            var honeycrisps = testList.Tests.Where(t => t.Url.EndsWith("honeycrisp")).ToArray();
 
-            honeycrisps.Count().Should().BeGreaterThan(0);
+            honeycrisps.Length.Should().BeGreaterThan(0);
 
             foreach (var honeycrisp in honeycrisps)
             {
-                honeycrisp["Tags"].Should().Contain(v => v.Value<string>() == "apple");
-                honeycrisp["Tags"].Should().Contain(v => v.Value<string>() == "fruit");
+                honeycrisp.Tags.Should().Contain(v => v == "apple");
+                honeycrisp.Tags.Should().Contain(v => v == "fruit");
             }
         }
 
@@ -628,85 +632,46 @@ namespace Peaky.Tests
 
     public class BigAppleTests : IHaveTags
     {
-        public string[] Tags
+        public string[] Tags => new[]
         {
-            get
-            {
-                return new[]
-                {
-                    "Brooklyn", "Queens"
-                };
-            }
-        }
+            "Brooklyn", "Queens"
+        };
 
-        public dynamic manhattan()
-        {
-            return "Empire State";
-        }
+        public dynamic manhattan() => "Empire State";
     }
 
     public class AppleTests : IHaveTags
     {
-        public string[] Tags
+        public string[] Tags => new[]
         {
-            get
-            {
-                return new[]
-                {
-                    "apple", "fruit"
-                };
-            }
-        }
+            "apple", "fruit"
+        };
 
-        public dynamic honeycrisp()
-        {
-            return "Yum!";
-        }
+        public dynamic honeycrisp() => "Yum!";
     }
 
     public class OrangeTests : IHaveTags
     {
-        public string[] Tags
+        public string[] Tags => new[]
         {
-            get
-            {
-                return new[]
-                {
-                    "orange", "fruit"
-                };
-            }
-        }
+            "orange", "fruit"
+        };
 
-        public dynamic tangerine()
-        {
-            return "Oooh!";
-        }
+        public dynamic tangerine() => "Oooh!";
     }
 
     public class InternalOnlyTests : IApplyToEnvironment
     {
-        public dynamic internal_only_test()
-        {
-            return "success!";
-        }
+        public dynamic internal_only_test() => "success!";
 
-        public bool AppliesToEnvironment(string environment)
-        {
-            return !environment.Equals("production", StringComparison.OrdinalIgnoreCase);
-        }
+        public bool AppliesToEnvironment(string environment) => !environment.Equals("production", StringComparison.OrdinalIgnoreCase);
     }
 
     public class WidgetApiTests : IApplyToApplication
     {
-        public dynamic widgetapi_only_test()
-        {
-            return "success!";
-        }
+        public dynamic widgetapi_only_test() => "success!";
 
-        public bool AppliesToApplication(string application)
-        {
-            return application.Equals("widgetapi", StringComparison.OrdinalIgnoreCase);
-        }
+        public bool AppliesToApplication(string application) => application.Equals("widgetapi", StringComparison.OrdinalIgnoreCase);
     }
 
     public class CollisionTest1 : IPeakyTest

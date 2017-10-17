@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -18,6 +19,7 @@ namespace Peaky
     {
         private readonly Func<T, dynamic> defaultExecuteTestMethod;
         private readonly MethodInfo methodInfo;
+        private readonly ConcurrentDictionary<TestTarget, ForTarget> applicabilityCache = new ConcurrentDictionary<TestTarget, ForTarget>();
 
         internal TestDefinition(MethodInfo methodInfo)
         {
@@ -27,47 +29,25 @@ namespace Peaky
             }
 
             this.methodInfo = methodInfo;
-            defaultExecuteTestMethod = BuildTestMethodExpression(methodInfo, methodInfo.GetParameters().Select(p => Expression.Constant(p.DefaultValue)));
+
+            TestName = methodInfo.Name;
+
+            defaultExecuteTestMethod = BuildTestMethodExpression(
+                methodInfo,
+                methodInfo.GetParameters()
+                          .Select(p => Expression.Constant(p.DefaultValue)));
         }
 
-        public override string TestName => methodInfo.Name;
+        public override bool AppliesTo(TestTarget target) =>
+            applicabilityCache.GetOrAdd(target, t => new ForTarget(t))
+                              .IsApplicable;
 
-        public override bool AppliesTo(TestTarget target)
-        {
-            // TODO: (AppliesTo) cache the result per target
-            object testClassInstance;
-            try
-            {
-                testClassInstance = target.ResolveDependency(typeof(T));
-            }
-            catch (Exception exception)
-            {
-                Log.Warning("Dependency resolution error while trying to instantiate {type}", exception, typeof(T));
-                return true;
-            }
-
-            if (target.Environment != null &&
-                testClassInstance is IApplyToEnvironment e && 
-                !e.AppliesToEnvironment(target.Environment))
-            {
-                return false;
-            }
-
-            if (target.Application != null &&
-                testClassInstance is IApplyToApplication a && 
-                !a.AppliesToApplication(target.Application))
-            {
-                return false;
-            }
-
-            if (testClassInstance is IApplyToTarget t && 
-                !t.AppliesToTarget(target))
-            {
-                return false;
-            }
-
-            return true;
-        }
+        public override string[] Tags =>
+            applicabilityCache.FirstOrDefault()
+                              .Value
+                              ?.Tags
+            ??
+            Array.Empty<string>();
 
         internal override async Task<object> Run(HttpContext context, Func<Type, object> resolve)
         {
@@ -141,6 +121,65 @@ namespace Peaky
                 voidRunMethod(testClassInstance);
                 return new object();
             };
+        }
+
+        private class ForTarget
+        {
+            private readonly TestTarget target;
+
+            public ForTarget(TestTarget target)
+            {
+                this.target = target ?? throw new ArgumentNullException(nameof(target));
+
+                // TODO: (AppliesTo) cache the result per target
+                try
+                {
+                    Initialize();
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning("Dependency resolution error while trying to instantiate {type}", exception, typeof(T));
+
+                    // return true which will allow the test execution error to be displayed 
+                    IsApplicable = true;
+                }
+            }
+
+            private void Initialize()
+            {
+                var testClassInstance = target.ResolveDependency(typeof(T));
+
+                if (target.Environment != null &&
+                    testClassInstance is IApplyToEnvironment e &&
+                    !e.AppliesToEnvironment(target.Environment))
+                {
+                    IsApplicable = false;
+                }
+                else if (target.Application != null &&
+                         testClassInstance is IApplyToApplication a &&
+                         !a.AppliesToApplication(target.Application))
+                {
+                    IsApplicable = false;
+                }
+                else if (testClassInstance is IApplyToTarget t &&
+                         !t.AppliesToTarget(target))
+                {
+                    IsApplicable = false;
+                }
+                else
+                {
+                    IsApplicable = true;
+                }
+
+                if (testClassInstance is IHaveTags hasTags)
+                {
+                    Tags = hasTags.Tags;
+                }
+            }
+
+            public string[] Tags { get; private set; }
+
+            public bool IsApplicable { get; private set; }
         }
     }
 }

@@ -25,18 +25,21 @@ namespace Peaky.Tests
             };
         }
 
-        private HttpClient CreateApiClient(Func<HttpClient, bool> buildChecker)
+        internal delegate bool TestApplicabilityCheck();
+
+        private HttpClient CreateApiClient(TestApplicabilityCheck applies)
         {
             var testApi = new PeakyService(targets =>
-                                          targets.Add("staging",
-                                                      "widgetapi",
-                                                      new Uri("http://staging.widgets.com"),
-                                                      dependencies =>
-                                                          dependencies
-                                                              .Register(() => buildChecker)),
+                                               targets.Add("staging",
+                                                           "widgetapi",
+                                                           new Uri("http://staging.widgets.com"),
+                                                           dependencies =>
+                                                               dependencies
+                                                                   .Register(() => applies)),
                                            testTypes: new[] { typeof(TestsConstrainedToTarget) });
 
             disposables.Add(testApi);
+
             return testApi.CreateHttpClient();
         }
 
@@ -45,19 +48,21 @@ namespace Peaky.Tests
         [Fact]
         public async Task A_test_can_be_hidden_based_on_the_target_application_build_date_sensor()
         {
-            var response = await CreateApiClient(BuildDateAfter(DateTime.Now.AddDays(10))).GetAsync("http://tests.com/tests");
+            var response = await CreateApiClient(() => false)
+                               .GetAsync("http://tests.com/tests");
 
             var testList = await response.AsTestList();
 
             testList.Tests
-                .Should()
-                .NotContain(t => t.Url.Contains("target_based_constraint_test"));
+                    .Should()
+                    .NotContain(t => t.Url.Contains("target_based_constraint_test"));
         }
 
         [Fact]
         public async Task A_test_can_be_shown_based_on_the_target_application_build_date_sensor()
         {
-            var response = await CreateApiClient(BuildDateAfter(DateTime.Now.Subtract(TimeSpan.FromDays(1000)))).GetAsync("http://tests.com/tests");
+            var response = await CreateApiClient(() => true)
+                               .GetAsync("http://tests.com/tests");
 
             JArray tests = response.JsonContent().Tests;
 
@@ -69,7 +74,7 @@ namespace Peaky.Tests
         {
             var constraintCalls = 0;
 
-            var apiClient = CreateApiClient(_ =>
+            var apiClient = CreateApiClient(() =>
             {
                 Interlocked.Increment(ref constraintCalls);
                 return false;
@@ -82,31 +87,15 @@ namespace Peaky.Tests
             constraintCalls.Should().Be(1);
         }
 
-        private static Func<HttpClient, bool> BuildDateAfter(DateTime buildDateAfter)
-        {
-            return httpClient =>
-            {
-                var sensorResult = httpClient.GetAsync("/sensors")
-                                             .Result
-                                             .JsonContent();
-                DateTime buildDate = sensorResult.Version["Build date"];
-                return buildDate > buildDateAfter;
-            };
-        }
-
         private class TestsConstrainedToTarget : IApplyToTarget
         {
             private readonly HttpClient httpClient;
-            private readonly Func<HttpClient, bool> buildChecker;
+            private readonly TestApplicabilityCheck applies;
 
-            public TestsConstrainedToTarget(HttpClient httpClient, Func<HttpClient, bool> buildChecker)
+            public TestsConstrainedToTarget(HttpClient httpClient, TestApplicabilityCheck applies)
             {
-                if (httpClient == null)
-                {
-                    throw new ArgumentNullException(nameof(httpClient));
-                }
-                this.httpClient = httpClient;
-                this.buildChecker = buildChecker;
+                this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+                this.applies = applies;
             }
 
             public void target_based_constraint_test()
@@ -115,7 +104,14 @@ namespace Peaky.Tests
 
             public bool AppliesToTarget(TestTarget target)
             {
-                return buildChecker?.Invoke(httpClient) ?? false;
+                if (applies != null)
+                {
+                    return applies();
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
     }
