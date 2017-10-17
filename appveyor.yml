@@ -1,17 +1,13 @@
-install:
-  - nuget restore
-
 configuration:
   - Release
 
 build:
   project: Peaky.sln
-  publish_nuget: true
 
-test:
-  assemblies:
-    - '**\*Tests.dll'
+test_script:
+  - cmd: dotnet test .\Pocket.Logger\Pocket.Logger.csproj
 
 artifacts:
-  - path: '*.nupkg'
+  - path: '**\*.nupkg'
+
 
