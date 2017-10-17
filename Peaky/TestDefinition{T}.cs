@@ -19,7 +19,7 @@ namespace Peaky
     {
         private readonly Func<T, dynamic> defaultExecuteTestMethod;
         private readonly MethodInfo methodInfo;
-        private readonly ConcurrentDictionary<TestTarget, ForTarget> applicabilityCache = new ConcurrentDictionary<TestTarget, ForTarget>();
+        private readonly ConcurrentDictionary<TestTarget, DetailsForTarget> applicabilityCache = new ConcurrentDictionary<TestTarget, DetailsForTarget>();
 
         internal TestDefinition(MethodInfo methodInfo)
         {
@@ -39,7 +39,7 @@ namespace Peaky
         }
 
         public override bool AppliesTo(TestTarget target) =>
-            applicabilityCache.GetOrAdd(target, t => new ForTarget(t))
+            applicabilityCache.GetOrAdd(target, t => new DetailsForTarget(t))
                               .IsApplicable;
 
         public override string[] Tags =>
@@ -123,15 +123,14 @@ namespace Peaky
             };
         }
 
-        private class ForTarget
+        private class DetailsForTarget
         {
             private readonly TestTarget target;
 
-            public ForTarget(TestTarget target)
+            public DetailsForTarget(TestTarget target)
             {
                 this.target = target ?? throw new ArgumentNullException(nameof(target));
 
-                // TODO: (AppliesTo) cache the result per target
                 try
                 {
                     Initialize();

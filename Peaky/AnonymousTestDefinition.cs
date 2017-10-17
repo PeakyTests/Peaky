@@ -9,15 +9,11 @@ namespace Peaky
 {
     internal class AnonymousTestDefinition : TestDefinition
     {
-        // FIX: (AnonymousTestDefinition) given this is only used in one place, it could be changed to something like InvalidTestDefinition
         private readonly Func<HttpContext, Task<object>> run;
 
-        public AnonymousTestDefinition(Func<HttpContext, Task<object>> run)
-        {
-          
+        public AnonymousTestDefinition(Func<HttpContext, Task<object>> run) =>
             this.run = run ??
                        throw new ArgumentNullException(nameof(run));
-        }
 
         internal override async Task<object> Run(HttpContext _, Func<Type, object> resolve) =>
             await run(_);
