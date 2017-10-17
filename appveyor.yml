@@ -1,13 +1,19 @@
-configuration:
-  - Release
-
-build:
-  project: Peaky.sln
-
-test_script:
-  - cmd: dotnet test .\Peaky.Tests\Peaky.Tests.csproj
-
 artifacts:
   - path: '**\*.nupkg'
 
+configuration:
+  - Release
 
+before_build:
+  - cmd: dotnet restore Peaky.sln
+
+build_script:
+  - cmd: >-
+      dotnet build Peaky.sln /p:VersionPrefix=%APPVEYOR_BUILD_VERSION%
+
+after_build:
+  - cmd: >-
+      dotnet pack .\Peaky\Peaky.csproj --no-build /p:VersionPrefix=%APPVEYOR_BUILD_VERSION%
+
+test_script:
+  - cmd: dotnet test .\Peaky.Tests\Peaky.Tests.csproj
