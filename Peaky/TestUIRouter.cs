@@ -8,45 +8,42 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Peaky
 {
-    public class TestUIRouter : IRouter
+    internal class TestUIRouter : PeakyRouter
     {
         private static readonly string version = typeof(TestUIRouter)
             .Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             .InformationalVersion;
 
-        private readonly string pathBase;
         private readonly string html;
 
-        public TestUIRouter(string pathBase = "/tests")
+        public TestUIRouter(string pathBase = "/tests") : base(pathBase)
         {
-            this.pathBase = pathBase ?? throw new ArgumentNullException(nameof(pathBase));
-
-            html = SetHtml();
+            html = InitializeHtml();
         }
 
-        public async Task RouteAsync(RouteContext context)
+        public override async Task RouteAsyncInternal(RouteContext context)
         {
-            if (!context.HttpContext.Request.Path.StartsWithSegments(new PathString(pathBase), StringComparison.OrdinalIgnoreCase))
+            if (RouteMatches(context))
             {
-                return;
+                context.Handler = async httpContext =>
+                {
+                    await context.HttpContext.Response.WriteAsync(html);
+                };
             }
-
-            context.Handler = async httpContext =>
-            {
-                await context.HttpContext.Response.WriteAsync(html);
-            };
         }
 
-        public VirtualPathData GetVirtualPath(VirtualPathContext context) => null;
-
-        private string SetHtml(
+        private static string InitializeHtml(
             string scriptUrl = "//phillippruett.github.io/Peaky/javascripts/peaky.js",
             IEnumerable<string> libraryUrls = null,
             IEnumerable<string> styleSheets = null)
         {
-            var libraryScriptRefs = string.Join("\n", (libraryUrls ?? Array.Empty<string>()).Select(u => $@"<script src=""{u}""></script>"));
-            var styleSheetRefs = string.Join("\n", (styleSheets ?? Array.Empty<string>()).Select(u => $@"<link rel=""stylesheet"" href=""{u}"" >"));
+            var libraryScriptRefs = string.Join("\n", (libraryUrls ?? Array.Empty<string>())
+                                                .Select(u => $@"<script src=""{u}""></script>"));
+
+            var styleSheetRefs =
+                string.Join("\n", (styleSheets ?? new[] { "//phillippruett.github.io/Peaky/stylesheets/peaky.css" })
+                            .Select(u => $@"<link rel=""stylesheet"" href=""{u}"" >"));
 
             return
                 $@"<!doctype html>

@@ -11,13 +11,13 @@ using static Pocket.Logger<Peaky.SensorRouter>;
 
 namespace Peaky
 {
-    public class SensorRouter : IRouter
+    internal class SensorRouter : PeakyRouter
     {
         private readonly AuthorizeSensors authorizeSensors;
 
         private readonly SensorRegistry sensors;
 
-        public SensorRouter(SensorRegistry sensors, AuthorizeSensors authorizeSensors)
+        public SensorRouter(SensorRegistry sensors, AuthorizeSensors authorizeSensors, string pathBase = "/sensors") : base(pathBase)
         {
             this.authorizeSensors = authorizeSensors ??
                                     throw new ArgumentNullException(nameof(authorizeSensors));
@@ -25,27 +25,22 @@ namespace Peaky
                            throw new ArgumentNullException(nameof(sensors));
         }
 
-        public async Task RouteAsync(RouteContext context)
+        public override async Task RouteAsyncInternal(RouteContext context)
         {
-            authorizeSensors(context);
 
+            // FIX: (RouteAsyncInternal) make authorization another AnonymousRouter
+            authorizeSensors(context);
             if (context.Handler != null)
             {
                 return;
             }
 
-            var path = context.HttpContext.Request.Path;
-
-            var testRootPath = "/sensors";
-
-            if (!path.StartsWithSegments(new PathString(testRootPath), StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
-
-            var segments = path.Value
-                               .Substring(testRootPath.Length)
-                               .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            var segments = context.HttpContext
+                                  .Request
+                                  .Path
+                                  .Value
+                                  .Substring(PathBase.Value.Length)
+                                  .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
             switch (segments.Length)
             {
@@ -115,7 +110,5 @@ namespace Peaky
                 };
             }
         }
-
-        public VirtualPathData GetVirtualPath(VirtualPathContext context) => null;
     }
 }

@@ -1,31 +1,63 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 
 namespace Peaky
 {
     internal static class RouterExtensions
     {
-        public static IRouter Accept(this IRouter router, MediaTypeHeaderValue mediaType)
+        public static PeakyRouter Accept(
+            this PeakyRouter router,
+            params string[] mediaTypes)
         {
             if (router == null)
             {
                 throw new ArgumentNullException(nameof(router));
             }
 
+            var acceptedMediaTypes = mediaTypes.ToMediaTypeCollection();
+
             return new AnonymousRouter(
                 routeAsync: async context =>
                 {
-                    var acceptHeader = context.HttpContext.Request.ContentType;
+                    var acceptHeader = context.HttpContext.Request.Headers[HeaderNames.Accept];
 
-                    await router.RouteAsync(context);
+                    if (acceptHeader.IsSubsetOfAny(acceptedMediaTypes))
+                    {
+                        await router.RouteAsync(context);
+                    }
                 },
-                getVirtualPath: router.GetVirtualPath);
+                pathBase: router.PathBase);
         }
 
-        public static IRouter AllowVerbs(this IRouter router, params string[] verbs)
+        private static MediaTypeCollection ToMediaTypeCollection(this string[] mediaTypes)
+        {
+            var acceptedMediaTypes = new MediaTypeCollection();
+            foreach (var arg in mediaTypes)
+            {
+                acceptedMediaTypes.Add(arg);
+            }
+            return acceptedMediaTypes;
+        }
+
+        private static bool IsSubsetOfAny(
+            this StringValues requestedMediaType,
+            MediaTypeCollection mediaTypes)
+        {
+            if (requestedMediaType == default(StringValues))
+            {
+                return false;
+            }
+
+            var requested = new MediaType(requestedMediaType);
+
+            return mediaTypes.Any(mediaType => requested.IsSubsetOf(new MediaType(mediaType)));
+        }
+
+        public static PeakyRouter AllowVerbs(this PeakyRouter router, params string[] verbs)
         {
             if (router == null)
             {
@@ -39,12 +71,15 @@ namespace Peaky
                 {
                     if (!allowedVerbs.Contains(context.HttpContext.Request.Method))
                     {
-                        context.Handler = async httpContext => httpContext.Response.StatusCode = 405;
+                        context.Handler = async httpContext =>
+                        {
+                            httpContext.Response.StatusCode = 405;
+                        };
                     }
 
-                    await router.RouteAsync(context);
+                    await router.RouteAsyncInternal(context);
                 },
-                getVirtualPath: router.GetVirtualPath);
+                pathBase: router.PathBase);
         }
     }
 }

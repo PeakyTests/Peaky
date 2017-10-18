@@ -4,26 +4,18 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Peaky
 {
-    internal class AnonymousRouter : IRouter
+    internal class AnonymousRouter : PeakyRouter
     {
         private readonly Func<RouteContext, Task> routeAsync;
-        private readonly Func<VirtualPathContext, VirtualPathData> getVirtualPath;
 
         public AnonymousRouter(
             Func<RouteContext, Task> routeAsync,
-            Func<VirtualPathContext, VirtualPathData> getVirtualPath)
+            string pathBase) : base(pathBase)
         {
-            this.routeAsync = routeAsync ?? 
+            this.routeAsync = routeAsync ??
                               throw new ArgumentNullException(nameof(routeAsync));
-            this.getVirtualPath = getVirtualPath ??
-                                  throw new ArgumentNullException(nameof(getVirtualPath));
         }
 
-        public async Task RouteAsync(RouteContext context) => await routeAsync(context);
-
-        public  VirtualPathData GetVirtualPath(VirtualPathContext context)
-        {
-            return getVirtualPath(context);
-        }
+        public override async Task RouteAsyncInternal(RouteContext context) => await routeAsync(context);
     }
 }

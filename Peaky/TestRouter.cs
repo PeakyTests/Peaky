@@ -10,7 +10,7 @@ using static Pocket.Logger<Peaky.TestRouter>;
 
 namespace Peaky
 {
-    public class TestRouter : IRouter
+    internal class TestRouter : PeakyRouter
     {
         private readonly TestTargetRegistry testTargets;
         private readonly TestDefinitionRegistry testDefinitions;
@@ -19,7 +19,7 @@ namespace Peaky
         public TestRouter(
             TestTargetRegistry testTargets,
             TestDefinitionRegistry testDefinitions,
-            string pathBase = "/tests")
+            string pathBase = "/tests") : base(pathBase)
         {
             this.pathBase = pathBase ??
                             throw new ArgumentNullException(nameof(pathBase));
@@ -30,7 +30,7 @@ namespace Peaky
                                throw new ArgumentNullException(nameof(testTargets));
         }
 
-        public async Task RouteAsync(RouteContext context)
+        public override async Task RouteAsyncInternal(RouteContext context)
         {
             if (!context.HttpContext.Request.Path.StartsWithSegments(new PathString(pathBase), StringComparison.OrdinalIgnoreCase))
             {
@@ -64,8 +64,6 @@ namespace Peaky
                     break;
             }
         }
-
-        public VirtualPathData GetVirtualPath(VirtualPathContext context) => null;
 
         private void ListTests(
             string environment,

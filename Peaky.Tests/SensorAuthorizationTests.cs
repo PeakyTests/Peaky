@@ -53,6 +53,5 @@ namespace Peaky.Tests
                     .Should()
                     .Be(HttpStatusCode.MethodNotAllowed);
         }
-
     }
 }

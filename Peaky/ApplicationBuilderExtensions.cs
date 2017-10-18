@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Net.Http.Headers;
 
 namespace Peaky
 {
@@ -24,9 +23,9 @@ namespace Peaky
                 {
                     builder.Routes.Add(
                         new SensorRouter(
-                            sensorRegistry,
-                            builder.ServiceProvider.GetRequiredService<AuthorizeSensors>()
-                        ).AllowVerbs("GET"));
+                                sensorRegistry,
+                                builder.ServiceProvider.GetRequiredService<AuthorizeSensors>())
+                            .AllowVerbs("GET"));
                 }
 
                 var testTargets = builder.ServiceProvider.GetService<TestTargetRegistry>();
@@ -38,7 +37,7 @@ namespace Peaky
                 {
                     var uiRouter = new TestUIRouter()
                         .AllowVerbs("GET")
-                        .Accept(new MediaTypeHeaderValue("text/html"));
+                        .Accept("text/html");
                     builder.Routes.Add(uiRouter);
 
                     var testRouter = new TestRouter(testTargets, testDefinitions)
