@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using Its.Log.Instrumentation;
 
 namespace Peaky.Tests
 {
@@ -13,7 +12,7 @@ namespace Peaky.Tests
         [DiagnosticSensor]
         public static object SensorMethod()
         {
-            return GetSensorValue == null ? null : GetSensorValue();
+            return GetSensorValue?.Invoke();
         }
     }
 }

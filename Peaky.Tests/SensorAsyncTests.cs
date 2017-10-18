@@ -5,99 +5,94 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Http;
 using FluentAssertions;
-using Its.Log.Instrumentation;
 using Its.Recipes;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.DependencyInjection;
+using Pocket;
+using Xunit;
 
 namespace Peaky.Tests
 {
-    [TestFixture]
-    public class SensorAsyncTests
+    public class SensorAsyncTests : IDisposable
     {
         private static HttpClient apiClient;
-        private string sensorName;
+        private readonly string sensorName;
+        private readonly SensorRegistry registry;
+        private readonly CompositeDisposable disposables = new CompositeDisposable();
 
         public SensorAsyncTests()
         {
-            var configuration1 = new HttpConfiguration();
-            configuration1.MapSensorRoutes(ctx => true);
-            var server = new HttpServer(configuration1);
-            apiClient = new HttpClient(server);
-        }
+            registry = new SensorRegistry(DiagnosticSensor.DiscoverSensors());
 
-        [SetUp]
-        public void SetUp()
-        {
+            var peaky = new PeakyService(configureServices: s => s.AddSingleton(registry));
+
+            apiClient = peaky.CreateHttpClient();
+
             sensorName = Any.AlphanumericString(10, 20);
         }
 
-        [TearDown]
-        public void TearDown()
+        public void Dispose()
         {
-            DiagnosticSensor.Remove(sensorName);
+            disposables.Dispose();
             TestSensor.GetSensorValue = null;
         }
 
-        [Test]
-        public void When_a_sensor_returning_a_Task_of_anonymous_type_is_requested_specifically_then_the_Result_is_returned()
+        [Fact]
+        public async Task When_a_sensor_returning_a_Task_of_anonymous_type_is_requested_specifically_then_the_Result_is_returned()
         {
             var words = Any.Paragraph(5);
             var sensorResult = new
             {
                 words
             };
-            DiagnosticSensor.Register(() => Task.Run(() => sensorResult), sensorName);
+            registry.Add(() => Task.Run(() => sensorResult), sensorName);
 
-            dynamic result = JObject.Parse(apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result);
+            var result = await apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName);
 
-            ((string) result.words)
-                .Should()
-                .Be(words);
+            result.Should().Contain("words");
+            result.Should().Contain(words);
         }
 
-        [Test]
-        public void When_a_sensor_returning_a_Task_is_requested_specifically_then_the_Result_is_returned()
+        [Fact]
+        public async Task When_a_sensor_returning_a_Task_is_requested_specifically_then_the_Result_is_returned()
         {
             var words = Any.Paragraph(5);
-            DiagnosticSensor.Register(() => Task.Run(() => words), sensorName);
+            registry.Add(() => Task.Run(() => words), sensorName);
 
-            dynamic result = JObject.Parse(apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName).Result);
-
-            ((string) result.value)
-                .Should()
-                .Be(words);
-        }
-
-        [Test]
-        public void When_all_sensors_are_requested_then_the_Result_values_are_returned_for_those_that_return_Tasks()
-        {
-            var words = Any.Paragraph(5);
-            TestSensor.GetSensorValue = () => Task.Run(() => words);
-
-            var result = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
-
-            Console.WriteLine(result);
+            var result = await apiClient.GetStringAsync("http://blammo.com/sensors/" + sensorName);
 
             result.Should()
-                  .Contain(string.Format("\"SensorMethod\":\"{0}\"", words));
+                  .Contain(words);
         }
 
-        [Test]
+        [Fact]
+        public async Task When_all_sensors_are_requested_then_the_Result_values_are_returned_for_those_that_return_Tasks()
+        {
+            var words = Any.Paragraph(5);
+            TestSensor.GetSensorValue = () =>
+            {
+                return Task.Run(() => words);
+            };
+
+            var result = await apiClient.GetStringAsync("http://blammo.com/sensors/");
+
+            result.Should()
+                  .Contain(string.Format("\"SensorMethod\":{{\"Value\":\"{0}\"", words));
+        }
+
+        [Fact]
         public void When_all_sensors_are_requested_and_some_are_slow_async_they_are_combined_with_synchronous_sensors()
         {
             var testSensor = Any.Paragraph(5);
-            var dynamicSensor = Any.Paragraph(7);
+            var dynamicSensor = Any.Paragraph(5);
 
             TestSensor.GetSensorValue = () => Task.Run(() =>
             {
-                Thread.Sleep(Any.Int(3000, 5000));
+                Thread.Sleep(Any.Int(1000, 2000));
                 return testSensor;
             });
 
-            DiagnosticSensor.Register(() => Task.Run(() =>
+            registry.Add(() => Task.Run(() =>
             {
                 Thread.Sleep(Any.Int(3000, 5000));
                 return dynamicSensor;
@@ -105,12 +100,10 @@ namespace Peaky.Tests
 
             var result = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
 
-            Console.WriteLine(result);
-
             result.Should()
-                  .Contain(string.Format("\"SensorMethod\":\"{0}\"", testSensor))
+                  .Contain(string.Format("\"SensorMethod\":{{\"Value\":\"{0}\"", testSensor))
                   .And
-                  .Contain(string.Format("\"{0}\":\"{1}\"", sensorName, dynamicSensor));
+                  .Contain(string.Format("\"{0}\":{{\"Value\":\"{1}\"", sensorName, dynamicSensor));
         }
     }
 }

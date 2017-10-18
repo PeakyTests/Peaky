@@ -2,14 +2,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Composition.Hosting;
-using System.ComponentModel.Composition.Primitives;
-using System.IO;
-using System.Linq;
 using System.Reflection;
+using System.Linq;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Pocket;
 
 namespace Peaky
 {
@@ -24,27 +23,6 @@ namespace Peaky
         private readonly Type returnType;
         private bool isAsync;
 
-        /// <summary>
-        ///   Initializes a new instance of the <see cref="DiagnosticSensor" /> class.
-        /// </summary>
-        internal DiagnosticSensor(ExportedDelegate export)
-        {
-            if (export == null)
-            {
-                throw new ArgumentNullException(nameof(export));
-            }
-
-            @delegate = export.CreateDelegate(typeof (Delegate));
-            if (@delegate != null)
-            {
-                name = GetName(@delegate.Method);
-                declaringType = @delegate.Method.DeclaringType;
-                returnType = @delegate.Method.ReturnType;
-            }
-
-            ValidateAndInitialize();
-        }
-
         internal DiagnosticSensor(Type returnType, string name, Type declaringType, Delegate @delegate)
         {
             this.returnType = returnType;
@@ -53,6 +31,14 @@ namespace Peaky
             this.@delegate = @delegate;
 
             ValidateAndInitialize();
+        }
+
+        private DiagnosticSensor(MethodInfo methodInfo) : this(
+            methodInfo.ReturnType,
+            methodInfo.Name,
+            methodInfo.DeclaringType,
+            methodInfo.CreateDelegate(typeof(Func<object>), null))
+        {
         }
 
         private void ValidateAndInitialize()
@@ -74,7 +60,7 @@ namespace Peaky
                 throw new ArgumentNullException(nameof(@delegate));
             }
 
-            isAsync = returnType.IsAsync();
+            isAsync = typeof(Task).IsAssignableFrom(returnType);
         }
 
         /// <summary>
@@ -108,68 +94,79 @@ namespace Peaky
         /// <remarks>
         ///   If the sensor throws an exception, the exception is returned.
         /// </remarks>
-        public object Read()
+        public async Task<SensorResult> Read()
         {
             try
             {
-                return @delegate.DynamicInvoke();
+                var value = @delegate.DynamicInvoke();
+
+                if (value is Task valueTask)
+                {
+                    await valueTask;
+
+                    if (valueTask.GetType().GetGenericArguments().First().IsVisible)
+                    {
+                        value = ((dynamic) valueTask).Result;
+                    }
+                    else
+                    {
+                        // this is required to work around the fact that internal types cause dynamic calls to Result to fail. JSON.NET however will happily serialize them, at which point we can retrieve the Result property.
+                        var serialized = JsonConvert.SerializeObject(value, SerializerSettings);
+                        value = JsonConvert.DeserializeObject<dynamic>(serialized).Result;
+                    }
+                }
+
+                return new SensorResult
+                {
+                    SensorName = Name,
+                    Value = value
+                };
+            }
+            catch (TargetInvocationException exception)
+            {
+                return new SensorResult
+                {
+                    SensorName = Name,
+                    Exception = exception.InnerException
+                };
             }
             catch (Exception exception)
             {
-                if (exception.ShouldThrow())
+                return new SensorResult
                 {
-                    throw;
-                }
-                return exception;
+                    SensorName = Name,
+                    Exception = exception
+                };
             }
         }
-
-        private static readonly Lazy<ConcurrentDictionary<string, DiagnosticSensor>> allSensors =
-            new Lazy<ConcurrentDictionary<string, DiagnosticSensor>>(Discover);
 
         /// <summary>
         /// Discovers sensors found in all loaded assemblies.
         /// </summary>
-        public static ConcurrentDictionary<string, DiagnosticSensor> Discover() =>
-            AppDomain.CurrentDomain
-                     .GetAssemblies()
-                     .Where(a => !a.IsDynamic && !a.GlobalAssemblyCache)
-                     .SelectMany(a =>
-                     {
-                         try
-                         {
-                             return new CompositionContainer(new AggregateCatalog(new AssemblyCatalog(a)))
-                                 .GetExports<object>("DiagnosticSensor")
-                                 .Select(lazy => lazy.Value)
-                                 .OfType<ExportedDelegate>()
-                                 .Select(sensorMethod => new DiagnosticSensor(sensorMethod));
-                         }
-                         catch (Exception ex)
-                         {
-                             if (ex is TypeLoadException ||
-                                 ex is ReflectionTypeLoadException ||
-                                 ex is FileNotFoundException ||
-                                 ex is FileLoadException)
-                             {
-                                 return new[]
-                                 {
-                                     new DiagnosticSensor(typeof (Exception),
-                                                          "AssemblyLoadError-" + a.FullName,
-                                                          typeof (DiagnosticSensor),
-                                                          new Func<Exception>(() => ex))
-                                 };
-                             }
-                             throw;
-                         }
-                     })
-                     .OrderBy(sensor => sensor.Name)
-                     .ThenBy(sensor => sensor.DeclaringType.Assembly.FullName)
-                     .Aggregate(new ConcurrentDictionary<string, DiagnosticSensor>(), (sensors, sensor) =>
-                     {
-                         // FIX: (Discover) we should be graceful about collisions or deterministic about ordering
-                         sensors[sensor.Name] = sensor;
-                         return sensors;
-                     });
+        public static IReadOnlyCollection<DiagnosticSensor> DiscoverSensors()
+        {
+            return Discover
+                .Types()
+                .SelectMany(t =>
+                {
+                    return t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
+                                        BindingFlags.Static)
+                            .Where(m =>
+                            {
+                                return m.GetCustomAttributes()
+                                        .Any(a =>
+                                        {
+                                            return a.GetType().Name.Equals("DiagnosticSensor") ||
+                                                   a.GetType().Name.Equals("DiagnosticSensorAttribute");
+                                        });
+                            });
+                })
+                .Select(m =>
+                {
+                    return new DiagnosticSensor(m);
+                })
+                .ToArray();
+        }
 
         /// <summary>
         /// Gets the name of a sensor.
@@ -177,10 +174,10 @@ namespace Peaky
         /// <param name="sensorMethod">The sensor method.</param>
         /// <returns>The sensor's name</returns>
         /// <remarks>The sensor name can be set by decorating the sensor method with <see cref="DisplayNameAttribute" />. Otherwise, the name of the method is used.</remarks>
-        public static string GetName(MethodInfo sensorMethod)
+        internal static string GetName(MethodInfo sensorMethod)
         {
             var displayName = sensorMethod
-                .GetCustomAttributes(typeof (DisplayNameAttribute), false)
+                .GetCustomAttributes(typeof(DisplayNameAttribute), false)
                 .OfType<DisplayNameAttribute>()
                 .FirstOrDefault();
 
@@ -189,35 +186,13 @@ namespace Peaky
                        : sensorMethod.Name;
         }
 
-        /// <summary>
-        ///   Returns all of the diagnostic sensors found in the application.
-        /// </summary>
-        public static IEnumerable<DiagnosticSensor> KnownSensors() => allSensors.Value.Values.ToArray();
-
-        /// <summary>
-        ///   Registers the specified sensor.
-        /// </summary>
-        /// <param name="sensor"> A function that returns the sensor result. </param>
-        /// <param name="name"> The name of the sensor. </param>
-        public static void Register<T>(Func<T> sensor, string name = null)
+        internal static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
         {
-            var anonymousMethodInfo = sensor.GetAnonymousMethodInfo();
-            name = name ?? anonymousMethodInfo.MethodName;
-            allSensors.Value[name] = new DiagnosticSensor(
-                @delegate: sensor,
-                returnType: typeof (T),
-                name: name,
-                declaringType: anonymousMethodInfo.EnclosingType);
-        }
-
-        /// <summary>
-        ///   Removes any sensor having the specified name.
-        /// </summary>
-        /// <param name="name"> The sensor name. </param>
-        public static void Remove(string name)
-        {
-            DiagnosticSensor sensor;
-            allSensors.Value.TryRemove(name, out sensor);
-        }
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            Error = (sender, args) =>
+            {
+                args.ErrorContext.Handled = true;
+            }
+        };
     }
 }

@@ -2,103 +2,83 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections;
 using System.Net.Http;
-using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
-using System.Web.Http;
 using FluentAssertions;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
-using log = Its.Log.Instrumentation.Log;
+using Pocket;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Peaky.Tests
 {
-    [TestFixture]
     public class TargetBasedTestConstraintTests
     {
-        private CompositeDisposable disposables;
+        private readonly CompositeDisposable disposables;
 
-        [SetUp]
-        public void SetUp()
+        public TargetBasedTestConstraintTests(ITestOutputHelper output)
         {
-            disposables = new CompositeDisposable(log.Events().Subscribe(Console.WriteLine));
+            disposables = new CompositeDisposable
+            {
+                LogEvents.Subscribe(e => output.WriteLine(e.ToLogString()))
+            };
         }
 
-        private TestApi CreateApiClient(Func<HttpClient, bool> buildChecker)
+        internal delegate bool TestApplicabilityCheck();
+
+        private HttpClient CreateApiClient(TestApplicabilityCheck applies)
         {
-            var testApi = new TestApi(targets =>
-                                      targets.Add("staging",
-                                                  "widgetapi",
-                                                  new Uri("http://staging.widgets.com"),
-                                                  dependencies =>
-                                                  dependencies
-                                                      .Register(() => buildChecker)
-                                                      .Register(() => new HttpClient(new HttpServer(new HttpConfiguration()
-                                                                                                        .MapSensorRoutes(_ => true))))),
-                                      typeof (TestsConstrainedToTarget));
+            var testApi = new PeakyService(targets =>
+                                               targets.Add("staging",
+                                                           "widgetapi",
+                                                           new Uri("http://staging.widgets.com"),
+                                                           dependencies =>
+                                                               dependencies
+                                                                   .Register(() => applies)),
+                                           testTypes: new[] { typeof(TestsConstrainedToTarget) });
 
             disposables.Add(testApi);
-            return testApi;
+
+            return testApi.CreateHttpClient();
         }
 
-        [TearDown]
-        public void TearDown()
-        {
-            foreach (DictionaryEntry entry in HttpRuntime.Cache)
-            {
-                HttpRuntime.Cache.Remove((string) entry.Key);
-            }
+        public void Dispose() => disposables.Dispose();
 
-            disposables.Dispose();
-        }
-
-        [Test]
+        [Fact]
         public async Task A_test_can_be_hidden_based_on_the_target_application_build_date_sensor()
         {
-            using (var activity = log.Enter(() => { }))
-            {
-                var response = await CreateApiClient(BuildDateAfter(DateTime.Now.AddDays(10))).GetAsync("http://tests.com/tests");
+            var response = await CreateApiClient(() => false)
+                               .GetAsync("http://tests.com/tests");
 
-                activity.Trace(() => new { response });
+            var testList = await response.AsTestList();
 
-                JArray tests = response.JsonContent().Tests;
-
-                activity.Trace(() => new { tests });
-
-                tests.Should().NotContain(t => t.Value<string>("Url").Contains("target_based_constraint_test"));
-            }
+            testList.Tests
+                    .Should()
+                    .NotContain(t => t.Url.Contains("target_based_constraint_test"));
         }
 
-        [Test]
+        [Fact]
         public async Task A_test_can_be_shown_based_on_the_target_application_build_date_sensor()
         {
-            using (var activity = log.Enter(() => { }))
-            {
-                var response = await CreateApiClient(BuildDateAfter(DateTime.Now.Subtract(TimeSpan.FromDays(1000)))).GetAsync("http://tests.com/tests");
+            var response = await CreateApiClient(() => true)
+                               .GetAsync("http://tests.com/tests");
 
-                activity.Confirm(() => new { response });
+            JArray tests = response.JsonContent().Tests;
 
-                JArray tests = response.JsonContent().Tests;
-
-                activity.Confirm(() => new { tests });
-
-                tests.Should().Contain(t => t.Value<string>("Url").Contains("target_based_constraint_test"));
-            }
+            tests.Should().Contain(t => t.Value<string>("Url").Contains("target_based_constraint_test"));
         }
 
-        [Test]
+        [Fact]
         public async Task Target_constraints_cache_their_results_and_and_do_not_trigger_every_time_Match_is_called()
         {
             var constraintCalls = 0;
 
-            var apiClient = CreateApiClient(_ =>
-                                            {
-                                                Interlocked.Increment(ref constraintCalls);
-                                                return false;
-                                            });
+            var apiClient = CreateApiClient(() =>
+            {
+                Interlocked.Increment(ref constraintCalls);
+                return false;
+            });
 
             await apiClient.GetAsync("http://tests.com/tests");
             await apiClient.GetAsync("http://tests.com/tests");
@@ -107,31 +87,15 @@ namespace Peaky.Tests
             constraintCalls.Should().Be(1);
         }
 
-        private static Func<HttpClient, bool> BuildDateAfter(DateTime buildDateAfter)
-        {
-            return httpClient =>
-            {
-                var sensorResult = httpClient.GetAsync("/sensors").Result.JsonContent();
-                Console.WriteLine(new { sensorResult });
-                DateTime buildDate = sensorResult.Version["Build date"];
-                Console.WriteLine(new { buildDate, buildDateAfter });
-                return buildDate > buildDateAfter;
-            };
-        }
-
         private class TestsConstrainedToTarget : IApplyToTarget
         {
             private readonly HttpClient httpClient;
-            private readonly Func<HttpClient, bool> buildChecker;
+            private readonly TestApplicabilityCheck applies;
 
-            public TestsConstrainedToTarget(HttpClient httpClient, Func<HttpClient, bool> buildChecker)
+            public TestsConstrainedToTarget(HttpClient httpClient, TestApplicabilityCheck applies)
             {
-                if (httpClient == null)
-                {
-                    throw new ArgumentNullException(nameof(httpClient));
-                }
-                this.httpClient = httpClient;
-                this.buildChecker = buildChecker;
+                this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+                this.applies = applies;
             }
 
             public void target_based_constraint_test()
@@ -140,10 +104,15 @@ namespace Peaky.Tests
 
             public bool AppliesToTarget(TestTarget target)
             {
-                return buildChecker?.Invoke(httpClient) ?? false;
+                if (applies != null)
+                {
+                    return applies();
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
     }
-
-   
 }

@@ -5,29 +5,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Web.Http.Controllers;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Peaky
 {
-    internal abstract class TestDefinition
+    public abstract class TestDefinition
     {
         private IEnumerable<Parameter> testParameters;
-        public abstract string TestName { get; }
+
+        public string TestName { get; internal set; }
 
         public string RouteName => "Peaky-Test-" + TestName;
 
         public string RouteTemplate { get; set; }
 
-        public string[] Tags { get; set; }
+        public virtual string[] Tags { get; set; } = Array.Empty<string>();
 
         internal Type TestType { get; set; }
 
-        internal abstract dynamic Run(HttpActionContext actionContext, Func<Type, object> resolver = null);
+        internal abstract Task<object> Run(HttpContext httpContext, Func<Type, object> resolve);
 
         internal static TestDefinition Create(MethodInfo methodInfo)
         {
             var testType = methodInfo.DeclaringType;
-            var testDefinitionType = typeof (TestDefinition<>).MakeGenericType(testType);
+            var testDefinitionType = typeof(TestDefinition<>).MakeGenericType(testType);
             var testDefinition = (TestDefinition) Activator.CreateInstance(
                 testDefinitionType,
                 BindingFlags.NonPublic | BindingFlags.Instance,
@@ -37,21 +39,17 @@ namespace Peaky
             testDefinition.TestType = testType;
             testDefinition.Parameters = methodInfo.GetParameters()
                                                   .Select(p =>
-                                                          new Parameter(p.Name, p.DefaultValue));
+                                                              new Parameter(p.Name, p.DefaultValue));
             return testDefinition;
         }
 
-        public IEnumerable<Parameter> Parameters
+        internal IEnumerable<Parameter> Parameters
         {
-            get
-            {
-                return testParameters ??
-                       (testParameters = System.Linq.Enumerable.Empty<Parameter>());
-            }
-            set
-            {
-                testParameters = value;
-            }
+            get => testParameters ??
+                   (testParameters = System.Linq.Enumerable.Empty<Parameter>());
+            set => testParameters = value;
         }
+
+        public abstract bool AppliesTo(TestTarget target);
     }
 }

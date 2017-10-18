@@ -1,17 +1,19 @@
-install:
-  - nuget restore
+artifacts:
+  - path: '**\*.nupkg'
 
 configuration:
   - Release
 
-build:
-  project: Peaky.sln
-  publish_nuget: true
+before_build:
+  - cmd: dotnet restore Peaky.sln
 
-test:
-  assemblies:
-    - '**\*Tests.dll'
+build_script:
+  - cmd: >-
+      dotnet build Peaky.sln /p:VersionPrefix=%APPVEYOR_BUILD_VERSION%
 
-artifacts:
-  - path: '*.nupkg'
+after_build:
+  - cmd: >-
+      dotnet pack .\Peaky\Peaky.csproj --no-build /p:VersionPrefix=%APPVEYOR_BUILD_VERSION%
 
+test_script:
+  - cmd: dotnet test .\Peaky.Tests\Peaky.Tests.csproj

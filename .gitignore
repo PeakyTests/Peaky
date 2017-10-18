@@ -30,3 +30,4 @@ Its.Log.Monitoring.UI/styles/monitoring.css
 *.nupkg
 /.vs/*
 *.stackdump
+.vscode/

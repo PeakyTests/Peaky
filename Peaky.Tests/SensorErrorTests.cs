@@ -5,73 +5,72 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
-using System.Web.Http;
+using System.Threading.Tasks;
 using FluentAssertions;
-using Its.Log.Instrumentation;
 using Its.Recipes;
-using NUnit.Framework;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
 
 namespace Peaky.Tests
 {
-    [TestFixture]
-    public class SensorErrorTests
+    public class SensorErrorTests : IDisposable
     {
         private static HttpClient apiClient;
-        private string sensorName;
+        private readonly string sensorName;
+        private readonly PeakyService peakyService;
+        private readonly SensorRegistry registry;
 
         public SensorErrorTests()
         {
-            var configuration1 = new HttpConfiguration();
-            configuration1.MapSensorRoutes(ctx => true);
-            var server = new HttpServer(configuration1);
-            apiClient = new HttpClient(server);
-        }
-
-        [SetUp]
-        public void SetUp()
-        {
+            registry = new SensorRegistry();
+            peakyService = new PeakyService(
+                configureServices: s => s.AddSingleton(registry));
+            apiClient = peakyService.CreateHttpClient();
             sensorName = Any.AlphanumericString(10, 20);
         }
 
-        [TearDown]
-        public void TearDown()
+        public void Dispose()
         {
-            DiagnosticSensor.Remove(sensorName);
+            peakyService.Dispose();
             TestSensor.GetSensorValue = null;
         }
 
-        [Test]
-        public void when_a_specific_sensor_is_requested_and_it_throws_then_it_returns_500_and_the_exception_text_is_in_the_response_body()
+        [Fact]
+        public async Task when_a_specific_sensor_is_requested_and_it_throws_then_it_returns_500_and_the_exception_text_is_in_the_response_body()
         {
-            DiagnosticSensor.Register<string>(() => { throw new Exception("oops!"); }, sensorName);
+            registry.Add<string>(() => throw new Exception("oops!"), sensorName);
 
-            var result = apiClient.GetAsync("http://blammo.com/sensors/" + sensorName).Result;
+            var result =await apiClient.GetAsync("http://blammo.com/sensors/" + sensorName);
+
+            var body = await result.Content.ReadAsStringAsync();
+
+            result.StatusCode
+                  .Should()
+                  .Be(HttpStatusCode.InternalServerError);
+
+            body.Should().Contain("oops!");
+        }
+
+        [Fact]
+        public async Task when_all_sensors_are_requested_and_one_throws_then_it_returns_200_and_the_exception_text_is_in_the_response_body()
+        {
+            registry.Add<string>(() => throw new Exception("oops!"), sensorName);
+
+            var result = await apiClient.GetAsync("http://blammo.com/sensors/");
 
             var body = result.Content.ReadAsStringAsync().Result;
 
             result.StatusCode
-                  .Should().Be(HttpStatusCode.InternalServerError);
-            body.Should().Contain("oops!");
+                  .Should()
+                  .Be(HttpStatusCode.OK);
+            body.Should()
+                .Contain("oops!");
         }
 
-        [Test]
-        public void when_all_sensors_are_requested_and_one_throws_then_it_returns_200_and_the_exception_text_is_in_the_response_body()
-        {
-            DiagnosticSensor.Register<string>(() => { throw new Exception("oops!"); }, sensorName);
-
-            var result = apiClient.GetAsync("http://blammo.com/sensors/").Result;
-
-            var body = result.Content.ReadAsStringAsync().Result;
-
-            result.StatusCode
-                  .Should().Be(HttpStatusCode.OK);
-            body.Should().Contain("oops!");
-        }
-
-        [Test]
+        [Fact]
         public void Cyclical_references_in_object_graphs_do_not_cause_serialization_errors()
         {
-            DiagnosticSensor.Register(() =>
+            registry.Add(() =>
             {
                 var parent = new Node();
                 parent.ChildNodes.Add(new Node

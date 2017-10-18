@@ -6,31 +6,35 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web.Http;
 using FluentAssertions;
-using NUnit.Framework;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Pocket;
+using Xunit;
+using Xunit.Abstractions;
 
 namespace Peaky.Tests
 {
-    [TestFixture]
-    public class PeakyTestDependencyTests
+    public class PeakyTestDependencyTests : IDisposable
     {
-        [Test]
+        private readonly CompositeDisposable disposables = new CompositeDisposable();
+
+        public PeakyTestDependencyTests(ITestOutputHelper output)
+        {
+            disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
+        }
+
+        public void Dispose() => disposables.Dispose();
+
+        [Fact]
         public void Target_environment_is_available_by_declaring_a_dependency_on_Target_when_no_resolver_is_specified()
         {
-            var api = new TestApi(configureTargets: targets => targets.Add("staging", "widgetapi", new Uri("http://localhost:81")));
+            var api = new PeakyService(targets => targets.Add("staging", "widgetapi", new Uri("http://localhost:81")));
 
-            var response = api.GetAsync("http://blammo.com/tests/staging/widgetapi/get_target").Result;
-
-            Console.WriteLine(api.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result.Content.ReadAsStringAsync().Result);
+            var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/staging/widgetapi/get_target").Result;
 
             response.ShouldSucceed(HttpStatusCode.OK);
 
             var result = response.Content.ReadAsStringAsync().Result;
-
-            Console.WriteLine(result);
 
             string environment = JsonConvert.DeserializeObject<dynamic>(result)
                                             .ReturnValue
@@ -39,21 +43,26 @@ namespace Peaky.Tests
             environment.Should().Be("staging");
         }
 
-        [Test]
+        [Fact]
         public async Task Dependencies_can_be_declared_that_are_specific_to_environment_and_application()
         {
-            var api = new TestApi(configureTargets:
-                                      targets => targets
-                                                     .Add("production", "widgets", new Uri("http://widgets.com"),
-                                                          t => t.Register<HttpClient>(() => new FakeHttpClient(_ => new HttpResponseMessage(HttpStatusCode.OK))
-                                                          {
-                                                              BaseAddress = new Uri("http://widgets.com")
-                                                          }))
-                                                     .Add("staging", "widgets", new Uri("http://staging.widgets.com"),
-                                                          t => t.Register<HttpClient>(() => new FakeHttpClient(_ => new HttpResponseMessage(HttpStatusCode.GatewayTimeout))
-                                                          {
-                                                              BaseAddress = new Uri("http://staging.widgets.com")
-                                                          })));
+            var api = new PeakyService(
+                    targets => targets
+                        .Add("production",
+                             "widgets",
+                             new Uri("http://widgets.com"),
+                             t => t.Register<HttpClient>(() => new FakeHttpClient(_ => new HttpResponseMessage(HttpStatusCode.OK))
+                             {
+                                 BaseAddress = new Uri("http://widgets.com")
+                             }))
+                        .Add("staging",
+                             "widgets",
+                             new Uri("http://staging.widgets.com"),
+                             t => t.Register<HttpClient>(() => new FakeHttpClient(_ => new HttpResponseMessage(HttpStatusCode.GatewayTimeout))
+                             {
+                                 BaseAddress = new Uri("http://staging.widgets.com")
+                             })))
+                .CreateHttpClient();
 
             // try production, which should be reachable
             var response = api.GetAsync("http://blammo.com/tests/production/widgets/is_reachable");
@@ -64,34 +73,31 @@ namespace Peaky.Tests
             await response.ShouldFailWithAsync(HttpStatusCode.InternalServerError);
         }
 
-        [Test]
-        public void When_a_test_cannot_be_instantiated_due_to_missing_dependencies_then_the_URL_is_still_displayed()
+        [Fact]
+        public async Task When_a_test_cannot_be_instantiated_due_to_missing_dependencies_then_the_URL_is_still_displayed()
         {
-            var api = new TestApi(configureTargets: targets => targets.Add("production", "widgetapi", new Uri("http://localhost:81")));
+            var api = new PeakyService(targets => targets.Add("production", "widgetapi", new Uri("http://localhost:81")));
 
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi").Result;
+            var response = await api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi");
 
             response.ShouldSucceed();
 
-            var json = response.JsonContent();
+            var testList = await response.AsTestList();
 
-            Console.WriteLine(json);
-
-            JArray tests = json.Tests;
-
-            tests.Should().Contain(o =>
-                                   o.Value<string>("Url") == "http://blammo.com/tests/production/widgetapi/unsatisfiable_dependencies_test");
+            testList.Tests
+                    .Should()
+                    .Contain(o =>
+                                 o.Url == "http://blammo.com/tests/production/widgetapi/unsatisfiable_dependencies_test");
         }
 
-        [Test]
-        public void When_a_test_cannot_be_instantiated_due_to_missing_dependencies_then_calling_the_error_test_returns_500_with_details()
+        [Fact]
+        public async Task When_a_test_cannot_be_instantiated_due_to_missing_dependencies_then_calling_the_error_test_returns_500_with_details()
         {
-            var api = new TestApi(configureTargets: targets => targets.Add("production", "widgetapi", new Uri("http://localhost:81")));
+            var api = new PeakyService(targets => targets.Add("production", "widgetapi", new Uri("http://localhost:81")));
 
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/unsatisfiable_dependencies_test").Result;
+            var response = await api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/unsatisfiable_dependencies_test");
 
-            var message = response.Content.ReadAsStringAsync().Result;
-            Console.WriteLine(message);
+            var message = await response.Content.ReadAsStringAsync();
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
 
@@ -100,48 +106,48 @@ namespace Peaky.Tests
                        "{\"ClassName\":\"System.ArgumentException\",\"Message\":\"PocketContainer can\'t construct a System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.Nullable`1[System.DateTimeOffset],System.Collections.Generic.HashSet`1[System.Guid]]] unless you register it first. ☹\"");
         }
 
-        [Test]
+        [Fact]
         public void Test_targets_require_absolute_URIs()
         {
-            var configuration = new HttpConfiguration();
+            Action configure = () =>
+            {
+                new PeakyService(targets =>
+                                     targets.Add("this", "that", new Uri("/relative/uri", UriKind.Relative)));
+            };
 
-            Action map = () =>
-                         configuration.MapTestRoutes(configureTargets: targets =>
-                                                                       targets.Add("this", "that", new Uri("/relative/uri", UriKind.Relative)));
-
-            map.ShouldThrow<ArgumentException>()
-               .And
-               .Message.Should().Contain("Base address must be an absolute URI");
+            configure.ShouldThrow<ArgumentException>()
+               .Which
+               .Message
+               .Should()
+               .Contain("Base address must be an absolute URI");
         }
 
-        [Test]
+        [Fact]
         public void HttpClient_is_configured_by_default_using_TestTarget_BaseAddress()
         {
-            var api = new TestApi(configureTargets: targets => targets.Add("production", "widgetapi", new Uri("http://localhost:42")));
+            var api = new PeakyService(targets => targets.Add("production", "widgetapi", new Uri("http://localhost:42")));
 
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress").Result;
+            var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress").Result;
 
             var message = response.Content.ReadAsStringAsync().Result;
-
-            Console.WriteLine(message);
 
             response.ShouldSucceed();
 
             message.Should().Contain("BaseAddress = http://localhost:42");
         }
 
-        [Test]
+        [Fact]
         public void When_HttpClient_BaseAddress_is_set_in_dependency_registration_then_it_is_not_overridden()
         {
-            var api = new TestApi(configureTargets: targets =>
-                                                    targets
-                                                        .Add("production", "widgetapi", new Uri("http://google.com"),
-                                                             dependencies => dependencies.Register(() => new HttpClient
-                                                             {
-                                                                 BaseAddress = new Uri("http://bing.com")
-                                                             })));
+            var api = new PeakyService(configureTargets: targets =>
+                                           targets
+                                               .Add("production", "widgetapi", new Uri("http://google.com"),
+                                                    dependencies => dependencies.Register(() => new HttpClient
+                                                    {
+                                                        BaseAddress = new Uri("http://bing.com")
+                                                    })));
 
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress").Result;
+            var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress").Result;
 
             var message = response.Content.ReadAsStringAsync().Result;
 
@@ -151,16 +157,16 @@ namespace Peaky.Tests
 
             message.Should().Contain("BaseAddress = http://bing.com");
         }
-        
-        [Test]
+
+        [Fact]
         public void When_HttpClient_BaseAddress_is_not_set_in_dependency_registration_then_it_is_set_to_the_test_target_configured_value()
         {
-            var api = new TestApi(configureTargets: targets =>
-                                                    targets
-                                                        .Add("production", "widgetapi", new Uri("http://bing.com"),
-                                                             dependencies => dependencies.Register(() => new HttpClient())));
+            var api = new PeakyService(configureTargets: targets =>
+                                           targets
+                                               .Add("production", "widgetapi", new Uri("http://bing.com"),
+                                                    dependencies => dependencies.Register(() => new HttpClient())));
 
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress").Result;
+            var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress").Result;
 
             var message = response.Content.ReadAsStringAsync().Result;
 
@@ -179,28 +185,15 @@ namespace Peaky.Tests
 
         public TestsWithDependencies(HttpClient httpClient, TestTarget testTarget)
         {
-            if (httpClient == null)
-            {
-                throw new ArgumentNullException("httpClient");
-            }
-            if (testTarget == null)
-            {
-                throw new ArgumentNullException("testTarget");
-            }
-            this.httpClient = httpClient;
-            this.testTarget = testTarget;
+            this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            this.testTarget = testTarget ?? throw new ArgumentNullException(nameof(testTarget));
         }
 
-        public async Task<dynamic> is_reachable()
-        {
-            return await httpClient.GetAsync("/sensors")
-                                   .ShouldSucceedAsync();
-        }
+        public async Task<dynamic> is_reachable() => 
+            await httpClient.GetAsync("/sensors").ShouldSucceedAsync();
 
-        public string HttpClient_BaseAddress()
-        {
-            return "BaseAddress = " + httpClient.BaseAddress;
-        }
+        public string HttpClient_BaseAddress() => 
+            "BaseAddress = " + httpClient.BaseAddress;
     }
 
     public class TestsWithDependencyOnTarget : IPeakyTest
@@ -209,17 +202,11 @@ namespace Peaky.Tests
 
         public TestsWithDependencyOnTarget(TestTarget testTarget)
         {
-            if (testTarget == null)
-            {
-                throw new ArgumentNullException("testTarget");
-            }
-            this.testTarget = testTarget;
+            this.testTarget = testTarget ??
+                throw new ArgumentNullException(nameof(testTarget));
         }
 
-        public async Task<dynamic> get_target()
-        {
-            return testTarget;
-        }
+        public async Task<dynamic> get_target() => testTarget;
     }
 
     public class TestWithUnsatisfiableDependencies : IPeakyTest

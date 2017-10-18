@@ -12,7 +12,7 @@ namespace Peaky
 {
     public class TestTargetRegistry : IEnumerable<TestTarget>
     {
-        private readonly IDictionary<string, Lazy<TestTarget>> targets = new Dictionary<string, Lazy<TestTarget>>();
+        private readonly IDictionary<string, Lazy<TestTarget>> targets = new Dictionary<string, Lazy<TestTarget>>(StringComparer.OrdinalIgnoreCase);
 
         public TestTargetRegistry Add(
             string environment,
@@ -48,7 +48,7 @@ namespace Peaky
 
             testDependencies?.Invoke(new TestDependencyRegistry((t, func) => container.Register(t, c => func())));
 
-            container.AfterResolve<HttpClient>((c, client) =>
+            container.AfterCreating<HttpClient>(client =>
             {
                 if (client.BaseAddress == null)
                 {
@@ -73,10 +73,10 @@ namespace Peaky
 
             if (!targets.Any(t => t.Value.Value.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase)))
             {
-                throw new ArgumentException($"Environment '{environment}' has not been defined.");
+                throw new TestNotDefinedException($"Environment '{environment}' has not been defined.");
             }
 
-            throw new ArgumentException($"Environment '{environment}' has no application named '{application}' defined.");
+            throw new TestNotDefinedException($"Environment '{environment}' has no application named '{application}' defined.");
         }
 
         internal TestTarget TryGet(string environment, string application)

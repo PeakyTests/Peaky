@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -25,7 +26,6 @@ namespace Its.Recipes
     /// </remarks>
 #if !RecipesProject
     [System.Diagnostics.DebuggerStepThrough]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
     internal static partial class Any
     {
@@ -155,8 +155,10 @@ namespace Its.Recipes
         /// <param name="min">The minimum value to be generated.</param>
         /// <param name="max">The maximum value to be generated.</param>
         /// <returns>A decimal between the specified min and max values.</returns>
-        public static decimal Decimal(decimal min = decimal.MinValue, decimal max = decimal.MaxValue)
+        public static decimal Decimal(decimal? min = null, decimal? max = null)
         {
+            min = min ?? decimal.MinValue;
+            max = max ?? decimal.MaxValue;
             var double0To1 = random.Value.NextDouble();
             var randomDouble = (double0To1 * (double)max) + ((1 - double0To1) * (double)min);
             var value = (decimal)randomDouble;
@@ -436,10 +438,15 @@ namespace Its.Recipes
             var words = Recipes.Words.Common.RandomSequence(wordCount);
             if (capitalize)
             {
-                words = words.Select(w => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(w));
+                words = words.Select(w => w.ToTitleCase());
             }
             return words;
         }
+
+        private static string ToTitleCase(this string word) =>
+            word.Length > 0
+                ? new string(new[] { CultureInfo.CurrentCulture.TextInfo.ToUpper(word[0]) }.Concat(word.Skip(1)).ToArray())
+                : "";
 
         /// <summary>
         /// Generate a CamelCaseName using <see cref="Words"/>
@@ -634,7 +641,6 @@ namespace Its.Recipes
     /// </summary>
 #if !RecipesProject
     [System.Diagnostics.DebuggerStepThrough]
-    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 #endif
     internal static partial class Characters
     {

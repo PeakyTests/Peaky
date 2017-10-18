@@ -3,6 +3,8 @@
 
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Peaky.Tests
@@ -21,6 +23,25 @@ namespace Peaky.Tests
                 Console.WriteLine("Invalid Json: " + json);
                 throw;
             }
+        }
+
+        internal static async Task<TestList> AsTestList(this HttpResponseMessage response)
+        {
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<TestList>(json);
+        }
+
+        internal static async Task<TestResult> AsTestResult(this HttpResponseMessage response)
+        {
+            var content = response.Content;
+
+            var json = await content.ReadAsStringAsync();
+
+            Console.WriteLine();
+            Console.WriteLine(json);
+            Console.WriteLine();
+
+            return JsonConvert.DeserializeObject<TestResult>(json);
         }
     }
 }

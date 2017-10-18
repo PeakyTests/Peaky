@@ -8,9 +8,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using System.Web.Http;
-using Its.Log.Instrumentation;
-using Microsoft.Its.Recipes;
+using Its.Recipes;
 
 namespace Peaky
 {
@@ -18,19 +16,19 @@ namespace Peaky
     {
         static AssertionExtensions()
         {
-            Formatter<ObjectContent>.RegisterForAllMembers();
-            Formatter<StringContent>.Register(c => new
-            {
-                c.ReadAsStringAsync().Result,
-                c.Headers
-            }.ToLogString());
-            Formatter<StreamContent>.Register(c => new
-            {
-                c.ReadAsStringAsync().Result,
-                c.Headers
-            }.ToLogString());
-            Formatter<HttpContentHeaders>.RegisterForAllMembers();
-            Formatter<HttpError>.RegisterForAllMembers();
+//            Formatter<ObjectContent>.RegisterForAllMembers();
+//            Formatter<StringContent>.Register(c => new
+//            {
+//                c.ReadAsStringAsync().Result,
+//                c.Headers
+//            }.ToLogString());
+//            Formatter<StreamContent>.Register(c => new
+//            {
+//                c.ReadAsStringAsync().Result,
+//                c.Headers
+//            }.ToLogString());
+//            Formatter<HttpContentHeaders>.RegisterForAllMembers();
+//            Formatter<HttpError>.RegisterForAllMembers();
         }
 
         public static HttpResponseMessage ShouldSucceed(
@@ -121,9 +119,7 @@ namespace Peaky
             var message = string.Format("{0}{1}{1}{2}",
                                         response,
                                         Environment.NewLine,
-                                        response.Content.IfTypeIs<ObjectContent>()
-                                                .Then(v => v.Value)
-                                                .Else(() => response.Content).ToLogString());
+                                        response?.ToString());
             throw new AssertionFailedException(message);
         }
     }
