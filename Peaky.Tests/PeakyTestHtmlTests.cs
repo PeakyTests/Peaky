@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Primitives;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;
@@ -56,10 +57,20 @@ namespace Peaky.Tests
             result.Should().Contain(@"<script src=""//phillippruett.github.io/Peaky/javascripts/peaky.js?version=");
         }
 
+        [Fact]
+        public void testname()
+        {
+            var headerValue = MediaTypeWithQualityHeaderValue.Parse("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+
+            // TODO (testname) write test
+            throw new NotImplementedException("Test testname is not written yet.");
+        }
+
         private HttpResponseMessage RequestTestsHtml()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, "http://blammo.com/tests/");
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/html"));
+            request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse("text/html"));
+            request.Headers.Accept.Add(MediaTypeWithQualityHeaderValue.Parse("application/xhtml+xml"));
             var response = apiClient.SendAsync(request).Result;
             return response;
         }

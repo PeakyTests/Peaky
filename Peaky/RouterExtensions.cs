@@ -18,12 +18,7 @@ namespace Peaky
             return new AnonymousRouter(
                 routeAsync: async context =>
                 {
-                    var requestHeader = context.HttpContext.Request.Headers["Accept"];
-
-                    if (!requestHeader.Select(h => MediaTypeHeaderValue.Parse(h)).Any(h => h.Equals(mediaType)))
-                    {
-                        return;
-                    }
+                    var acceptHeader = context.HttpContext.Request.ContentType;
 
                     await router.RouteAsync(context);
                 },
