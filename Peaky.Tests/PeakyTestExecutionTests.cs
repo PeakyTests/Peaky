@@ -11,43 +11,52 @@ using FluentAssertions;
 using Newtonsoft.Json;
 using Pocket;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Peaky.Tests
 {
     public class PeakyTestExecutionTests : IDisposable
     {
-        private static HttpClient api;
+        private readonly HttpClient apiClient;
 
-        public PeakyTestExecutionTests()
+        private readonly CompositeDisposable disposables = new CompositeDisposable();
+
+        public PeakyTestExecutionTests(ITestOutputHelper output)
         {
-            api = new PeakyService(
-                    targets => targets
-                        .Add("production",
-                             "widgetapi",
-                             new Uri("http://widgets.com"),
-                             dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
-                        .Add("staging",
-                             "widgetapi",
-                             new Uri("http://widgets.com"),
-                             dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
-                        .Add("production",
-                             "sprocketapi",
-                             new Uri("http://widgets.com"),
-                             dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK)))))
-                .CreateHttpClient();
+            disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
+
+            var peakyService = new PeakyService(
+                targets => targets
+                    .Add("production",
+                         "widgetapi",
+                         new Uri("http://widgets.com"),
+                         dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
+                    .Add("staging",
+                         "widgetapi",
+                         new Uri("http://widgets.com"),
+                         dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
+                    .Add("production",
+                         "sprocketapi",
+                         new Uri("http://widgets.com"),
+                         dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK)))));
+
+            disposables.Add(peakyService);
+
+            apiClient = peakyService.CreateHttpClient();
 
             TestsWithTraceOutput.GetResponse = () => "...and the response";
         }
 
         public void Dispose()
         {
+            disposables.Dispose();
             TestsWithTraceOutput.Barrier = null;
         }
 
         [Fact]
-        public void When_a_test_with_a_return_value_passes_then_a_200_is_returned()
+        public async Task When_a_test_with_a_return_value_passes_then_a_200_is_returned()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object");
 
             response.ShouldSucceed(HttpStatusCode.OK);
         }
@@ -55,7 +64,15 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_with_a_void_return_value_passes_then_a_200_is_returned()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/passing_void_test").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_void_test").Result;
+
+            response.ShouldSucceed(HttpStatusCode.OK);
+        }
+
+        [Fact]
+        public async Task When_a_test_with_a_resultless_Task_return_value_passes_then_a_200_is_returned()
+        {
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_void_async_test");
 
             response.ShouldSucceed(HttpStatusCode.OK);
         }
@@ -63,7 +80,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_passes_and_returns_an_object_then_the_response_contains_the_test_return_value()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object").Result;
 
             var result = response.Content.ReadAsStringAsync().Result;
 
@@ -73,9 +90,9 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_passes_and_returns_a_struct_then_the_response_contains_the_test_return_value()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct").Result;
 
-            var result = JsonConvert.DeserializeObject<TestResult>( response.Content.ReadAsStringAsync().Result);
+            var result = JsonConvert.DeserializeObject<TestResult>(response.Content.ReadAsStringAsync().Result);
 
             result.Passed.Should().BeTrue();
         }
@@ -83,7 +100,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_with_a_return_value_throws_then_a_500_Test_Failed_is_returned()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test").Result;
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
         }
@@ -91,7 +108,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_with_a_void_return_value_throws_then_a_500_Test_Failed_is_returned()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test").Result;
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
 
@@ -105,7 +122,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_with_a_Task_return_value_throws_then_a_500_Test_Failed_is_returned()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_async_test").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_async_test").Result;
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
 
@@ -119,7 +136,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_with_a_return_value_fails_then_the_response_contains_the_test_return_value_and_exception_details()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test").Result;
 
             var result = response.Content.ReadAsStringAsync().Result;
 
@@ -129,7 +146,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_with_a_void_return_value_fails_then_the_response_contains_the_test_return_value_and_exception_details()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test").Result;
 
             var result = response.Content.ReadAsStringAsync().Result;
 
@@ -139,7 +156,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_is_not_valid_for_a_given_environment_then_calling_it_returns_404()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/internal_only_test").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/internal_only_test").Result;
 
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }
@@ -147,7 +164,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_is_not_valid_for_a_given_application_then_calling_it_returns_404()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/sprocketapi/widgetapi_only_test").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/sprocketapi/widgetapi_only_test").Result;
 
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }
@@ -155,7 +172,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_passes_then_the_response_contains_trace_output_written_by_the_test()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace").Result;
 
             var result = response.Content.ReadAsStringAsync().Result;
 
@@ -166,7 +183,7 @@ namespace Peaky.Tests
         [Fact(Skip = "Coming soon")]
         public void When_a_test_passes_then_the_response_contains_its_log_output_written_by_the_test()
         {
-            var response = api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_its_log").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_its_log").Result;
 
             var result = response.Content.ReadAsStringAsync().Result;
 
@@ -179,8 +196,8 @@ namespace Peaky.Tests
         {
             TestsWithTraceOutput.Barrier = new Barrier(2);
 
-            var productionResponse = api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
-            var stagingResponse = api.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
+            var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
+            var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
 
             var productionResult = await productionResponse.Result.Content.ReadAsStringAsync();
             var stagingResult = await stagingResponse.Result.Content.ReadAsStringAsync();
@@ -199,7 +216,7 @@ namespace Peaky.Tests
                 throw new Exception("Doh!");
             };
 
-            var response = await api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
 
             var result = await response.AsTestResult();
 
@@ -215,7 +232,7 @@ namespace Peaky.Tests
                 throw new Exception("oops!");
             };
 
-            var response = await api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
 
             var result = await response.Content.ReadAsStringAsync();
 
@@ -230,8 +247,8 @@ namespace Peaky.Tests
             TestsWithTraceOutput.Barrier = new Barrier(2);
             TestsWithTraceOutput.GetResponse = () => throw new Exception("oh noes!");
 
-            var productionResponse = api.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
-            var stagingResponse = api.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
+            var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
+            var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
 
             var productionResult = await productionResponse.Result.Content.ReadAsStringAsync();
             var stagingResult = await stagingResponse.Result.Content.ReadAsStringAsync();

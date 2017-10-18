@@ -280,7 +280,7 @@ namespace Peaky.Tests
                                 .Result
                                 .Tests;
 
-            tests.Should().Contain(test => test.Url.EndsWith( "honeycrisp"));
+            tests.Should().Contain(test => test.Url.EndsWith("honeycrisp"));
         }
 
         [Category("Tags")]
@@ -295,7 +295,7 @@ namespace Peaky.Tests
                                 .Result
                                 .Tests;
 
-            tests.Should().Contain(test => test.Url.EndsWith( "honeycrisp"));
+            tests.Should().Contain(test => test.Url.EndsWith("honeycrisp"));
         }
 
         [Category("Tags")]
@@ -319,7 +319,7 @@ namespace Peaky.Tests
                                 .Result
                                 .Tests;
 
-            tests.Should().Contain(test => test.Url.EndsWith( "tangerine"));
+            tests.Should().Contain(test => test.Url.EndsWith("tangerine"));
         }
 
         [Category("Tags")]
@@ -562,6 +562,10 @@ namespace Peaky.Tests
         public void failing_void_test()
         {
             throw new Exception("oops!");
+        }
+
+        public async Task passing_void_async_test()
+        {
         }
 
         public async Task failing_void_async_test()

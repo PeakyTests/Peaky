@@ -24,7 +24,6 @@ namespace Peaky
         }
     }
 
-    
     public static class StaticTestSensors
     {
         private static int callCount = 0;

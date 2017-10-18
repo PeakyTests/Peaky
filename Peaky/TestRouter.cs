@@ -173,11 +173,16 @@ namespace Peaky
 
                             if (task.GetType().IsGenericType)
                             {
-                                returnValue = ((dynamic) task).Result;
+                                var genericTypeParameter = task.GetType().GenericTypeArguments.First();
+
+                                if (genericTypeParameter.IsPublic)
+                                {
+                                    returnValue = ((dynamic) task).Result;
+                                }
                             }
                         }
 
-                        result = TestResult.Pass(returnValue);
+                        result = TestResult.Pass(returnValue);  
                     }
                     catch (ParameterFormatException exception)
                     {
