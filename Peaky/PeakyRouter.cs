@@ -19,7 +19,7 @@ namespace Peaky
 
         public PathString PathBase { get; }
 
-        public async Task RouteAsync(RouteContext context)
+        async Task IRouter.RouteAsync(RouteContext context)
         {
             if (context.Handler != null)
             {
@@ -28,11 +28,11 @@ namespace Peaky
 
             if (RouteMatches(context))
             {
-                await RouteAsyncInternal(context);
+                await RouteAsync(context);
             }
         }
 
-        public abstract Task RouteAsyncInternal(RouteContext context);
+        public abstract Task RouteAsync(RouteContext context);
 
         public virtual VirtualPathData GetVirtualPath(VirtualPathContext context) => null;
 

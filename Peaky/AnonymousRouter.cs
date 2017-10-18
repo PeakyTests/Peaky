@@ -16,6 +16,6 @@ namespace Peaky
                               throw new ArgumentNullException(nameof(routeAsync));
         }
 
-        public override async Task RouteAsyncInternal(RouteContext context) => await routeAsync(context);
+        public override async Task RouteAsync(RouteContext context) => await routeAsync(context);
     }
 }

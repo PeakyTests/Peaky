@@ -22,7 +22,7 @@ namespace Peaky
             html = InitializeHtml();
         }
 
-        public override async Task RouteAsyncInternal(RouteContext context)
+        public override async Task RouteAsync(RouteContext context)
         {
             if (RouteMatches(context))
             {

@@ -30,7 +30,7 @@ namespace Peaky
                                throw new ArgumentNullException(nameof(testTargets));
         }
 
-        public override async Task RouteAsyncInternal(RouteContext context)
+        public override async Task RouteAsync(RouteContext context)
         {
             if (!context.HttpContext.Request.Path.StartsWithSegments(new PathString(pathBase), StringComparison.OrdinalIgnoreCase))
             {

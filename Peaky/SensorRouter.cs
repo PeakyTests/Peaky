@@ -25,10 +25,8 @@ namespace Peaky
                            throw new ArgumentNullException(nameof(sensors));
         }
 
-        public override async Task RouteAsyncInternal(RouteContext context)
+        public override async Task RouteAsync(RouteContext context)
         {
-
-            // FIX: (RouteAsyncInternal) make authorization another AnonymousRouter
             authorizeSensors(context);
             if (context.Handler != null)
             {

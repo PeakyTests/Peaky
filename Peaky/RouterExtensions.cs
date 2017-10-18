@@ -77,7 +77,7 @@ namespace Peaky
                         };
                     }
 
-                    await router.RouteAsyncInternal(context);
+                    await router.RouteAsync(context);
                 },
                 pathBase: router.PathBase);
         }
