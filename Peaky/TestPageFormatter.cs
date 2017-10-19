@@ -2,41 +2,35 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 
 namespace Peaky
 {
-    internal class TestUIRouter : PeakyRouter
+    public class TestPageFormatter : ITestPageFormatter
     {
-        private static readonly string version = typeof(TestUIRouter)
+        private static readonly string version = typeof(TestPageRouter)
             .Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             .InformationalVersion;
 
-        private readonly string html;
+        private readonly string scriptUrl;
+        private readonly IEnumerable<string> libraryUrls;
+        private readonly IEnumerable<string> styleSheets;
 
-        public TestUIRouter(string pathBase = "/tests") : base(pathBase)
-        {
-            html = InitializeHtml();
-        }
-
-        public override async Task RouteAsync(RouteContext context)
-        {
-            if (RouteMatches(context))
-            {
-                context.Handler = async httpContext =>
-                {
-                    await context.HttpContext.Response.WriteAsync(html);
-                };
-            }
-        }
-
-        private static string InitializeHtml(
+        public TestPageFormatter(
             string scriptUrl = "//phillippruett.github.io/Peaky/javascripts/peaky.js",
             IEnumerable<string> libraryUrls = null,
             IEnumerable<string> styleSheets = null)
+        {
+            if (string.IsNullOrWhiteSpace(scriptUrl))
+            {
+                throw new ArgumentException("Value cannot be null or whitespace.", nameof(scriptUrl));
+            }
+            this.scriptUrl = scriptUrl;
+            this.libraryUrls = libraryUrls;
+            this.styleSheets = styleSheets;
+        }
+
+        public string Render()
         {
             var libraryScriptRefs = string.Join("\n", (libraryUrls ?? Array.Empty<string>())
                                                 .Select(u => $@"<script src=""{u}""></script>"));
