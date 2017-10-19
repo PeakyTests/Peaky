@@ -17,25 +17,27 @@ namespace Peaky
 
             app.UseRouter(builder =>
             {
-                var sensorRegistry = builder.ServiceProvider.GetService<SensorRegistry>();
+                var services = builder.ServiceProvider;
+
+                var sensorRegistry = services.GetService<SensorRegistry>();
 
                 if (sensorRegistry != null)
                 {
                     builder.Routes.Add(
                         new SensorRouter(
                                 sensorRegistry,
-                                builder.ServiceProvider.GetRequiredService<AuthorizeSensors>())
+                                services.GetRequiredService<AuthorizeSensors>())
                             .AllowVerbs("GET"));
                 }
 
-                var testTargets = builder.ServiceProvider.GetService<TestTargetRegistry>();
+                var testTargets = services.GetService<TestTargetRegistry>();
 
-                var testDefinitions = builder.ServiceProvider.GetService<TestDefinitionRegistry>();
+                var testDefinitions = services.GetService<TestDefinitionRegistry>();
 
                 if (testTargets != null &&
                     testDefinitions != null)
                 {
-                    var uiRouter = new TestUIRouter()
+                    var uiRouter = new TestPageRouter(services.GetRequiredService<ITestPageRenderer>())
                         .AllowVerbs("GET")
                         .Accept("text/html");
                     builder.Routes.Add(uiRouter);

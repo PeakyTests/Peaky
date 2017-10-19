@@ -24,6 +24,8 @@ namespace Peaky
 
             builder.TryAddSingleton(c => new TestDefinitionRegistry(testTypes));
 
+            builder.TryAddTransient<ITestPageRenderer, TestPageRenderer>();
+
             return builder;
         }
 
