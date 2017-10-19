@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Peaky
 {
-    public class TestPageFormatter : ITestPageFormatter
+    public class TestPageRenderer : ITestPageRenderer
     {
         private static readonly string version = typeof(TestPageRouter)
             .Assembly
@@ -15,8 +17,9 @@ namespace Peaky
         private readonly string scriptUrl;
         private readonly IEnumerable<string> libraryUrls;
         private readonly IEnumerable<string> styleSheets;
+        private readonly string html;
 
-        public TestPageFormatter(
+        public TestPageRenderer(
             string scriptUrl = "//phillippruett.github.io/Peaky/javascripts/peaky.js",
             IEnumerable<string> libraryUrls = null,
             IEnumerable<string> styleSheets = null)
@@ -28,9 +31,15 @@ namespace Peaky
             this.scriptUrl = scriptUrl;
             this.libraryUrls = libraryUrls;
             this.styleSheets = styleSheets;
+            html = Html();
         }
 
-        public string Render()
+        public async Task Render(HttpContext httpContext)
+        {
+            await httpContext.Response.WriteAsync(html);
+        }
+
+        private string Html()
         {
             var libraryScriptRefs = string.Join("\n", (libraryUrls ?? Array.Empty<string>())
                                                 .Select(u => $@"<script src=""{u}""></script>"));

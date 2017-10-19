@@ -2,15 +2,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;
-using IServiceCollection = Microsoft.Extensions.DependencyInjection.IServiceCollection;
 
 namespace Peaky.Tests
 {
@@ -54,7 +53,7 @@ namespace Peaky.Tests
         {
             var response = RequestTestsHtml(services =>
             {
-                services.AddTransient<ITestPageFormatter>(c => new SubstituteTestPageFormatter("not actually html"));
+                services.AddTransient<ITestPageRenderer>(c => new SubstituteTestPageRenderer("not actually html"));
             });
 
             var content = await response.Content.ReadAsStringAsync();
@@ -62,13 +61,13 @@ namespace Peaky.Tests
             content.Should().Be("not actually html");
         }
 
-        public class SubstituteTestPageFormatter : ITestPageFormatter
+        public class SubstituteTestPageRenderer : ITestPageRenderer
         {
             private readonly string html;
 
-            public SubstituteTestPageFormatter(string html) => this.html = html;
+            public SubstituteTestPageRenderer(string html) => this.html = html;
 
-            public string Render() => html;
+            public async Task Render(HttpContext httpContext) => await httpContext.Response.WriteAsync(html);
         }
 
         private HttpClient CreateClient(Action<IServiceCollection> configureServices)

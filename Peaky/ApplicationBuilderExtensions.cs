@@ -37,7 +37,7 @@ namespace Peaky
                 if (testTargets != null &&
                     testDefinitions != null)
                 {
-                    var uiRouter = new TestPageRouter(services.GetRequiredService<ITestPageFormatter>())
+                    var uiRouter = new TestPageRouter(services.GetRequiredService<ITestPageRenderer>())
                         .AllowVerbs("GET")
                         .Accept("text/html");
                     builder.Routes.Add(uiRouter);

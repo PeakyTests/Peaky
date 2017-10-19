@@ -1,25 +1,19 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
 namespace Peaky
 {
     internal class TestPageRouter : PeakyRouter
     {
-        private readonly string html;
+        private readonly ITestPageRenderer testPageRenderer;
 
         public TestPageRouter(
-            ITestPageFormatter testPageFormatter,
+            ITestPageRenderer testPageRenderer,
             string pathBase = "/tests") : base(pathBase)
         {
-            if (testPageFormatter == null)
-            {
-                throw new ArgumentNullException(nameof(testPageFormatter));
-            }
-
-            html = testPageFormatter.Render();
+            this.testPageRenderer = testPageRenderer ?? throw new ArgumentNullException(nameof(testPageRenderer));
         }
 
         public override async Task RouteAsync(RouteContext context)
@@ -28,7 +22,7 @@ namespace Peaky
             {
                 context.Handler = async httpContext =>
                 {
-                    await context.HttpContext.Response.WriteAsync(html);
+                    await testPageRenderer.Render(context.HttpContext);
                 };
             }
         }
