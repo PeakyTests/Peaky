@@ -15,14 +15,14 @@ namespace Peaky
             .InformationalVersion;
 
         private readonly string scriptUrl;
-        private readonly IEnumerable<string> libraryUrls;
-        private readonly IEnumerable<string> styleSheets;
+        private readonly IEnumerable<PathString> libraryUrls;
+        private readonly IEnumerable<PathString> styleSheets;
         private readonly string html;
 
         public TestPageRenderer(
             string scriptUrl = "//phillippruett.github.io/Peaky/javascripts/peaky.js",
-            IEnumerable<string> libraryUrls = null,
-            IEnumerable<string> styleSheets = null)
+            IEnumerable<PathString> libraryUrls = null,
+            IEnumerable<PathString> styleSheets = null)
         {
             if (string.IsNullOrWhiteSpace(scriptUrl))
             {
@@ -41,12 +41,20 @@ namespace Peaky
 
         private string Html()
         {
-            var libraryScriptRefs = string.Join("\n", (libraryUrls ?? Array.Empty<string>())
+            var libraryScriptRefs = string.Join("\n",
+                                                (libraryUrls ??
+                                                 Array.Empty<PathString>())
                                                 .Select(u => $@"<script src=""{u}""></script>"));
 
+            var defaultStylesheet =
+                new PathString($"//phillippruett.github.io/Peaky/stylesheets/peaky.css")
+                    .Add(new QueryString($"?version={version}"));
+
             var styleSheetRefs =
-                string.Join("\n", (styleSheets ?? new[] { "//phillippruett.github.io/Peaky/stylesheets/peaky.css" })
-                            .Select(u => $@"<link rel=""stylesheet"" href=""{u}"" >"));
+                string.Join("\n",
+                            (styleSheets ??
+                             new PathString[] { defaultStylesheet })
+                            .Select(u => $@"<link rel=""stylesheet"" href=""{u.Value}"" >"));
 
             return
                 $@"<!doctype html>
