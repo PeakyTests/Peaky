@@ -49,6 +49,19 @@ namespace Peaky.Tests
         }
 
         [Fact]
+        public async Task The_default_test_page_contains_a_css_link()
+        {
+            var response = RequestTestsHtml();
+
+            response.ShouldSucceed();
+
+            var result = await response.Content.ReadAsStringAsync();
+
+            result.Should().Contain(@"<link rel=""stylesheet"" href=""//phillippruett.github.io/Peaky/stylesheets/peaky.css?version=");
+
+        }
+
+        [Fact]
         public async Task Test_page_HTML_can_be_overridden()
         {
             var response = RequestTestsHtml(services =>
@@ -61,6 +74,7 @@ namespace Peaky.Tests
             content.Should().Be("not actually html");
         }
 
+      
         public class SubstituteTestPageRenderer : ITestPageRenderer
         {
             private readonly string html;
