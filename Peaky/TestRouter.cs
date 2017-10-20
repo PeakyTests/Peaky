@@ -32,11 +32,6 @@ namespace Peaky
 
         public override async Task RouteAsync(RouteContext context)
         {
-            if (!context.HttpContext.Request.Path.StartsWithSegments(new PathString(pathBase), StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
-
             var segments = context.HttpContext
                                   .Request
                                   .Path

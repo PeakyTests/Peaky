@@ -18,13 +18,10 @@ namespace Peaky
 
         public override async Task RouteAsync(RouteContext context)
         {
-            if (RouteMatches(context))
+            context.Handler = async httpContext =>
             {
-                context.Handler = async httpContext =>
-                {
-                    await testPageRenderer.Render(context.HttpContext);
-                };
-            }
+                await testPageRenderer.Render(context.HttpContext);
+            };
         }
     }
 }
