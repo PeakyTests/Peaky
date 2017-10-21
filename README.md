@@ -1,6 +1,6 @@
 [![Gitter](https://badges.gitter.im/PhillipPruett/Peaky.svg)](https://gitter.im/PhillipPruett/Peaky?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Build status](https://ci.appveyor.com/api/projects/status/5ui79hatbw9k5yas/branch/master?svg=true)](https://ci.appveyor.com/project/PhillipPruett/peaky/branch/master)  [![NuGet Status](http://img.shields.io/nuget/v/Peaky.svg?style=flat)](https://www.nuget.org/packages/Peaky/) 
 
-[Try it out here!](http://peaky.azurewebsites.net/tests)
+[Try it out here!](http://peaky-sample.azurewebsites.net/tests)
 
 ### Peaky Exposes Tests as HTTP Endpoints
 
