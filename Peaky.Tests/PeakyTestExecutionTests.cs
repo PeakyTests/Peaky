@@ -2,10 +2,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Newtonsoft.Json;
@@ -30,28 +28,24 @@ namespace Peaky.Tests
                     .Add("production",
                          "widgetapi",
                          new Uri("http://widgets.com"),
-                         dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
-                    .Add("staging",
-                         "widgetapi",
-                         new Uri("http://widgets.com"),
-                         dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK))))
+                         dependencies => dependencies.Register<HttpClient>(() =>
+                         {
+                             return new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK));
+                         }))
                     .Add("production",
                          "sprocketapi",
                          new Uri("http://widgets.com"),
-                         dependencies => dependencies.Register<HttpClient>(() => new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK)))));
+                         dependencies => dependencies.Register<HttpClient>(() =>
+                         {
+                             return new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK));
+                         })));
 
             disposables.Add(peakyService);
 
             apiClient = peakyService.CreateHttpClient();
-
-            TestsWithTraceOutput.GetResponse = () => "...and the response";
         }
 
-        public void Dispose()
-        {
-            disposables.Dispose();
-            TestsWithTraceOutput.Barrier = null;
-        }
+        public void Dispose() => disposables.Dispose();
 
         [Fact]
         public async Task When_a_test_with_a_return_value_passes_then_a_200_is_returned()
@@ -177,135 +171,6 @@ namespace Peaky.Tests
             var response = apiClient.GetAsync("http://blammo.com/tests/production/sprocketapi/widgetapi_only_test").Result;
 
             response.ShouldFailWith(HttpStatusCode.NotFound);
-        }
-
-        [Fact]
-        public void When_a_test_passes_then_the_response_contains_trace_output_written_by_the_test()
-        {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace").Result;
-
-            var result = response.Content.ReadAsStringAsync().Result;
-
-            result.Should().Contain("Application = widgetapi | Environment = production");
-            result.Should().Contain("...and the response\"");
-        }
-
-        [Fact(Skip = "Coming soon")]
-        public void When_a_test_passes_then_the_response_contains_its_log_output_written_by_the_test()
-        {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_its_log").Result;
-
-            var result = response.Content.ReadAsStringAsync().Result;
-
-            result.Should().Contain("Application = widgetapi | Environment = production");
-            result.Should().Contain("...and the response\"");
-        }
-
-        [Fact]
-        public async Task When_a_test_passes_then_the_response_does_not_contains_trace_output_written_by_other_tests()
-        {
-            TestsWithTraceOutput.Barrier = new Barrier(2);
-
-            var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
-            var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
-
-            var productionResult = await productionResponse.Result.Content.ReadAsStringAsync();
-            var stagingResult = await stagingResponse.Result.Content.ReadAsStringAsync();
-
-            productionResult.Should().Contain("Environment = production");
-            productionResult.Should().NotContain("Environment = staging");
-            stagingResult.Should().Contain("Environment = staging");
-            stagingResult.Should().NotContain("Environment = production");
-        }
-
-        [Fact]
-        public async Task When_a_test_fails_then_the_response_contains_trace_output_written_by_the_test()
-        {
-            TestsWithTraceOutput.GetResponse = () =>
-            {
-                throw new Exception("Doh!");
-            };
-
-            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
-
-            var result = await response.AsTestResult();
-
-            result.Log.Should().Contain("Application = widgetapi | Environment = production");
-        }
-
-        [Fact(Skip = "Coming soon")]
-        public async Task When_a_test_fails_then_the_response_contains_PocketLogger_output_written_by_the_test()
-        {
-            TestsWithTraceOutput.GetResponse = () =>
-            {
-                Logger.Log.Info("Doh!");
-                throw new Exception("oops!");
-            };
-
-            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
-
-            var result = await response.Content.ReadAsStringAsync();
-
-            result.Should().Contain("Application = widgetapi | Environment = production");
-
-            throw new NotImplementedException();
-        }
-
-        [Fact]
-        public async Task When_a_test_fails_then_the_response_does_not_contains_trace_output_written_by_other_tests()
-        {
-            TestsWithTraceOutput.Barrier = new Barrier(2);
-            TestsWithTraceOutput.GetResponse = () => throw new Exception("oh noes!");
-
-            var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
-            var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
-
-            var productionResult = await productionResponse.Result.Content.ReadAsStringAsync();
-            var stagingResult = await stagingResponse.Result.Content.ReadAsStringAsync();
-
-            productionResult.Should().Contain("Environment = production");
-            productionResult.Should().NotContain("Environment = staging");
-            stagingResult.Should().Contain("Environment = staging");
-            stagingResult.Should().NotContain("Environment = production");
-            productionResult.Should().Contain("oh noes!");
-            stagingResult.Should().Contain("oh noes!");
-        }
-    }
-
-    public class TestsWithTraceOutput : IPeakyTest
-    {
-        public static Barrier Barrier;
-
-        public static Func<dynamic> GetResponse;
-
-        private readonly TestTarget target;
-
-        public TestsWithTraceOutput(TestTarget target)
-        {
-            this.target = target;
-        }
-
-        public async Task<dynamic> write_to_trace()
-        {
-            if (Barrier != null)
-            {
-                Console.WriteLine("before barrier: " + target);
-                await Task.Yield();
-                Barrier.SignalAndWait(TimeSpan.FromSeconds(2));
-                Console.WriteLine("after barrier: " + target);
-            }
-
-            Trace.WriteLine($"Application = {target.Application} | Environment = {target.Environment}");
-
-            return GetResponse();
-        }
-
-        public dynamic write_to_pocket_logger()
-        {
-            using (Logger<TestsWithTraceOutput>.Log.OnEnterAndExit().Info("Testing {target}", target))
-            {
-            }
-            return GetResponse();
         }
     }
 }

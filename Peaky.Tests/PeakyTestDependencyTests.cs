@@ -139,7 +139,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_HttpClient_BaseAddress_is_set_in_dependency_registration_then_it_is_not_overridden()
         {
-            var api = new PeakyService(configureTargets: targets =>
+            var api = new PeakyService(targets =>
                                            targets
                                                .Add("production", "widgetapi", new Uri("http://google.com"),
                                                     dependencies => dependencies.Register(() => new HttpClient
@@ -161,7 +161,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_HttpClient_BaseAddress_is_not_set_in_dependency_registration_then_it_is_set_to_the_test_target_configured_value()
         {
-            var api = new PeakyService(configureTargets: targets =>
+            var api = new PeakyService(targets =>
                                            targets
                                                .Add("production", "widgetapi", new Uri("http://bing.com"),
                                                     dependencies => dependencies.Register(() => new HttpClient())));
