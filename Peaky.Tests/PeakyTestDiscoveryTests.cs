@@ -566,10 +566,13 @@ namespace Peaky.Tests
 
         public async Task passing_void_async_test()
         {
+            await Task.Yield();
         }
 
         public async Task failing_void_async_test()
         {
+            await Task.Yield();
+
             throw new Exception("oops!");
         }
 

@@ -174,10 +174,14 @@ namespace Peaky
                                 {
                                     returnValue = ((dynamic) task).Result;
                                 }
+                                else
+                                {
+                                    returnValue = null;
+                                }
                             }
                         }
 
-                        result = TestResult.Pass(returnValue);  
+                        result = TestResult.Pass(returnValue);
                     }
                     catch (ParameterFormatException exception)
                     {

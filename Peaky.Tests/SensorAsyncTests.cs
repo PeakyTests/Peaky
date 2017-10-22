@@ -68,42 +68,31 @@ namespace Peaky.Tests
         [Fact]
         public async Task When_all_sensors_are_requested_then_the_Result_values_are_returned_for_those_that_return_Tasks()
         {
-            var words = Any.Paragraph(5);
-            TestSensor.GetSensorValue = () =>
-            {
-                return Task.Run(() => words);
-            };
+            registry.Add(() => Task.Run(() => "task result"), sensorName);
 
             var result = await apiClient.GetStringAsync("http://blammo.com/sensors/");
 
             result.Should()
-                  .Contain(string.Format("\"SensorMethod\":{{\"Value\":\"{0}\"", words));
+                  .Contain(string.Format("\"{0}\":{{\"Value\":\"{1}\"", sensorName, "task result"));
         }
 
         [Fact]
         public void When_all_sensors_are_requested_and_some_are_slow_async_they_are_combined_with_synchronous_sensors()
         {
-            var testSensor = Any.Paragraph(5);
-            var dynamicSensor = Any.Paragraph(5);
+            registry.Add(() => "fast sensor result", "fast sensor");
 
-            TestSensor.GetSensorValue = () => Task.Run(() =>
+            registry.Add(() => Task.Run(async () =>
             {
-                Thread.Sleep(Any.Int(1000, 2000));
-                return testSensor;
-            });
-
-            registry.Add(() => Task.Run(() =>
-            {
-                Thread.Sleep(Any.Int(3000, 5000));
-                return dynamicSensor;
-            }), sensorName);
+                await Task.Delay(1000);
+                return "slow sensor result";
+            }), "slow sensor");
 
             var result = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
 
             result.Should()
-                  .Contain(string.Format("\"SensorMethod\":{{\"Value\":\"{0}\"", testSensor))
+                  .Contain("\"slow sensor\":{\"Value\":\"slow sensor result\"")
                   .And
-                  .Contain(string.Format("\"{0}\":{{\"Value\":\"{1}\"", sensorName, dynamicSensor));
+                  .Contain("\"fast sensor\":{\"Value\":\"fast sensor result\"");
         }
     }
 }
