@@ -10,6 +10,7 @@ namespace Peaky.SampleWebApplication
     public class HomePageTests : IHaveTags
     {
         private readonly HttpClient httpClient;
+        private ILogger<HomePageTests> logger;
 
         public HomePageTests(
             HttpClient httpClient,
@@ -19,17 +20,25 @@ namespace Peaky.SampleWebApplication
             {
                 throw new ArgumentNullException(nameof(loggerFactory));
             }
+
+            this.logger = loggerFactory.CreateLogger<HomePageTests>();
             this.httpClient = httpClient;
         }
 
         public string[] Tags => new[]
-                                {
-                                    "NonSideEffecting"
-                                };
+        {
+            "NonSideEffecting"
+        };
 
         public async Task homepage_should_return_200OK()
         {
-            (await httpClient.GetAsync("/")).StatusCode.Should().Be(HttpStatusCode.OK);
+            var response = await httpClient.GetAsync("/");
+
+            logger.LogInformation("Response: {response}", response);
+
+            response.StatusCode
+                    .Should()
+                    .Be(HttpStatusCode.OK);
         }
     }
 }
