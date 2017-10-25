@@ -3,11 +3,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;
@@ -103,7 +106,7 @@ namespace Peaky.Tests
 
             message.Should()
                    .Contain(
-                       "{\"ClassName\":\"System.ArgumentException\",\"Message\":\"PocketContainer can\'t construct a System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.Nullable`1[System.DateTimeOffset],System.Collections.Generic.HashSet`1[System.Guid]]] unless you register it first. ☹\"");
+                       "\"ClassName\":\"System.InvalidOperationException\",\"Message\":\"No service for type 'System.Collections.Generic.List`1[System.Collections.Generic.KeyValuePair`2[System.Nullable`1[System.DateTimeOffset],System.Collections.Generic.HashSet`1[System.Guid]]]' has been registered.\"");
         }
 
         [Fact]
@@ -116,10 +119,10 @@ namespace Peaky.Tests
             };
 
             configure.ShouldThrow<ArgumentException>()
-               .Which
-               .Message
-               .Should()
-               .Contain("Base address must be an absolute URI");
+                     .Which
+                     .Message
+                     .Should()
+                     .Contain("Base address must be an absolute URI");
         }
 
         [Fact]
@@ -176,6 +179,31 @@ namespace Peaky.Tests
 
             message.Should().Contain("BaseAddress = http://bing.com");
         }
+
+        [Fact]
+        public async Task Dependencies_added_to_ServiceProvider_are_resolvable_by_Peaky()
+        {
+            var peaky = new PeakyService(
+                configureTargets: targets => targets.Add("production", "widgetapi", new Uri("http://blammo.com")),
+                configureServices: services =>
+                    services.AddTransient<IList<string>>(c =>
+                                                             new List<string>
+                                                             {
+                                                                 "one",
+                                                                 "two",
+                                                                 "three"
+                                                             }),
+                testTypes: new[] { typeof(TestWithDependencyOn<IList<string>>) });
+
+            var response = await peaky.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/dependency_test");
+
+            var testResult = await response.AsTestResult();
+
+            JsonConvert.DeserializeObject<string[]>(testResult.ReturnValue.ToString()).Should()
+                  .BeEquivalentTo("one",
+                                  "two",
+                                  "three");
+        }
     }
 
     public class TestsWithDependencies : IPeakyTest
@@ -189,11 +217,27 @@ namespace Peaky.Tests
             this.testTarget = testTarget ?? throw new ArgumentNullException(nameof(testTarget));
         }
 
-        public async Task<dynamic> is_reachable() => 
+        public async Task<dynamic> is_reachable() =>
             await httpClient.GetAsync("/sensors").ShouldSucceedAsync();
 
-        public string HttpClient_BaseAddress() => 
+        public string HttpClient_BaseAddress() =>
             "BaseAddress = " + httpClient.BaseAddress;
+    }
+
+    public class TestWithDependencyOn<T> : IPeakyTest
+    {
+        private readonly T dependency;
+
+        public TestWithDependencyOn(T dependency)
+        {
+            this.dependency = dependency;
+        }
+
+        public async Task<T> dependency_test()
+        {
+            await Task.Yield();
+            return dependency;
+        }
     }
 
     public class TestsWithDependencyOnTarget : IPeakyTest
@@ -203,7 +247,7 @@ namespace Peaky.Tests
         public TestsWithDependencyOnTarget(TestTarget testTarget)
         {
             this.testTarget = testTarget ??
-                throw new ArgumentNullException(nameof(testTarget));
+                              throw new ArgumentNullException(nameof(testTarget));
         }
 
         public async Task<dynamic> get_target() => testTarget;
@@ -211,7 +255,7 @@ namespace Peaky.Tests
 
     public class TestWithUnsatisfiableDependencies : IPeakyTest
     {
-        public TestWithUnsatisfiableDependencies(IEnumerable<KeyValuePair<DateTimeOffset?, HashSet<Guid>>> probablyNotRegistered)
+        public TestWithUnsatisfiableDependencies(List<KeyValuePair<DateTimeOffset?, HashSet<Guid>>> probablyNotRegistered)
         {
         }
 

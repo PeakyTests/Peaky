@@ -14,7 +14,7 @@ namespace Peaky
         {
             builder.TryAddSingleton(c =>
             {
-                var registry = new TestTargetRegistry();
+                var registry = new TestTargetRegistry(c);
 
                 configure?.Invoke(registry);
 

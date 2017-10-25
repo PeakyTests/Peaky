@@ -1,7 +1,9 @@
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 
 namespace Peaky.SampleWebApplication
 {
@@ -9,8 +11,14 @@ namespace Peaky.SampleWebApplication
     {
         private readonly HttpClient httpClient;
 
-        public HomePageTests(HttpClient httpClient)
+        public HomePageTests(
+            HttpClient httpClient,
+            ILoggerFactory loggerFactory)
         {
+            if (loggerFactory == null)
+            {
+                throw new ArgumentNullException(nameof(loggerFactory));
+            }
             this.httpClient = httpClient;
         }
 

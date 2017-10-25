@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pocket;
 using Xunit;
@@ -14,47 +15,27 @@ namespace Peaky.Tests
 {
     public class TestLoggingTests
     {
-        private readonly HttpClient apiClient;
-
         private readonly CompositeDisposable disposables = new CompositeDisposable();
 
         public TestLoggingTests(ITestOutputHelper output)
         {
             disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
 
-            var peakyService = new PeakyService(
-                targets => targets
-                    .Add("production",
-                         "widgetapi",
-                         new Uri("http://widgets.com"),
-                         dependencies => dependencies.Register<HttpClient>(() =>
-                         {
-                             return new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK));
-                         }))
-                    .Add("staging",
-                         "widgetapi",
-                         new Uri("http://widgets.com"),
-                         dependencies => dependencies.Register<HttpClient>(() =>
-                         {
-                             return new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK));
-                         })));
-
-            disposables.Add(peakyService);
-
-            apiClient = peakyService.CreateHttpClient();
-
             TestsWithTraceOutput.GetResponse = () => "...and the response";
+            TestsWithLoggerOutput.GetResponse = () => "...and the response";
         }
 
         public void Dispose()
         {
             disposables.Dispose();
             TestsWithTraceOutput.Barrier = null;
+            TestsWithLoggerOutput.Barrier = null;
         }
 
         [Fact]
         public void When_a_test_passes_then_the_response_contains_trace_output_written_by_the_test()
         {
+            var apiClient = CreatePeakyClient();
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace").Result;
 
             var result = response.Content.ReadAsStringAsync().Result;
@@ -66,6 +47,7 @@ namespace Peaky.Tests
         [Fact]
         public void When_a_test_passes_then_the_response_contains_ILogger_output_written_by_the_test()
         {
+            var apiClient = CreatePeakyClient(c => c.AddSingleton<ILoggerFactory, LoggerFactory>());
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger").Result;
 
             var result = response.Content.ReadAsStringAsync().Result;
@@ -79,6 +61,7 @@ namespace Peaky.Tests
         {
             TestsWithTraceOutput.Barrier = new Barrier(2);
 
+            var apiClient = CreatePeakyClient();
             var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
             var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
 
@@ -95,7 +78,7 @@ namespace Peaky.Tests
         public async Task When_a_test_passes_then_the_response_does_not_contain_ILogger_output_written_by_other_tests()
         {
             TestsWithTraceOutput.Barrier = new Barrier(2);
-
+            var apiClient = CreatePeakyClient(c => c.AddSingleton<ILoggerFactory, LoggerFactory>());
             var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger");
             var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_logger");
 
@@ -112,7 +95,7 @@ namespace Peaky.Tests
         public async Task When_a_test_fails_then_the_response_contains_trace_output_written_by_the_test()
         {
             TestsWithTraceOutput.GetResponse = () => throw new Exception("Doh!");
-
+            var apiClient = CreatePeakyClient();
             var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
 
             var result = await response.AsTestResult();
@@ -124,7 +107,7 @@ namespace Peaky.Tests
         public async Task When_a_test_fails_then_the_response_contains_ILogger_output_written_by_the_test()
         {
             TestsWithTraceOutput.GetResponse = () => throw new Exception("oops!");
-
+            var apiClient = CreatePeakyClient(c => c.AddSingleton<ILoggerFactory, LoggerFactory>());
             var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger");
 
             var result = await response.Content.ReadAsStringAsync();
@@ -137,7 +120,7 @@ namespace Peaky.Tests
         {
             TestsWithTraceOutput.Barrier = new Barrier(2);
             TestsWithTraceOutput.GetResponse = () => throw new Exception("oh noes!");
-
+            var apiClient = CreatePeakyClient();
             var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
             var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
 
@@ -155,9 +138,9 @@ namespace Peaky.Tests
         [Fact]
         public async Task When_a_test_fails_then_the_response_does_not_contain_ILogger_output_written_by_other_tests()
         {
-            TestsWithTraceOutput.Barrier = new Barrier(2);
-            TestsWithTraceOutput.GetResponse = () => throw new Exception("oh noes!");
-
+            TestsWithLoggerOutput.Barrier = new Barrier(2);
+            TestsWithLoggerOutput.GetResponse = () => throw new Exception("oh noes!");
+            var apiClient = CreatePeakyClient(c => c.AddSingleton<ILoggerFactory, LoggerFactory>());
             var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger");
             var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_logger");
 
@@ -170,6 +153,31 @@ namespace Peaky.Tests
             stagingResult.Should().NotContain("Environment = production");
             productionResult.Should().Contain("oh noes!");
             stagingResult.Should().Contain("oh noes!");
+        }
+
+        private HttpClient CreatePeakyClient(Action<IServiceCollection> configureServices = null)
+        {
+            var peakyService = new PeakyService(
+                targets => targets
+                    .Add("production",
+                         "widgetapi",
+                         new Uri("http://widgets.com"),
+                         dependencies => dependencies.Register<HttpClient>(() =>
+                         {
+                             return new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK));
+                         }))
+                    .Add("staging",
+                         "widgetapi",
+                         new Uri("http://widgets.com"),
+                         dependencies => dependencies.Register<HttpClient>(() =>
+                         {
+                             return new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK));
+                         })),
+                configureServices: configureServices);
+
+            disposables.Add(peakyService);
+
+            return peakyService.CreateHttpClient();
         }
     }
 
@@ -197,7 +205,7 @@ namespace Peaky.Tests
         }
     }
 
-    public class TestsWithLoggeOutput : IPeakyTest
+    public class TestsWithLoggerOutput : IPeakyTest
     {
         public static Barrier Barrier;
 
@@ -206,10 +214,10 @@ namespace Peaky.Tests
         private readonly TestTarget target;
         private readonly ILogger logger;
 
-        public TestsWithLoggeOutput(TestTarget target, ILogger logger)
+        public TestsWithLoggerOutput(TestTarget target, ILoggerFactory loggerFactory)
         {
             this.target = target;
-            this.logger = logger;
+            logger = loggerFactory.CreateLogger<TestsWithLoggerOutput>();
         }
 
         public async Task<dynamic> write_to_logger()
@@ -217,10 +225,10 @@ namespace Peaky.Tests
             if (Barrier != null)
             {
                 await Task.Yield();
-                Barrier.SignalAndWait(TimeSpan.FromSeconds(2));
+                Barrier.SignalAndWait(2.Seconds());
             }
 
-            Trace.WriteLine($"Application = {target.Application} | Environment = {target.Environment}");
+            logger.LogInformation($"Application = {target.Application} | Environment = {target.Environment}");
 
             return GetResponse();
         }
