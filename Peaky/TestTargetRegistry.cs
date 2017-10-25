@@ -6,13 +6,21 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Pocket;
 
 namespace Peaky
 {
     public class TestTargetRegistry : IEnumerable<TestTarget>
     {
+        private readonly IServiceProvider services;
+
         private readonly IDictionary<string, Lazy<TestTarget>> targets = new Dictionary<string, Lazy<TestTarget>>(StringComparer.OrdinalIgnoreCase);
+
+        public TestTargetRegistry(IServiceProvider services = null)
+        {
+            this.services = services;
+        }
 
         public TestTargetRegistry Add(
             string environment,
@@ -20,14 +28,6 @@ namespace Peaky
             Uri baseAddress,
             Action<TestDependencyRegistry> testDependencies = null)
         {
-            if (environment == null)
-            {
-                throw new ArgumentNullException(nameof(environment));
-            }
-            if (application == null)
-            {
-                throw new ArgumentNullException(nameof(application));
-            }
             if (baseAddress == null)
             {
                 throw new ArgumentNullException(nameof(baseAddress));
@@ -36,15 +36,37 @@ namespace Peaky
             {
                 throw new ArgumentException("Base address must be an absolute URI.");
             }
+            if (string.IsNullOrWhiteSpace(environment))
+            {
+                throw new ArgumentException("Value cannot be null or whitespace.", nameof(environment));
+            }
+            if (string.IsNullOrWhiteSpace(application))
+            {
+                throw new ArgumentException("Value cannot be null or whitespace.", nameof(application));
+            }
 
             var container = new PocketContainer()
                 .Register(c => new HttpClient())
-                .RegisterSingle(c =>  new TestTarget(c.Resolve)
+                .RegisterSingle(c => new TestTarget(c.Resolve)
+                {
+                    Application = application,
+                    Environment = environment,
+                    BaseAddress = baseAddress
+                });
+
+            if (services != null)
             {
-                Application = application,
-                Environment = environment,
-                BaseAddress = baseAddress
-            });
+                // fall back to application's IServiceProvider
+                container.AddStrategy(type =>
+                {
+                    if (typeof(IPeakyTest).IsAssignableFrom(type))
+                    {
+                        return null;
+                    }
+
+                    return c => services.GetRequiredService(type);
+                });
+            }
 
             testDependencies?.Invoke(new TestDependencyRegistry((t, func) => container.Register(t, c => func())));
 
@@ -81,8 +103,7 @@ namespace Peaky
 
         internal TestTarget TryGet(string environment, string application)
         {
-            Lazy<TestTarget> target;
-            if (targets.TryGetValue(environment + ":" + application, out target))
+            if (targets.TryGetValue(environment + ":" + application, out var target))
             {
                 return target.Value;
             }
