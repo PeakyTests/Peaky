@@ -78,6 +78,16 @@ namespace Peaky.Tests
         }
 
         [Fact]
+        public async Task When_a_test_with_a_resultless_Task_return_value_passes_then_ReturnValue_is_null()
+        {
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_void_async_test");
+            
+            var result = await response.AsTestResult();
+
+            result.ReturnValue.Should().Be(null);
+        }
+
+        [Fact]
         public void When_a_test_passes_and_returns_an_object_then_the_response_contains_the_test_return_value()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object").Result;
