@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -15,7 +14,7 @@ namespace Peaky
         {
             builder.TryAddSingleton(c =>
             {
-                var registry = new TestTargetRegistry();
+                var registry = new TestTargetRegistry(c);
 
                 configure?.Invoke(registry);
 

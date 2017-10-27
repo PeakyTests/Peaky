@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Peaky
 {
@@ -45,6 +46,9 @@ namespace Peaky
                     var testRouter = new TestRouter(testTargets, testDefinitions)
                         .AllowVerbs("GET", "POST");
                     builder.Routes.Add(testRouter);
+
+                    services.GetService<ILoggerFactory>()
+                            ?.AddProvider(new PeakyLoggerProvider());
                 }
             });
 
