@@ -21,7 +21,20 @@ namespace Peaky.SampleWebApplication
         {
             services.AddMvc();
 
-            services.AddPeakyTests(RegisterTargets);
+            services.AddPeakyTests(
+                targets =>
+                {
+                    targets.Add("production",
+                                "bing",
+                                new Uri("https://bing.com"))
+                           .Add("test",
+                                "bing",
+                                new Uri("https://bing.com"))
+                           .Add("production",
+                                "microsoft",
+                                new Uri("https://microsoft.com"));
+                });
+
             services.AddPeakySensors();
         }
 
@@ -31,13 +44,6 @@ namespace Peaky.SampleWebApplication
             app.UseDeveloperExceptionPage();
             app.UseMvc();
             app.UsePeaky();
-        }
-
-        private void RegisterTargets(TestTargetRegistry targets)
-        {
-            targets.Add("prod", "bing", new Uri("https://bing.com"))
-                   .Add("test", "bing", new Uri("https://bing.com"))
-                   .Add("prod", "microsoft", new Uri("https://microsoft.com"));
         }
     }
 }

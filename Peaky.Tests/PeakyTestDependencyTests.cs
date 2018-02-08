@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;

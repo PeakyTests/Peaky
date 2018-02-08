@@ -11,10 +11,12 @@ namespace Peaky.SampleWebApplication
                              IHaveTags
     {
         private readonly HttpClient httpClient;
+        private readonly TestTarget testTarget;
 
-        public BingTests(HttpClient httpClient)
+        public BingTests(HttpClient httpClient, TestTarget testTarget)
         {
             this.httpClient = httpClient;
+            this.testTarget = testTarget;
         }
 
         public bool AppliesToApplication(string application)
@@ -26,13 +28,13 @@ namespace Peaky.SampleWebApplication
                                 {
                                     "LiveSite",
                                     "NonSideEffecting"
-                                };
+        };
 
-        public string bing_homepage_returned_in_under_5ms()
+        public async Task<string> bing_homepage_returned_in_under_5ms()
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            httpClient.GetAsync("/").Wait();
+            await httpClient.GetAsync("/");
             stopwatch.Stop();
 
             stopwatch.ElapsedMilliseconds.Should().BeLessThan(5);
@@ -42,7 +44,7 @@ namespace Peaky.SampleWebApplication
 
         public async Task<string> images_should_return_200OK()
         {
-            var result = (await httpClient.GetAsync("/images"));
+            var result = await httpClient.GetAsync("/images");
             result.StatusCode.Should().Be(HttpStatusCode.OK);
 
             var content = await result.Content.ReadAsStringAsync();
