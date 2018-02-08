@@ -169,7 +169,7 @@ If you need additional dependencies, they can be registered for constructor inje
             targets.Add("production", 
                         "bing", 
                         new Uri("https://bing.com"),
-                        dependencies => dependencies.Register(() => new Telemetry()));
+                        dependencies => dependencies.Register(() => new MyDependency()));
         });
 ```
 
