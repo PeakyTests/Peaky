@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 
 namespace Peaky.Tests
 {
-    public class TargetBasedTestConstraintTests
+    public class TargetBasedTestConstraintTests : IDisposable
     {
         private readonly CompositeDisposable disposables;
 
