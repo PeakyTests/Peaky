@@ -42,11 +42,11 @@ Any class that implements `IPeakyTest` (or its derived interfaces `IApplyToAppli
 Write a Peaky test much in the same way that you would write any unit test. A test method that throws an exception will return a 500 Internal Server Error response to the caller, signaling failure, and tests that do not throw an exceptions will return 200 OK, signaling success. 
 
 ```csharp
-public string bing_homepage_returned_in_under_5ms()
+public async Task<string> bing_homepage_returned_in_under_5ms()
 {
     var stopwatch = new Stopwatch();
     stopwatch.Start();
-    httpClient.GetAsync("/").Wait();
+    await httpClient.GetAsync("/");
     stopwatch.Stop();
 
     stopwatch.ElapsedMilliseconds.Should().BeLessThan(5);
@@ -56,10 +56,38 @@ public string bing_homepage_returned_in_under_5ms()
 
 #### Routing Tests at Application Startup
 
-Tests will by default be located at `http://yourPeakyApplicationsBaseUri/tests`
+Tests are exposed by default at `http://{domain}/tests`
+
+##### Peaky 3 (ASP.NET MVC Core)
+
+To use Peaky 3 with ASP.NET MVC Core, add the following code to your `Startup` class. 
 
 ```csharp
-config.MapTestRoutes(targets => targets.Add("prod","bing", new Uri("https://bing.com")));
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddMvc();
+
+    services.AddPeakyTests(
+        targets =>
+        {
+            targets.Add("production", "bing", new Uri("https://bing.com"))
+                    .Add("test", "bing", new Uri("https://bing.com"))
+                    .Add("production", "microsoft", new Uri("https://microsoft.com"));
+        });
+}
+
+public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+{
+    app.UseMvc();
+    app.UsePeaky();
+}
+
+```
+
+##### Peaky 2 (.NET Desktop + WebAPI)
+
+```csharp
+config.MapTestRoutes(targets => targets.Add("production","bing", new Uri("https://bing.com")));
 ```
 
 #### Structure of a Peaky Uri
@@ -93,18 +121,64 @@ Numerous tags can be filtered on with one request.
 
 #### Dependency Injection
 
-By default, Peaky will allow your test classes to take a dependency on an `HttpClient` only. This is constructed using the details provided at app startup:
+By default, Peaky will allow your test classes to take a dependency, via constructor injection, on a couple types: `HttpClient` and `TestTarget`. 
 
 ```csharp
-config.MapTestRoutes(targets => targets.Add("prod","bing", new Uri("https://bing.com")));
-```
-This would allow any test classes that apply to both 'prod' and 'bing' to depend on an `HttpClient`.
+public class BingTests : IApplyToApplication, IHaveTags
+{
+    private readonly HttpClient httpClient;
+    private readonly TestTarget testTarget;
 
-If you have other dependencies, they can be registered as follows:
+    public BingTests(HttpClient httpClient, TestTarget testTarget)
+    {
+        this.httpClient = httpClient;
+        this.testTarget = testTarget;
+    }
+    // ...
+}
+```
+
+These are configured using the details provided at app startup:
+
+##### Peaky 3 (ASP.NET MVC Core)
+
+```csharp
+services.AddPeakyTests(
+            targets =>
+            {
+                targets.Add("production", "bing", new Uri("https://bing.com"));
+            });
+```
+
+##### Peaky 2 (.NET Desktop + WebAPI)
+
+```csharp
+config.MapTestRoutes(targets => targets.Add("production","bing", new Uri("https://bing.com")));
+```
+
+This allows any test classes that apply to both 'production' and 'bing' to take a dependency on an `HttpClient` or `TestTarget` within their constructors, and Peaky will pass configured instances when a test is run.
+
+If you need additional dependencies, they can be registered for constructor injection as follows:
+
+##### Peaky 3 (ASP.NET MVC Core)
+
+```csharp
+ services.AddPeakyTests(
+        targets =>
+        {
+            targets.Add("production", 
+                        "bing", 
+                        new Uri("https://bing.com"),
+                        dependencies => dependencies.Register(() => new MyDependency()));
+        });
+```
+
+
+##### Peaky 2 (.NET Desktop + WebAPI)
 
 ```csharp
 config.MapTestRoutes(targets =>
-                     targets.Add("prod",
+                     targets.Add("production",
                                  "bing",
                                  new Uri("https://bing.com"),
                                  registry => registry.Register(new TableStorageClient())
