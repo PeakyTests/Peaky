@@ -27,16 +27,16 @@
     <PackageReference Include="pocket.disposable" Version="1.0.3">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Pocket.TypeDiscovery" Version="0.3.13">
+    <PackageReference Include="Pocket.TypeDiscovery" Version="0.4.1">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="pocketcontainer" Version="1.4.5">
+    <PackageReference Include="pocketcontainer" Version="1.6.3-beta">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="pocketcontainer.aftercreating" Version="1.0.4">
+    <PackageReference Include="pocketcontainer.aftercreating" Version="1.1.0">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="pocketlogger" Version="0.2.6">
+    <PackageReference Include="pocketlogger" Version="0.2.12">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>

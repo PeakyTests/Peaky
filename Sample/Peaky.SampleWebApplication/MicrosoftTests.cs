@@ -23,7 +23,7 @@ namespace Peaky.SampleWebApplication
 
         public bool AppliesToEnvironment(string environment)
         {
-            return environment == "prod";
+            return environment == "production";
         }
 
         public string[] Tags => new[]

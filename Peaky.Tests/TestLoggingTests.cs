@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 
 namespace Peaky.Tests
 {
-    public class TestLoggingTests
+    public class TestLoggingTests : IDisposable
     {
         private readonly CompositeDisposable disposables = new CompositeDisposable();
 
