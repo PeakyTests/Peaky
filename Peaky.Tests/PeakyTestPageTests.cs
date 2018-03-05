@@ -6,7 +6,9 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Net.Http.Headers;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;
@@ -33,7 +35,14 @@ namespace Peaky.Tests
 
             var result = response.Content.ReadAsStringAsync().Result;
 
-            result.Should().StartWith(@"<!doctype html>");
+            response.Content
+                    .Headers
+                    .ContentType
+                    .ToString()
+                    .Should()
+                    .Be("text/html");
+            result.Should()
+                  .StartWith(@"<!doctype html>");
         }
 
         [Fact]
