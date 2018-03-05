@@ -39,6 +39,7 @@ namespace Peaky
 
         public async Task Render(HttpContext httpContext)
         {
+            httpContext.Response.Headers.Add("Content-Type", "text/html");
             await httpContext.Response.WriteAsync(html);
         }
 

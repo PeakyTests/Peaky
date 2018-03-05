@@ -33,6 +33,7 @@ namespace Peaky.Tests
 
             var result = response.Content.ReadAsStringAsync().Result;
 
+            response.Content.Headers.ContentType.Should().Be(new[] { "text/html" });
             result.Should().StartWith(@"<!doctype html>");
         }
 
