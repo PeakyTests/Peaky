@@ -70,7 +70,6 @@ namespace Peaky
                     if (services.GetService(type) != null)
                     {
                         return c => services.GetService(type);
-
                     }
 
                     return null;
