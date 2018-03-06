@@ -54,6 +54,9 @@ namespace Peaky
                     BaseAddress = baseAddress
                 });
 
+            container.OnFailedResolve = (t, e) =>
+                throw new InvalidOperationException($"TestTarget does not contain registration for '{t}'.");
+
             if (services != null)
             {
                 // fall back to application's IServiceProvider
@@ -64,7 +67,13 @@ namespace Peaky
                         return null;
                     }
 
-                    return c => services.GetRequiredService(type);
+                    if (services.GetService(type) != null)
+                    {
+                        return c => services.GetService(type);
+
+                    }
+
+                    return null;
                 });
             }
 
