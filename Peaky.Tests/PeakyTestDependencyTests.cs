@@ -105,7 +105,7 @@ namespace Peaky.Tests
 
             message.Should()
                    .Contain(
-                       "\"ClassName\":\"System.InvalidOperationException\",\"Message\":\"No service for type 'System.Collections.Generic.List`1[System.Collections.Generic.KeyValuePair`2[System.Nullable`1[System.DateTimeOffset],System.Collections.Generic.HashSet`1[System.Guid]]]' has been registered.\"");
+                       "\"ClassName\":\"System.InvalidOperationException\",\"Message\":\"TestTarget does not contain registration for 'System.Collections.Generic.List`1[System.Collections.Generic.KeyValuePair`2[System.Nullable`1[System.DateTimeOffset],System.Collections.Generic.HashSet`1[System.Guid]]]'.\"");
         }
 
         [Fact]
