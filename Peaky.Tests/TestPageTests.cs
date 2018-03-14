@@ -6,20 +6,18 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Internal;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Net.Http.Headers;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Peaky.Tests
 {
-    public class PeakyTestPageTests : IDisposable
+    public class TestPageTests : IDisposable
     {
         private readonly CompositeDisposable disposables = new CompositeDisposable();
 
-        public PeakyTestPageTests(ITestOutputHelper output)
+        public TestPageTests(ITestOutputHelper output)
         {
             disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
         }
