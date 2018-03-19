@@ -162,6 +162,13 @@ namespace Peaky
                         TraceBuffer.Initialize();
 
                         var container = target.DependencyRegistry.Container;
+
+                        if (target.RequiresServiceWarmup)
+                        {
+                            var warmup = container.Resolve<ServiceWarmupTracker>();
+                            await warmup.WarmUp();
+                        }
+
                         var returnValue = await testDefinition.Run(
                                               httpContext,
                                               container.Resolve);

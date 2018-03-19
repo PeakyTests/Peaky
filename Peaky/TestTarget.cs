@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 
 namespace Peaky
 {
@@ -19,5 +20,7 @@ namespace Peaky
         public Uri BaseAddress { get; internal set; }
 
         public TestDependencyRegistry DependencyRegistry { get; }
+
+        public bool RequiresServiceWarmup => DependencyRegistry.Container.Any(r => typeof(ServiceWarmupTracker).IsAssignableFrom(r.Key));
     }
 }
