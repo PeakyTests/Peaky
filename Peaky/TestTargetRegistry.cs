@@ -45,13 +45,16 @@ namespace Peaky
             }
 
             var container = new PocketContainer()
-                .Register(c => new HttpClient())
-                .RegisterSingle(c => new TestTarget(c.Resolve)
-                {
-                    Application = application,
-                    Environment = environment,
-                    BaseAddress = baseAddress
-                });
+                .Register(c => new HttpClient());
+
+            var testDependencyRegistry = new TestDependencyRegistry(container);
+
+            container.RegisterSingle(c => new TestTarget(testDependencyRegistry)
+            {
+                Application = application,
+                Environment = environment,
+                BaseAddress = baseAddress
+            });
 
             container.OnFailedResolve = (t, e) =>
                 throw new InvalidOperationException($"TestTarget does not contain registration for '{t}'.");
@@ -75,7 +78,7 @@ namespace Peaky
                 });
             }
 
-            testDependencies?.Invoke(new TestDependencyRegistry((t, func) => container.Register(t, c => func())));
+            testDependencies?.Invoke(testDependencyRegistry);
 
             container.AfterCreating<HttpClient>(client =>
             {

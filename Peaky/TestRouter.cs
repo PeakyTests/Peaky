@@ -161,9 +161,10 @@ namespace Peaky
                     {
                         TraceBuffer.Initialize();
 
+                        var container = target.DependencyRegistry.Container;
                         var returnValue = await testDefinition.Run(
                                               httpContext,
-                                              target.ResolveDependency);
+                                              container.Resolve);
 
                         if (returnValue is Task task)
                         {

@@ -7,9 +7,9 @@ namespace Peaky
 {
     public class TestTarget
     {
-        public TestTarget(Func<Type, object> resolveDependency)
+        public TestTarget(TestDependencyRegistry testDependencyRegistry)
         {
-            ResolveDependency = resolveDependency ?? throw new ArgumentNullException(nameof(resolveDependency));
+            DependencyRegistry = testDependencyRegistry ?? throw new ArgumentNullException(nameof(testDependencyRegistry));
         }
 
         public string Application { get; internal set; }
@@ -18,6 +18,6 @@ namespace Peaky
 
         public Uri BaseAddress { get; internal set; }
 
-        internal Func<Type, object> ResolveDependency { get; }
+        public TestDependencyRegistry DependencyRegistry { get; }
     }
 }
