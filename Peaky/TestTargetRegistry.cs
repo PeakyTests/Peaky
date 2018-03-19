@@ -6,7 +6,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Pocket;
 
 namespace Peaky
