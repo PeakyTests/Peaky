@@ -46,7 +46,7 @@ namespace Peaky
         internal IEnumerable<Parameter> Parameters
         {
             get => testParameters ??
-                   (testParameters = System.Linq.Enumerable.Empty<Parameter>());
+                   (testParameters = Enumerable.Empty<Parameter>());
             set => testParameters = value;
         }
 

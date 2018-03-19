@@ -78,7 +78,6 @@ namespace Peaky
             }
 
             var testClassInstance = (T) resolve(typeof(T));
-
             return executeTestMethod(testClassInstance);
         }
 
@@ -146,7 +145,7 @@ namespace Peaky
 
             private void Initialize()
             {
-                var testClassInstance = target.ResolveDependency(typeof(T));
+                var testClassInstance = target.DependencyRegistry.Container.Resolve(typeof(T));
 
                 if (target.Environment != null &&
                     testClassInstance is IApplyToEnvironment e &&

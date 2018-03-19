@@ -16,12 +16,12 @@ using Xunit.Abstractions;
 
 namespace Peaky.Tests
 {
-    public class PeakyTestDiscoveryTests : IDisposable
+    public class TestDiscoveryTests : IDisposable
     {
         private readonly HttpClient apiClient;
         private readonly CompositeDisposable disposables = new CompositeDisposable();
 
-        public PeakyTestDiscoveryTests(ITestOutputHelper output)
+        public TestDiscoveryTests(ITestOutputHelper output)
         {
             disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
 

@@ -54,7 +54,7 @@ namespace Peaky
                     break;
 
                 case 3:
-                    RunTest(
+                    await RunTest(
                         segments[0],
                         segments[1],
                         segments[2],
@@ -126,7 +126,7 @@ namespace Peaky
             }
         }
 
-        private void RunTest(
+        private async Task RunTest(
             string environment,
             string application,
             string testName,
@@ -142,7 +142,7 @@ namespace Peaky
                 }
                 catch (TestNotDefinedException)
                 {
-                    context.Handler = async httpContext => { httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound; };
+                    context.Handler = async httpContext => httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
                     return;
                 }
 
@@ -161,9 +161,17 @@ namespace Peaky
                     {
                         TraceBuffer.Initialize();
 
+                        var container = target.DependencyRegistry.Container;
+
+                        if (target.RequiresServiceWarmup)
+                        {
+                            var warmup = container.Resolve<ServiceWarmupTracker>();
+                            await warmup.WarmUp();
+                        }
+
                         var returnValue = await testDefinition.Run(
                                               httpContext,
-                                              target.ResolveDependency);
+                                              container.Resolve);
 
                         if (returnValue is Task task)
                         {
@@ -175,7 +183,8 @@ namespace Peaky
 
                                 if (genericTypeParameter.IsPublic)
                                 {
-                                    returnValue = ((dynamic) task).Result;
+                                    // task is Task<T> so await to get its return value
+                                    returnValue = await (dynamic) task;
                                 }
                                 else
                                 {
