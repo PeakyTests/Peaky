@@ -11,11 +11,16 @@ namespace Peaky
 {
     public static class ApplicationBuilderExtensions
     {
+        private static readonly object lockObj = new object();
+
         public static IApplicationBuilder UsePeaky(this IApplicationBuilder app)
         {
-            if (!Trace.Listeners.OfType<PeakyTraceListener>().Any())
-            {
-                Trace.Listeners.Add(new PeakyTraceListener());
+            lock (lockObj)
+            {            
+                if (!Trace.Listeners.OfType<PeakyTraceListener>().Any())
+                {
+                    Trace.Listeners.Add(new PeakyTraceListener());
+                }
             }
 
             app.UseRouter(builder =>
