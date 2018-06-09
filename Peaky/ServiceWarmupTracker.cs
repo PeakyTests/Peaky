@@ -4,6 +4,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Timers;
+using Pocket;
 
 namespace Peaky
 {
@@ -28,7 +29,11 @@ namespace Peaky
         {
             if (!warmedUp)
             {
-                await warmup.WarmUp();
+                using (Logger.Log.OnEnterAndExit())
+                {
+                    await warmup.WarmUp();
+                }
+
                 warmedUp = true;
             }
         }
