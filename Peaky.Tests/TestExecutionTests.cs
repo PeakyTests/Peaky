@@ -172,5 +172,15 @@ namespace Peaky.Tests
 
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }
+
+        [Fact]
+        public async Task Tests_return_a_duration()
+        {
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object");
+
+            var result = await response.AsTestResult();
+
+            result.Duration.Should().BeGreaterThan(TimeSpan.Zero);
+        }
     }
 }

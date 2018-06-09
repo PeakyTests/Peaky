@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -35,6 +36,25 @@ namespace Peaky
 
         public override async Task RouteAsync(RouteContext context)
         {
+            var (environment, application, test) = ParseUrl(context);
+
+            if (test == null)
+            {
+                ListTests(environment,
+                          application,
+                          context);
+            }
+            else
+            {
+                await RunTest(environment,
+                              application,
+                              test,
+                              context);
+            }
+        }
+
+        private (string environment, string application, string test) ParseUrl(RouteContext context)
+        {
             var segments = context.HttpContext
                                   .Request
                                   .Path
@@ -42,25 +62,31 @@ namespace Peaky
                                   .Substring(pathBase.Length)
                                   .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
-            switch (segments.Length)
-            {
-                case 0:
-                case 1:
-                case 2:
-                    ListTests(
-                        segments.ElementAtOrDefault(0),
-                        segments.ElementAtOrDefault(1),
-                        context);
-                    break;
+            string application = null;
+            string environment = null;
+            string test = null;
 
-                case 3:
-                    await RunTest(
-                        segments[0],
-                        segments[1],
-                        segments[2],
-                        context);
-                    break;
+            if (segments.Length < 3)
+            {
+                var firstSegment = segments.ElementAtOrDefault(0);
+
+                environment = testTargets.FirstOrDefault(t => t.Environment.Equals(firstSegment, StringComparison.OrdinalIgnoreCase))?.Environment;
+
+                application = segments.ElementAtOrDefault(1);
+
+                if (environment == null)
+                {
+                    application = firstSegment;
+                }
             }
+            else if (segments.Length == 3)
+            {
+                environment = segments.ElementAt(0);
+                application = segments.ElementAt(1);
+                test = segments.ElementAt(2);
+            }
+
+            return (environment, application, test);
         }
 
         private void ListTests(
@@ -87,37 +113,37 @@ namespace Peaky
                 context.Handler = async httpContext =>
                 {
                     var applicableTargets = testTargets
-                        .Where(
-                            tt => environment == null ||
-                                  tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase))
-                        .Where(
-                            tt => application == null ||
-                                  tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
-                        .ToArray();
+                                            .Where(
+                                                tt => environment == null ||
+                                                      tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase))
+                                            .Where(
+                                                tt => application == null ||
+                                                      tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
+                                            .ToArray();
 
                     var tests = testDefinitions
-                        .SelectMany(
-                            definition =>
-                                applicableTargets
-                                    .Where(definition.AppliesTo)
-                                    .Where(_ =>
-                                               MatchesFilter(
-                                                   definition.Tags,
-                                                   context.HttpContext.Request.Query))
-                                    .Select(
-                                        target =>
-                                            new Test
-                                            {
-                                                Environment = target.Environment,
-                                                Application = target.Application,
-                                                Url = context.HttpContext.Request.GetLink(target, definition),
-                                                Tags = definition.Tags,
-                                                Parameters = definition.Parameters.Any()
-                                                                 ? definition.Parameters.ToArray()
-                                                                 : null
-                                            })
-                                    .Where(l => l.Url != null))
-                        .OrderBy(t => t.Url.ToString());
+                                .SelectMany(
+                                    definition =>
+                                        applicableTargets
+                                            .Where(definition.AppliesTo)
+                                            .Where(_ =>
+                                                       MatchesFilter(
+                                                           definition.Tags,
+                                                           context.HttpContext.Request.Query))
+                                            .Select(
+                                                target =>
+                                                    new Test
+                                                    {
+                                                        Environment = target.Environment,
+                                                        Application = target.Application,
+                                                        Url = context.HttpContext.Request.GetLink(target, definition),
+                                                        Tags = definition.Tags,
+                                                        Parameters = definition.Parameters.Any()
+                                                                         ? definition.Parameters.ToArray()
+                                                                         : null
+                                                    })
+                                            .Where(l => l.Url != null))
+                                .OrderBy(t => t.Url.ToString());
 
                     var json = JsonConvert.SerializeObject(new { Tests = tests });
 
@@ -157,6 +183,8 @@ namespace Peaky
                 {
                     TestResult result;
 
+                    var stopwatch = Stopwatch.StartNew();
+
                     try
                     {
                         TraceBuffer.Initialize();
@@ -193,16 +221,16 @@ namespace Peaky
                             }
                         }
 
-                        result = TestResult.Pass(returnValue);
+                        result = TestResult.Pass(returnValue, stopwatch.Elapsed);
                     }
                     catch (ParameterFormatException exception)
                     {
-                        result = TestResult.Fail(exception);
+                        result = TestResult.Fail(exception, stopwatch.Elapsed);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                     }
                     catch (Exception exception)
                     {
-                        result = TestResult.Fail(exception);
+                        result = TestResult.Fail(exception, stopwatch.Elapsed);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
                     }
 
