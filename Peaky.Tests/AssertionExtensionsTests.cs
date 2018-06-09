@@ -16,7 +16,7 @@ namespace Peaky.Tests
 
             Action assert = () => response.ShouldSucceed();
 
-            assert.ShouldThrow<AssertionFailedException>();
+            assert.Should().Throw<AssertionFailedException>();
         }
 
         [Fact]
@@ -26,7 +26,7 @@ namespace Peaky.Tests
 
             Action assert = () => response.ShouldFailWith(HttpStatusCode.Forbidden);
 
-            assert.ShouldThrow<AssertionFailedException>();
+            assert.Should().Throw<AssertionFailedException>();
         }
 
         [Fact]
@@ -36,7 +36,7 @@ namespace Peaky.Tests
 
             Action assert = () => response.ShouldSucceed();
 
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
@@ -46,7 +46,7 @@ namespace Peaky.Tests
 
             Action assert = () => response.ShouldFailWith(HttpStatusCode.BadRequest);
 
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
@@ -56,7 +56,7 @@ namespace Peaky.Tests
 
             Func<Task> assert = () => response.ShouldSucceedAsync();
 
-            assert.ShouldThrow<AssertionFailedException>();
+            assert.Should().Throw<AssertionFailedException>();
         }
 
         [Fact]
@@ -66,7 +66,7 @@ namespace Peaky.Tests
 
             Func<Task> assert = () => response.ShouldFailWithAsync(HttpStatusCode.Forbidden);
 
-            assert.ShouldThrow<AssertionFailedException>();
+            assert.Should().Throw<AssertionFailedException>();
         }
 
         [Fact]
@@ -79,7 +79,7 @@ namespace Peaky.Tests
                 var x = response.ShouldSucceedAsync().Result;
             };
 
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
@@ -92,7 +92,7 @@ namespace Peaky.Tests
                 var x = response.ShouldFailWithAsync(HttpStatusCode.BadRequest).Result;
             };
 
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
     }
 }

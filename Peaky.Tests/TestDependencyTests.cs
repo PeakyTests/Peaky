@@ -117,7 +117,8 @@ namespace Peaky.Tests
                                      targets.Add("this", "that", new Uri("/relative/uri", UriKind.Relative)));
             };
 
-            configure.ShouldThrow<ArgumentException>()
+            configure.Should()
+                     .Throw<ArgumentException>()
                      .Which
                      .Message
                      .Should()

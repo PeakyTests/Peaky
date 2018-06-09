@@ -504,10 +504,14 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
-            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
-                   .Parameters.Single(p => p.Name == "foo").DefaultValue.ShouldBeEquivalentTo("bar");
-            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
-                   .Parameters.Single(p => p.Name == "count").DefaultValue.ShouldBeEquivalentTo(1);
+            content.Tests
+                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
+                   .Parameters
+                   .Single(p => p.Name == "foo").DefaultValue.Should().BeEquivalentTo("bar");
+            content.Tests
+                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
+                   .Parameters
+                   .Single(p => p.Name == "count").DefaultValue.Should().BeEquivalentTo(1);
         }
 
         [Fact]

@@ -25,105 +25,105 @@ namespace Peaky.Tests
         public void BeEqualTo_does_not_throw_when_the_expected_value_is_equal_to_the_actual()
         {
             Action assert = () => five.Should().BeEqualTo(5);
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
         public void BeEqualTo_throws_when_the_expected_value_is_greater_than_the_actual()
         {
             Action assert = () => five.Should().BeEqualTo(4);
-            assert.ShouldThrow<AggregationAssertionException<IEnumerable<int>>>();
+            assert.Should().Throw<AggregationAssertionException<IEnumerable<int>>>();
         }
 
         [Fact]
         public void BeEqualTo_throws_when_the_expected_value_is_less_than_the_actual()
         {
             Action assert = () => five.Should().BeEqualTo(6);
-            assert.ShouldThrow<AggregationAssertionException<IEnumerable<int>>>();
+            assert.Should().Throw<AggregationAssertionException<IEnumerable<int>>>();
         }
 
         [Fact]
         public void BeGreaterThan_does_not_throw_when_the_expected_value_is_greater_than_the_actual()
         {
             Action assert = () => five.Should().BeGreaterThan(4);
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
         public void BeGreaterThan_throws_when_the_expected_value_is_equal_to_the_actual()
         {
             Action assert = () => five.Should().BeGreaterThan(5);
-            assert.ShouldThrow<AggregationAssertionException<IEnumerable<int>>>();
+            assert.Should().Throw<AggregationAssertionException<IEnumerable<int>>>();
         }
 
         [Fact]
         public void BeGreaterThan_throws_when_the_expected_value_is_less_than_the_actual()
         {
             Action assert = () => five.Should().BeGreaterThan(6);
-            assert.ShouldThrow<AggregationAssertionException<IEnumerable<int>>>();
+            assert.Should().Throw<AggregationAssertionException<IEnumerable<int>>>();
         }
 
         [Fact]
         public void BeGreaterThanOrEqualTo_does_not_throw_when_the_expected_value_is_equal_to_the_actual()
         {
             Action assert = () => five.Should().BeGreaterThanOrEqualTo(5);
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
         public void BeGreaterThanOrEqualTo_does_not_throw_when_the_expected_value_is_greater_than_the_actual()
         {
             Action assert = () => five.Should().BeGreaterThanOrEqualTo(4);
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
         public void BeGreaterThanOrEqualTo_throws_when_the_expected_value_is_less_than_the_actual()
         {
             Action assert = () => five.Should().BeGreaterThanOrEqualTo(6);
-            assert.ShouldThrow<AggregationAssertionException<IEnumerable<int>>>();
+            assert.Should().Throw<AggregationAssertionException<IEnumerable<int>>>();
         }
 
         [Fact]
         public void BeLessThan_does_not_throw_when_the_expected_value_is_less_than_the_actual()
         {
             Action assert = () => five.Should().BeLessThan(6);
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
         public void BeLessThan_throws_when_the_expected_value_is_equal_to_the_actual()
         {
             Action assert = () => five.Should().BeLessThan(5);
-            assert.ShouldThrow<AggregationAssertionException<IEnumerable<int>>>();
+            assert.Should().Throw<AggregationAssertionException<IEnumerable<int>>>();
         }
 
         [Fact]
         public void BeLessThan_throws_when_the_expected_value_is_greater_than_the_actual()
         {
             Action assert = () => five.Should().BeLessThan(4);
-            assert.ShouldThrow<AggregationAssertionException<IEnumerable<int>>>();
+            assert.Should().Throw<AggregationAssertionException<IEnumerable<int>>>();
         }
 
         [Fact]
         public void BeLessThanOrEqualTo_does_not_throw_when_the_expected_value_is_equal_to_the_actual()
         {
             Action assert = () => five.Should().BeLessThanOrEqualTo(5);
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
         public void BeLessThanOrEqualTo_does_not_throw_when_the_expected_value_is_less_than_the_actual()
         {
             Action assert = () => five.Should().BeLessThanOrEqualTo(6);
-            assert.ShouldNotThrow();
+            assert.Should().NotThrow();
         }
 
         [Fact]
         public void BeLessThanOrEqualTo_throws_when_the_expected_value_is_greater_than_the_actual()
         {
             Action assert = () => five.Should().BeLessThanOrEqualTo(4);
-            assert.ShouldThrow<AggregationAssertionException<IEnumerable<int>>>();
+            assert.Should().Throw<AggregationAssertionException<IEnumerable<int>>>();
         }
 
         [Fact]
@@ -147,7 +147,7 @@ namespace Peaky.Tests
         [Fact]
         public void CountOf_returns_the_values_of_the_enumerable_that_met_the_condition()
         {
-            results.CountOf(r => r.Success).State.ShouldBeEquivalentTo(results.Where(r => r.Success));
+            results.CountOf(r => r.Success).State.Should().BeEquivalentTo(results.Where(r => r.Success));
         }
 
         [Fact]
@@ -165,15 +165,15 @@ namespace Peaky.Tests
         [Fact]
         public void PercentageOf_returns_the_values_of_the_enumerable_that_met_the_condition()
         {
-            results.PercentageOf(r => r.Success).State.ShouldBeEquivalentTo(results.Where(r => r.Success));
+            results.PercentageOf(r => r.Success).State.Should().BeEquivalentTo(results.Where(r => r.Success));
         }
 
         [Fact]
         public void AggregationAssertionException_contains_TState()
         {
             Action assert = () => five.Should().BeLessThan(4);
-            assert.ShouldThrow<AggregationAssertionException<IEnumerable<int>>>()
-                  .And.State.ShouldBeEquivalentTo(Enumerable.Range(1, 5));
+            assert.Should().Throw<AggregationAssertionException<IEnumerable<int>>>()
+                  .And.State.Should().BeEquivalentTo(Enumerable.Range(1, 5));
         }
     }
 }
