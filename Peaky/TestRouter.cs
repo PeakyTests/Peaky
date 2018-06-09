@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -157,6 +158,8 @@ namespace Peaky
                 {
                     TestResult result;
 
+                    var stopwatch = Stopwatch.StartNew();
+
                     try
                     {
                         TraceBuffer.Initialize();
@@ -193,16 +196,16 @@ namespace Peaky
                             }
                         }
 
-                        result = TestResult.Pass(returnValue);
+                        result = TestResult.Pass(returnValue, stopwatch.Elapsed);
                     }
                     catch (ParameterFormatException exception)
                     {
-                        result = TestResult.Fail(exception);
+                        result = TestResult.Fail(exception, stopwatch.Elapsed);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                     }
                     catch (Exception exception)
                     {
-                        result = TestResult.Fail(exception);
+                        result = TestResult.Fail(exception, stopwatch.Elapsed);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
                     }
 

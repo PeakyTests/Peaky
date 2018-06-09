@@ -1,3 +1,5 @@
+using System;
+
 namespace Peaky.Tests
 {
     public class TestResult
@@ -9,5 +11,7 @@ namespace Peaky.Tests
         public string Log { get; set; }
 
         public object Exception { get; set; }
+
+        public TimeSpan Duration { get; set; }
     }
 }
