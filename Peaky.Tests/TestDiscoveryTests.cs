@@ -107,7 +107,7 @@ namespace Peaky.Tests
         [Fact]
         public async Task When_tests_are_queried_by_application_then_tests_not_valid_for_that_application_are_not_returned()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/sprocketapi/").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/sprocketapi/");
 
             response.ShouldSucceed();
 
@@ -115,6 +115,26 @@ namespace Peaky.Tests
 
             testList.Tests
                     .Should().NotContain(o => o.Url.Contains("widgetapi_only_test"));
+        }
+
+        [Fact]
+        public async Task Tests_can_be_queried_by_application_across_all_environments()
+        {
+            var response = await apiClient.GetAsync("http://blammo.com/tests/widgetapi/");
+
+            response.ShouldSucceed();
+
+            var testList = await response.AsTestList();
+
+            testList.Tests
+                    .Should()
+                    .NotContain(o => o.Url.Contains("sprocketapi"));
+            testList.Tests
+                    .Should()
+                    .Contain(o => o.Url == "http://blammo.com/tests/staging/widgetapi/is_reachable");
+            testList.Tests
+                    .Should()
+                    .Contain(o => o.Url == "http://blammo.com/tests/production/widgetapi/is_reachable");
         }
 
         [Fact]
