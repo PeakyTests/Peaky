@@ -15,7 +15,6 @@ using static Pocket.Logger<Peaky.TestDefinition>;
 namespace Peaky
 {
     internal class TestDefinition<T> : TestDefinition
-        where T : IPeakyTest
     {
         private readonly Func<T, dynamic> defaultExecuteTestMethod;
        
