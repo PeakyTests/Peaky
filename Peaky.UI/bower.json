@@ -1,6 +1,6 @@
 {
   "name": "peaky.ui",
-  "homepage": "https://github.com/PhillipPruett/Peaky",
+  "homepage": "https://github.com/PeakyTests/Peaky",
   "ignore": [
     "**/.*",
     "node_modules",
