@@ -15,6 +15,10 @@
     <PackageReference Include="microsoft.aspnetcore.mvc" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
+    <PackageReference Include="Pocket.Disposable" Version="1.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="pocketcontainer" Version="1.6.3-beta" />
     <PackageReference Include="pocketcontainer.aftercreating" Version="1.1.0" />
     <PackageReference Include="pocketlogger" Version="0.2.13" />

@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -9,7 +10,7 @@ namespace Peaky.Tests
 {
     public class SessionTests
     {
-        private ITestOutputHelper output;
+        private readonly ITestOutputHelper output;
 
         public SessionTests(ITestOutputHelper output)
         {
@@ -30,18 +31,18 @@ namespace Peaky.Tests
                                                                BaseAddress = new Uri("http://example.com")
                                                            })), testTypes: new[] { typeof(SessionfulTests) }))
             {
-                var request = CreateRequest(sessionId);
+                var response1 = await peakyService
+                                      .CreateHttpClient()
+                                      .SendAsync(CreateRequest(sessionId));
+                var response2 = await peakyService
+                                      .CreateHttpClient()
+                                      .SendAsync(CreateRequest(sessionId));
 
-                var response1 = await peakyService.CreateHttpClient().SendAsync(request);
-                var response2 = await peakyService.CreateHttpClient().SendAsync(request);
+                var result1 = (long) (await response1.AsTestResult()).ReturnValue;
+                var result2 = (long) (await response2.AsTestResult()).ReturnValue;
 
-                var result1 = await response1.AsTestResult();
-
-                output.WriteLine(result1.ReturnValue.ToString());
+                result2.Should().Be(result1 + 1);
             }
-
-            // TODO (testname) write test
-            throw new NotImplementedException("Test testname is not written yet.");
 
             HttpRequestMessage CreateRequest(string s)
             {
