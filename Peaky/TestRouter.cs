@@ -180,6 +180,7 @@ namespace Peaky
                 }
 
                 var url = context.HttpContext.Request.GetLink(target, testDefinition);
+                var testInfo = new TestInfo(target.Application, target.Environment, testDefinition.TestName, new Uri(url), testDefinition.Tags);
 
                 context.Handler = async httpContext =>
                 {
@@ -222,18 +223,17 @@ namespace Peaky
                                 }
                             }
                         }
-
                        
-                        result = TestResult.Pass(returnValue, stopwatch.Elapsed, target.Application, target.Environment, testDefinition.TestName, testDefinition.Tags, url);
+                        result = TestResult.Pass(returnValue, stopwatch.Elapsed, testInfo);
                     }
                     catch (ParameterFormatException exception)
                     {
-                        result = TestResult.Fail(exception, stopwatch.Elapsed, target.Application, target.Environment, testDefinition.TestName, testDefinition.Tags, url);
+                        result = TestResult.Fail(exception, stopwatch.Elapsed, testInfo);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                     }
                     catch (Exception exception)
                     {
-                        result = TestResult.Fail(exception, stopwatch.Elapsed, target.Application, target.Environment, testDefinition.TestName, testDefinition.Tags, url);
+                        result = TestResult.Fail(exception, stopwatch.Elapsed, testInfo);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
                     }
 
