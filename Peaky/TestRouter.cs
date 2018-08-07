@@ -145,7 +145,7 @@ namespace Peaky
                                             .Where(l => l.Url != null))
                                 .OrderBy(t => t.Url.ToString());
 
-                    var json = JsonConvert.SerializeObject(new { Tests = tests });
+                    var json = JsonConvert.SerializeObject(new { Tests = tests }, SerializerSettings);
 
                     await httpContext.Response.WriteAsync(json);
                 };
@@ -178,6 +178,9 @@ namespace Peaky
                 {
                     return;
                 }
+
+                var url = context.HttpContext.Request.GetLink(target, testDefinition);
+                var testInfo = new TestInfo(target.Application, target.Environment, testDefinition.TestName, new Uri(url), testDefinition.Tags);
 
                 context.Handler = async httpContext =>
                 {
@@ -220,26 +223,35 @@ namespace Peaky
                                 }
                             }
                         }
-
-                        result = TestResult.Pass(returnValue, stopwatch.Elapsed);
+                       
+                        result = TestResult.Pass(returnValue, stopwatch.Elapsed, testInfo);
                     }
                     catch (ParameterFormatException exception)
                     {
-                        result = TestResult.Fail(exception, stopwatch.Elapsed);
+                        result = TestResult.Fail(exception, stopwatch.Elapsed, testInfo);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                     }
                     catch (Exception exception)
                     {
-                        result = TestResult.Fail(exception, stopwatch.Elapsed);
+                        result = TestResult.Fail(exception, stopwatch.Elapsed, testInfo);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
                     }
 
-                    var json = JsonConvert.SerializeObject(result);
+                    var json = JsonConvert.SerializeObject(result, SerializerSettings);
 
                     await httpContext.Response.WriteAsync(json);
                 };
             }
         }
+
+        private static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            Error = (sender, args) =>
+            {
+                args.ErrorContext.Handled = true;
+            }
+        };
 
         private static bool MatchesFilter(
             string[] testTags,

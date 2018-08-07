@@ -103,8 +103,7 @@ namespace Peaky
         public async Task Sensors_can_be_registered_at_runtime()
         {
             var sensorName = nameof(Sensors_can_be_registered_at_runtime);
-            var registry = new SensorRegistry();
-            registry.Add(() => "hello", sensorName);
+            var registry = new SensorRegistry {{() => "hello", sensorName}};
 
             var sensor = registry.Single(s => s.Name == sensorName);
 
@@ -119,9 +118,7 @@ namespace Peaky
         {
             var newGuid = Guid.NewGuid();
 
-            var registry = new SensorRegistry();
-
-            registry.Add(() => newGuid);
+            var registry = new SensorRegistry {() => newGuid};
 
             var sensor = registry.Single(s => s.Read().Result.Value.Equals(newGuid));
 
@@ -131,21 +128,16 @@ namespace Peaky
         [Fact]
         public void When_registered_sensor_is_a_method_then_name_is_derived_from_its_name()
         {
-            var registry = new SensorRegistry();
+            var registry = new SensorRegistry {SensorNameTester};
 
-            registry.Add(SensorNameTester);
-
-            registry.Count(s => s.Name == "SensorNameTester").Should().Be(1);
-        }
+            registry.Count(s => s.Name == "SensorNameTester").Should().Be(1);}
 
         [Fact]
         public void When_registered_sensor_is_anonymous_then_DeclaringType_is_the_containing_type()
         {
             var newGuid = Guid.NewGuid();
 
-            var registry = new SensorRegistry();
-
-            registry.Add(() => newGuid);
+            var registry = new SensorRegistry {() => newGuid};
 
             var sensor = registry.Single(s => s.Read().Result.Value.Equals(newGuid));
 
@@ -155,9 +147,7 @@ namespace Peaky
         [Fact]
         public void When_registered_sensor_is_a_method_then_DeclaringType_is_the_containing_type()
         {
-            var registry = new SensorRegistry();
-
-            registry.Add(StaticTestSensors.ExceptionSensor);
+            var registry = new SensorRegistry {StaticTestSensors.ExceptionSensor};
 
             var sensor = registry.Single(s => s.Name == "ExceptionSensor");
 
@@ -168,8 +158,7 @@ namespace Peaky
         public void When_a_sensor_returns_a_Task_then_its_IsAsync_Property_returns_true()
         {
             var sensorName = Any.Paragraph(5);
-            var registry = new SensorRegistry();
-            registry.Add(AsyncTask, sensorName);
+            var registry = new SensorRegistry {{AsyncTask, sensorName}};
 
             var sensor = registry.Single(s => s.Name == sensorName);
 
@@ -180,10 +169,7 @@ namespace Peaky
         public void When_a_sensor_does_not_return_a_Task_then_its_IsAsync_Property_returns_false()
         {
             var sensorName = Any.Paragraph(5);
-
-            var registry = new SensorRegistry();
-
-            registry.Add(() => "hi!", sensorName);
+            var registry = new SensorRegistry {{() => "hi!", sensorName}};
 
             var sensor = registry.Single(s => s.Name == sensorName);
 

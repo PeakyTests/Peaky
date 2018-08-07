@@ -97,8 +97,20 @@ namespace Peaky.Tests
             var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct").Result;
 
             var result = JsonConvert.DeserializeObject<TestResult>(response.Content.ReadAsStringAsync().Result);
-
             result.Passed.Should().BeTrue();
+        }
+
+        [Fact]
+        public void When_a_test_executes_and_returns_a_struct_then_the_response_contains_test_metadata()
+        {
+            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct").Result;
+
+            var result = JsonConvert.DeserializeObject<TestResult>(response.Content.ReadAsStringAsync().Result);
+            result.Test.Should().NotBeNull();
+            result.Test.Application.Should().Be("widgetapi");
+            result.Test.Environment.Should().Be("production");
+            result.Test.Url.Should().Be("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct");
+            result.Test.Tags.Should().BeNullOrEmpty();
         }
 
         [Fact]

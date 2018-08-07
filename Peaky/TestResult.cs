@@ -21,16 +21,21 @@ namespace Peaky
 
         public Exception Exception { get; private set; }
 
+        public TestInfo Test { get; private set; }
+
         public static TestResult Pass(
             object returnValue,
-            TimeSpan duration)
+            TimeSpan duration,
+            TestInfo test)
         {
+           
             var testResult = new TestResult
             {
                 ReturnValue = returnValue,
                 Log = TraceBuffer.Current?.ToString(),
                 Passed = true,
-                Duration = duration
+                Duration = duration,
+                Test = test
             };
 
             return testResult;
@@ -38,19 +43,23 @@ namespace Peaky
 
         public static TestResult Fail(
             Exception exception,
-            TimeSpan duration)
+            TimeSpan duration, 
+            TestInfo test)
         {
             if (exception == null)
             {
                 throw new ArgumentNullException(nameof(exception));
             }
 
+          
+
             var testResult = new TestResult
             {
                 Log = TraceBuffer.Current?.ToString(),
                 Passed = false,
                 Exception = exception,
-                Duration = duration
+                Duration = duration,
+                Test = test
             };
 
             return testResult;

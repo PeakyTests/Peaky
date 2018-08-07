@@ -13,5 +13,7 @@ namespace Peaky.Tests
         public object Exception { get; set; }
 
         public TimeSpan Duration { get; set; }
+
+        public TestInfo Test { get; set; }
     }
 }

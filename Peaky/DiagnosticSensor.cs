@@ -154,17 +154,11 @@ namespace Peaky
                             .Where(m =>
                             {
                                 return m.GetCustomAttributes()
-                                        .Any(a =>
-                                        {
-                                            return a.GetType().Name.Equals("DiagnosticSensor") ||
-                                                   a.GetType().Name.Equals("DiagnosticSensorAttribute");
-                                        });
+                                        .Any(a => a.GetType().Name.Equals("DiagnosticSensor") ||
+                                                  a.GetType().Name.Equals("DiagnosticSensorAttribute"));
                             });
                 })
-                .Select(m =>
-                {
-                    return new DiagnosticSensor(m);
-                })
+                .Select(m => new DiagnosticSensor(m))
                 .ToArray();
         }
 
