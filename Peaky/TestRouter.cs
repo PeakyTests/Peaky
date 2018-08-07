@@ -145,7 +145,7 @@ namespace Peaky
                                             .Where(l => l.Url != null))
                                 .OrderBy(t => t.Url.ToString());
 
-                    var json = JsonConvert.SerializeObject(new { Tests = tests });
+                    var json = JsonConvert.SerializeObject(new { Tests = tests }, SerializerSettings);
 
                     await httpContext.Response.WriteAsync(json);
                 };
@@ -237,12 +237,21 @@ namespace Peaky
                         httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
                     }
 
-                    var json = JsonConvert.SerializeObject(result);
+                    var json = JsonConvert.SerializeObject(result, SerializerSettings);
 
                     await httpContext.Response.WriteAsync(json);
                 };
             }
         }
+
+        private static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            Error = (sender, args) =>
+            {
+                args.ErrorContext.Handled = true;
+            }
+        };
 
         private static bool MatchesFilter(
             string[] testTags,

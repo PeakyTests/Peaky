@@ -27,6 +27,7 @@ namespace Peaky
             {
                 var services = builder.ServiceProvider;
 
+                
                 var sensorRegistry = services.GetService<SensorRegistry>();
 
                 if (sensorRegistry != null)
