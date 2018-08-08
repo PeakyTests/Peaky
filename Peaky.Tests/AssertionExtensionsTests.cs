@@ -9,9 +9,6 @@ namespace Peaky.Tests
 {
     public class AssertionExtensionsTests
     {
-        [Fact] 
-        public void just_checking() => throw new Exception("oops");
-
         [Fact]
         public async Task When_ShouldSucceed_is_passed_a_failed_response_it_throws()
         {
