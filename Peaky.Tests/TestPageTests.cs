@@ -52,7 +52,7 @@ namespace Peaky.Tests
 
             var result = await response.Content.ReadAsStringAsync();
 
-            result.Should().Contain(@"<script src=""//phillippruett.github.io/Peaky/javascripts/peaky.js?version=");
+            result.Should().Contain(@"<script src=""//peakytests.github.io/Peaky/javascripts/peaky.js?version=");
         }
 
         [Fact]
@@ -64,7 +64,7 @@ namespace Peaky.Tests
 
             var result = await response.Content.ReadAsStringAsync();
 
-            result.Should().Contain(@"<link rel=""stylesheet"" href=""//phillippruett.github.io/Peaky/stylesheets/peaky.css?version=");
+            result.Should().Contain(@"<link rel=""stylesheet"" href=""//peakytests.github.io/Peaky/stylesheets/peaky.css?version=");
 
         }
 

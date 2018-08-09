@@ -23,7 +23,7 @@ namespace Peaky
         private readonly string html;
 
         public TestPageRenderer(
-            string scriptUrl = "//phillippruett.github.io/Peaky/javascripts/peaky.js",
+            string scriptUrl = "//peakytests.github.io/Peaky/javascripts/peaky.js",
             IEnumerable<PathString> libraryUrls = null,
             IEnumerable<PathString> styleSheets = null)
         {
@@ -51,7 +51,7 @@ namespace Peaky
                                                 .Select(u => $@"<script src=""{u}""></script>"));
 
             var defaultStylesheet =
-                new PathString($"//phillippruett.github.io/Peaky/stylesheets/peaky.css")
+                new PathString($"//peakytests.github.io/Peaky/stylesheets/peaky.css")
                     .Add(new QueryString($"?version={version}"));
 
             var styleSheetRefs =
