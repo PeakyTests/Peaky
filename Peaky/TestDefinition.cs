@@ -39,7 +39,7 @@ namespace Peaky
             testDefinition.TestType = testType;
             testDefinition.Parameters = methodInfo.GetParameters()
                                                   .Select(p =>
-                                                              new Parameter(p.Name, p.DefaultValue));
+                                                              new Parameter(p.Name, p.GetDefaultValue()));
             return testDefinition;
         }
 

@@ -21,7 +21,7 @@ namespace Peaky
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Parameter[] Parameters { get; set; }
 
-        public static IEnumerable<Test> CreateTests(TestTarget testTarget)
+        public static IEnumerable<Test> CreateTests(TestTarget testTarget, TestDefinition definition)
         {
             return Enumerable.Empty<Test>();
         }

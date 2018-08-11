@@ -30,13 +30,9 @@ namespace Peaky
             defaultExecuteTestMethod = BuildTestMethodExpression(
                 methodInfo,
                 methodInfo.GetParameters()
-                          .Select(p => Expression.Constant(p.HasDefaultValue ? p.DefaultValue : GetDefaultValue( p.ParameterType), p.ParameterType)));
+                          .Select(p => Expression.Constant(p.GetDefaultValue(), p.ParameterType)));
         }
 
-        private static object GetDefaultValue(Type type)
-        {
-            return type.IsValueType ? Activator.CreateInstance(type): null;
-        }
 
         public override bool AppliesTo(TestTarget target) =>
             applicabilityCache.GetOrAdd(target, t => new DetailsForTarget(t))

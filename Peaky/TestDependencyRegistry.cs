@@ -76,6 +76,11 @@ namespace Peaky
         {
             return parametrisedTestCases.TryGetValue(method, out var parameters) ? parameters : null;
         }
+
+        internal IEnumerable<(MethodInfo testMethod, IEnumerable<Parameter> testParameters)> GetParameterSetsFor(Type type)
+        {
+            return parametrisedTestCases.Where(e => e.Key.DeclaringType == type).Select(e =>(e.Key, e.Value));
+        }
     }
     
 }

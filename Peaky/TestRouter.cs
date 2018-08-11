@@ -121,6 +121,28 @@ namespace Peaky
                                                       tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
                                             .ToArray();
 
+                    foreach (var parametrizedTestCases in testDefinitions
+                        
+                        .SelectMany(
+                            definition =>
+                                applicableTargets
+                                    .Where(definition.AppliesTo)
+                                    .Where(_ => MatchesFilter(definition.Tags, context.HttpContext.Request.Query))
+                                    .Select(target => (type: definition.TestType, target:target)))
+                        .GroupBy(e => e.type)
+                        .Where(e => e.Key.GetInterfaces().Contains(typeof(IParametrizedTestCases)))
+                        .Select(e => (type:e.Key, targets: e.Select(g => g.target))))
+                    {
+                        
+                        foreach (var testTarget in parametrizedTestCases.targets)
+                        {
+                            var testClassInstance = (IParametrizedTestCases)testTarget.DependencyRegistry.Container.Resolve(parametrizedTestCases.type);
+                            testClassInstance.RegisterTestCasesTo(testTarget.DependencyRegistry);
+                        }
+                    }
+
+
+
                     var tests = testDefinitions
                                 .SelectMany(
                                     definition =>
@@ -150,6 +172,11 @@ namespace Peaky
                     await httpContext.Response.WriteAsync(json);
                 };
             }
+        }
+
+        private void ExtractTestCases()
+        {
+           
         }
 
         private async Task RunTest(
