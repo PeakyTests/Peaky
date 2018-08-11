@@ -41,7 +41,10 @@ namespace Peaky
                             .GetMethods(BindingFlags.Public |
                                         BindingFlags.Instance |
                                         BindingFlags.DeclaredOnly)
-                            .Where(m => m.GetParameters().All(p => p.HasDefaultValue))
+                            .Where(NotDefinedOn<IApplyToApplication>)
+                            .Where(NotDefinedOn<IApplyToEnvironment>)
+                            .Where(NotDefinedOn<IApplyToTarget>)
+                            .Where(NotDefinedOn<IParametrizedTestCases>)
                             .Where(m => !m.IsSpecialName)
                             .Select(TestDefinition.Create));
 
@@ -61,6 +64,17 @@ namespace Peaky
         }
 
         public IEnumerator<TestDefinition> GetEnumerator() => tests.Values.GetEnumerator();
+
+        private static bool NotDefinedOn<T>(MethodInfo method)
+        {
+            if (method.DeclaringType.GetInterface(typeof(T).Name) == null)
+            {
+                return true;
+            }
+            var map = method.DeclaringType.GetInterfaceMap(typeof(T));
+            var found = map.TargetMethods.Contains(method);
+            return !found;
+        }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

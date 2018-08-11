@@ -2,12 +2,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using FluentAssertions;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 using Its.Recipes;
 using Newtonsoft.Json;
 using Pocket;
@@ -30,6 +32,7 @@ namespace Peaky.Tests
                     targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
                            .Add("production", "widgetapi", new Uri("http://widgets.com"))
                            .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
+                           .Add("staging", "parametrized", new Uri("http://staging.parametrized.com"))
                            .Add("production", "sprocketapi", new Uri("http://sprockets.com")));
 
             apiClient = peakyService.CreateHttpClient();
@@ -425,12 +428,12 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void when_a_public_method_has_non_optional_parameters_then_it_is_not_discovered_as_a_test()
+        public void when_a_public_method_has_non_optional_parameters_then_it_is_discovered_as_a_test()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
 
             response.ShouldSucceed();
-            response.Content.ReadAsStringAsync().Result.Should().NotContain("test_with_non_optional_parameters");
+            response.Content.ReadAsStringAsync().Result.Should().Contain("test_with_non_optional_parameters");
         }
 
         [Fact]
@@ -451,6 +454,16 @@ namespace Peaky.Tests
 
             response.ShouldSucceed();
             response.Content.ReadAsStringAsync().Result.Should().Contain("notbar");
+        }
+
+        [Fact]
+        public void when_a_test_with_optional_parameters_is_called_with_ecoded_values_then_values_are_decoded()
+        {
+            var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/" +
+                                              $"string_returning_test_with_optional_parameters?foo={HttpUtility.UrlEncode("//")}").Result;
+
+            response.ShouldSucceed();
+            response.Content.ReadAsStringAsync().Result.Should().Contain("//");
         }
 
         [Fact]
@@ -544,6 +557,17 @@ namespace Peaky.Tests
 
             content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/passing_test_returns_object")
                    .Parameters.Should().BeNull();
+        }
+
+        [Fact]
+        public void when_a_test_exposes_parametrized_test_cases_then_the_input_parameters_are_recorded()
+        {
+            var response = apiClient.GetAsync("http://blammo.com/tests/staging/parametrized/").Result;
+
+            response.ShouldSucceed();
+            var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
+            
+            content.Tests.Should().Contain(t => t.Url.ToString().ToLowerInvariant().Contains( "i_do_stuff"));
         }
     }
 
@@ -704,6 +728,46 @@ namespace Peaky.Tests
 
         public bool AppliesToApplication(string application) => application.Equals("widgetapi", StringComparison.OrdinalIgnoreCase);
     }
+
+
+    public class ParametrizedTest : IApplyToApplication, IParametrizedTestCases
+    {
+        private readonly Dictionary<string, EnvironmentStuff> _environmentLookup;
+        public bool AppliesToApplication(string application) => application.Equals("parametrized", StringComparison.OrdinalIgnoreCase);
+        
+        public ParametrizedTest()
+        {
+            _environmentLookup = new Dictionary<string, EnvironmentStuff>
+            {
+                { "case1", new EnvironmentStuff{Value = true} },
+                { "case2", new EnvironmentStuff {Value = false} },
+                { "case3", new EnvironmentStuff {Value = true} },
+                { "case4", new EnvironmentStuff{Value = false} }
+            };
+        }
+
+        public void I_do_stuff(string testCaseId, bool extectedResult)
+        {
+            var env = _environmentLookup[testCaseId];
+            env.Value.Should().Be(extectedResult);
+        }
+
+        private class EnvironmentStuff
+        {
+            public bool Value { get; set; }
+        }
+
+        public void RegisterTestCasesTo(TestDependencyRegistry registry)
+        {
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case1", true));
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case2", false));
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case3", true));
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case4", false));
+        }
+    }
+
+
+   
 
     public class CollisionTest1 : IPeakyTest
     {

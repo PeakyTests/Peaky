@@ -23,19 +23,19 @@ namespace Peaky
 
         internal TestDefinition(MethodInfo methodInfo)
         {
-            if (methodInfo == null)
-            {
-                throw new ArgumentNullException(nameof(methodInfo));
-            }
-
-            this.methodInfo = methodInfo;
+            this.methodInfo = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
 
             TestName = methodInfo.Name;
 
             defaultExecuteTestMethod = BuildTestMethodExpression(
                 methodInfo,
                 methodInfo.GetParameters()
-                          .Select(p => Expression.Constant(p.DefaultValue)));
+                          .Select(p => Expression.Constant(p.HasDefaultValue ? p.DefaultValue : GetDefaultValue( p.ParameterType), p.ParameterType)));
+        }
+
+        private static object GetDefaultValue(Type type)
+        {
+            return type.IsValueType ? Activator.CreateInstance(type): null;
         }
 
         public override bool AppliesTo(TestTarget target) =>
