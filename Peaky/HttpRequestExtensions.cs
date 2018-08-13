@@ -48,6 +48,7 @@ namespace Peaky
             return string.Join(
                 "&",
                 parameters
+                    .OrderBy(p => p.Name)
                     .Where(p => p.DefaultValue != null)
                     .Select(p => $"{p.Name}={HttpUtility.UrlEncode(p.DefaultValue.ToString())}"));
         }
