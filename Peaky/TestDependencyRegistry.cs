@@ -13,7 +13,7 @@ namespace Peaky
 {
     public class TestDependencyRegistry
     {
-        private readonly ConcurrentDictionary<MethodInfo, ConcurrentBag<IEnumerable<Parameter>>> parametrizedTestCases = new ConcurrentDictionary<MethodInfo, ConcurrentBag<IEnumerable<Parameter>>>();
+        private readonly ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, ParameterSet>> parametrizedTestCases = new ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string,ParameterSet>>();
 
         internal TestDependencyRegistry(PocketContainer container)
         {
@@ -43,12 +43,12 @@ namespace Peaky
         {
             var parametrizedTestCase = ExtractParametrizedTestCase(expression);
             var testCases = parametrizedTestCases.GetOrAdd(parametrizedTestCase.method,
-                key => new ConcurrentBag<IEnumerable<Parameter>>());
-            testCases.Add(parametrizedTestCase.parameters);
+                key => new ConcurrentDictionary<string,ParameterSet>());
+            testCases.TryAdd(parametrizedTestCase.parameters.GetQueryString(), parametrizedTestCase.parameters);
             return this;
         }
 
-        private static (MethodInfo method, Parameter[] parameters) ExtractParametrizedTestCase(MethodCallExpression expression)
+        private static (MethodInfo method, ParameterSet parameters) ExtractParametrizedTestCase(MethodCallExpression expression)
         {
             var body = expression;
             var method = body.Method;
@@ -75,12 +75,12 @@ namespace Peaky
                 values.Add(new Parameter(argumentName, data));
             }
 
-            return (method, values.ToArray());
+            return (method, new ParameterSet( values ));
         }
 
-        internal IEnumerable<IEnumerable<Parameter>> GetParameterSetsFor(MethodInfo method)
+        internal IEnumerable<ParameterSet> GetParameterSetsFor(MethodInfo method)
         {
-            return parametrizedTestCases.TryGetValue(method, out var parameters) ? parameters : null;
+            return parametrizedTestCases.TryGetValue(method, out var parameters) ? parameters.Select(e => e.Value) : null;
         }
     }
     

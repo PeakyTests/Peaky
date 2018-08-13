@@ -31,6 +31,17 @@ namespace Peaky
             return $"{request.GetLink(testTarget, testDefinition)}{query}";
         }
 
+        internal static string GetLinkWithQuery(
+            this HttpRequest request,
+            TestTarget testTarget,
+            TestDefinition testDefinition,
+            ParameterSet parameters)
+        {
+            var query = parameters.GetQueryString();
+            query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"/?{query}";
+            return $"{request.GetLink(testTarget, testDefinition)}{query}";
+        }
+
 
         internal static string GetQueryString(IEnumerable<Parameter> parameters)
         {
