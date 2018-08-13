@@ -166,11 +166,6 @@ namespace Peaky
             }
         }
 
-        private void ExtractTestCases()
-        {
-           
-        }
-
         private async Task RunTest(
             string environment,
             string application,
