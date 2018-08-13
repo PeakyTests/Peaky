@@ -524,10 +524,9 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
-            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?foo=bar&count=1")
-                   .Parameters.Should().ContainSingle(p => p.Name == "foo");
-            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?foo=bar&count=1")
-                   .Parameters.Should().ContainSingle(p => p.Name == "count");
+            var test = content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?count=1&foo=bar");
+            test.Parameters.Should().ContainSingle(p => p.Name == "foo");
+            test.Parameters.Should().ContainSingle(p => p.Name == "count");
         }
 
         [Fact]
@@ -538,14 +537,9 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
-            content.Tests
-                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?foo=bar&count=1")
-                   .Parameters
-                   .Single(p => p.Name == "foo").DefaultValue.Should().BeEquivalentTo("bar");
-            content.Tests
-                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?foo=bar&count=1")
-                   .Parameters
-                   .Single(p => p.Name == "count").DefaultValue.Should().BeEquivalentTo(1);
+            var test = content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?count=1&foo=bar");
+            test.Parameters.Single(p => p.Name == "foo").DefaultValue.Should().BeEquivalentTo("bar");
+            test.Parameters.Single(p => p.Name == "count").DefaultValue.Should().BeEquivalentTo(1);
         }
 
         [Fact]
