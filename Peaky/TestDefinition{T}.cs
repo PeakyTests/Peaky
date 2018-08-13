@@ -18,12 +18,12 @@ namespace Peaky
         where T : IPeakyTest
     {
         private readonly Func<T, dynamic> defaultExecuteTestMethod;
-        private readonly MethodInfo methodInfo;
+       
         private readonly ConcurrentDictionary<TestTarget, DetailsForTarget> applicabilityCache = new ConcurrentDictionary<TestTarget, DetailsForTarget>();
 
         internal TestDefinition(MethodInfo methodInfo)
         {
-            this.methodInfo = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
+            TestMethod = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
 
             TestName = methodInfo.Name;
 
@@ -48,14 +48,14 @@ namespace Peaky
         internal override async Task<object> Run(HttpContext context, Func<Type, object> resolve)
         {
             var executeTestMethod = defaultExecuteTestMethod;
-            var methodParameters = methodInfo.GetParameters();
+            var methodParameters = TestMethod.GetParameters();
 
             var queryParameters = context.Request.Query;
 
             if (queryParameters.Keys.Any(p => methodParameters.Select(pp => pp.Name).Contains(p)))
             {
                 executeTestMethod = BuildTestMethodExpression(
-                    methodInfo,
+                    TestMethod,
                     methodParameters
                         .Select(p =>
                         {
@@ -78,7 +78,7 @@ namespace Peaky
         }
 
         public override string ToString() =>
-            $"{base.ToString()} ({methodInfo.DeclaringType}.{methodInfo.Name})";
+            $"{base.ToString()} ({TestMethod.DeclaringType}.{TestMethod.Name})";
 
         private static Func<T, dynamic> BuildTestMethodExpression(MethodInfo methodInfo, IEnumerable<ConstantExpression> parameters)
         {

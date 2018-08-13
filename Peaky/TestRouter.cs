@@ -121,27 +121,7 @@ namespace Peaky
                                                       tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
                                             .ToArray();
 
-                    foreach (var parametrizedTestCases in testDefinitions
-                        
-                        .SelectMany(
-                            definition =>
-                                applicableTargets
-                                    .Where(definition.AppliesTo)
-                                    .Where(_ => MatchesFilter(definition.Tags, context.HttpContext.Request.Query))
-                                    .Select(target => (type: definition.TestType, target:target)))
-                        .GroupBy(e => e.type)
-                        .Where(e => e.Key.GetInterfaces().Contains(typeof(IParametrizedTestCases)))
-                        .Select(e => (type:e.Key, targets: e.Select(g => g.target))))
-                    {
-                        
-                        foreach (var testTarget in parametrizedTestCases.targets)
-                        {
-                            var testClassInstance = (IParametrizedTestCases)testTarget.DependencyRegistry.Container.Resolve(parametrizedTestCases.type);
-                            testClassInstance.RegisterTestCasesTo(testTarget.DependencyRegistry);
-                        }
-                    }
-
-
+                    DiscoverParametrizedTestCases(context, applicableTargets);
 
                     var tests = testDefinitions
                                 .SelectMany(
@@ -152,18 +132,8 @@ namespace Peaky
                                                        MatchesFilter(
                                                            definition.Tags,
                                                            context.HttpContext.Request.Query))
-                                            .Select(
-                                                target =>
-                                                    new Test
-                                                    {
-                                                        Environment = target.Environment,
-                                                        Application = target.Application,
-                                                        Url = context.HttpContext.Request.GetLink(target, definition),
-                                                        Tags = definition.Tags,
-                                                        Parameters = definition.Parameters.Any()
-                                                                         ? definition.Parameters.ToArray()
-                                                                         : null
-                                                    })
+                                            .SelectMany(
+                                                target => Test.CreateTests(target,definition, context.HttpContext.Request))
                                             .Where(l => l.Url != null))
                                 .OrderBy(t => t.Url.ToString());
 
@@ -171,6 +141,28 @@ namespace Peaky
 
                     await httpContext.Response.WriteAsync(json);
                 };
+            }
+        }
+
+        private void DiscoverParametrizedTestCases(RouteContext context, TestTarget[] applicableTargets)
+        {
+            foreach (var parametrizedTestCases in testDefinitions
+                .SelectMany(
+                    definition =>
+                        applicableTargets
+                            .Where(definition.AppliesTo)
+                            .Where(_ => MatchesFilter(definition.Tags, context.HttpContext.Request.Query))
+                            .Select(target => (type: definition.TestType, target: target)))
+                .GroupBy(e => e.type)
+                .Where(e => e.Key.GetInterfaces().Contains(typeof(IParametrizedTestCases)))
+                .Select(e => (type: e.Key, targets: e.Select(g => g.target))))
+            {
+                foreach (var testTarget in parametrizedTestCases.targets)
+                {
+                    var testClassInstance =
+                        (IParametrizedTestCases) testTarget.DependencyRegistry.Container.Resolve(parametrizedTestCases.type);
+                    testClassInstance.RegisterTestCasesTo(testTarget.DependencyRegistry);
+                }
             }
         }
 

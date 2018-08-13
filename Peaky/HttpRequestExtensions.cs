@@ -20,12 +20,25 @@ namespace Peaky
 
             return $"{scheme}://{host}/tests/{testTarget.Environment}/{testTarget.Application}/{testDefinition.TestName}";
         }
+        internal static string GetLinkWithQuery(
+            this HttpRequest request,
+            TestTarget testTarget,
+            TestDefinition testDefinition,
+            IEnumerable<Parameter> parameters)
+        {
+            var query = GetQueryString(parameters);
+            query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"/?{query}";
+            return $"{request.GetLink(testTarget, testDefinition)}{query}";
+        }
+
 
         internal static string GetQueryString(IEnumerable<Parameter> parameters)
         {
             return string.Join(
                 "&",
-                parameters.Select(p => $"{p.Name}={HttpUtility.UrlEncode(p.DefaultValue.ToString())}"));
+                parameters
+                    .Where(p => p.DefaultValue != null)
+                    .Select(p => $"{p.Name}={HttpUtility.UrlEncode(p.DefaultValue.ToString())}"));
         }
     }
 }

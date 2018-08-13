@@ -523,9 +523,9 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
-            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
+            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?foo=bar&count=1")
                    .Parameters.Should().ContainSingle(p => p.Name == "foo");
-            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
+            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?foo=bar&count=1")
                    .Parameters.Should().ContainSingle(p => p.Name == "count");
         }
 
@@ -538,11 +538,11 @@ namespace Peaky.Tests
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
             content.Tests
-                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
+                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?foo=bar&count=1")
                    .Parameters
                    .Single(p => p.Name == "foo").DefaultValue.Should().BeEquivalentTo("bar");
             content.Tests
-                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
+                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?foo=bar&count=1")
                    .Parameters
                    .Single(p => p.Name == "count").DefaultValue.Should().BeEquivalentTo(1);
         }
@@ -567,7 +567,13 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
             
-            content.Tests.Should().Contain(t => t.Url.ToString().ToLowerInvariant().Contains( "i_do_stuff"));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?testCaseId=case1&extectedResult=true", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?testCaseId=case2&extectedResult=false", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?testCaseId=case3&extectedResult=true", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?testCaseId=case4&extectedResult=false", StringComparison.OrdinalIgnoreCase));
+
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?testCaseId=case1&extectedResult=true", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?testCaseId=case2&extectedResult=false", StringComparison.OrdinalIgnoreCase));
         }
     }
 
@@ -752,6 +758,13 @@ namespace Peaky.Tests
             env.Value.Should().Be(extectedResult);
         }
 
+        public bool I_do_stuff_and_return(string testCaseId, bool extectedResult)
+        {
+            var env = _environmentLookup[testCaseId];
+            env.Value.Should().Be(extectedResult);
+            return env.Value;
+        }
+
         private class EnvironmentStuff
         {
             public bool Value { get; set; }
@@ -763,6 +776,9 @@ namespace Peaky.Tests
             registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case2", false));
             registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case3", true));
             registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case4", false));
+
+            registry.RegisterParameterFor<ParametrizedTest,bool>(testClass => testClass.I_do_stuff_and_return("case1", true));
+            registry.RegisterParameterFor<ParametrizedTest,bool>(testClass => testClass.I_do_stuff_and_return("case2", false));
         }
     }
 

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -12,7 +13,7 @@ namespace Peaky
 {
     public class TestDependencyRegistry
     {
-        private Dictionary<MethodInfo, IEnumerable<Parameter>> parametrisedTestCases = new Dictionary<MethodInfo, IEnumerable<Parameter>>();
+        private readonly ConcurrentDictionary<MethodInfo, ConcurrentBag<IEnumerable<Parameter>>> parametrizedTestCases = new ConcurrentDictionary<MethodInfo, ConcurrentBag<IEnumerable<Parameter>>>();
 
         internal TestDependencyRegistry(PocketContainer container)
         {
@@ -29,16 +30,21 @@ namespace Peaky
 
         public TestDependencyRegistry RegisterParameterFor<T>(Expression<Action<T>> testCase)
         {
-            var parametrizedTestCase = ExtractParametrizedTestCase(testCase.Body as MethodCallExpression);
-            parametrisedTestCases[parametrizedTestCase.method] = parametrizedTestCase.parameters;
-            return this;
+            return RegisterParameterFor(testCase.Body as MethodCallExpression);
         }
 
 
         public TestDependencyRegistry RegisterParameterFor<T, U>(Expression<Func<T, U>> testCase)
         {
-            var parametrizedTestCase = ExtractParametrizedTestCase(testCase.Body as MethodCallExpression);
-            parametrisedTestCases[parametrizedTestCase.method] = parametrizedTestCase.parameters;
+            return RegisterParameterFor(testCase.Body as MethodCallExpression);
+        }
+
+        private TestDependencyRegistry RegisterParameterFor(MethodCallExpression expression)
+        {
+            var parametrizedTestCase = ExtractParametrizedTestCase(expression);
+            var testCases = parametrizedTestCases.GetOrAdd(parametrizedTestCase.method,
+                key => new ConcurrentBag<IEnumerable<Parameter>>());
+            testCases.Add(parametrizedTestCase.parameters);
             return this;
         }
 
@@ -72,14 +78,9 @@ namespace Peaky
             return (method, values.ToArray());
         }
 
-        internal IEnumerable<Parameter> GetParameterSetsFor(MethodInfo method)
+        internal IEnumerable<IEnumerable<Parameter>> GetParameterSetsFor(MethodInfo method)
         {
-            return parametrisedTestCases.TryGetValue(method, out var parameters) ? parameters : null;
-        }
-
-        internal IEnumerable<(MethodInfo testMethod, IEnumerable<Parameter> testParameters)> GetParameterSetsFor(Type type)
-        {
-            return parametrisedTestCases.Where(e => e.Key.DeclaringType == type).Select(e =>(e.Key, e.Value));
+            return parametrizedTestCases.TryGetValue(method, out var parameters) ? parameters : null;
         }
     }
     
