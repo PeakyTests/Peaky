@@ -2,14 +2,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using FluentAssertions;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 using Its.Recipes;
 using Newtonsoft.Json;
+using Peaky.Tests.TestClasses;
 using Pocket;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,6 +33,7 @@ namespace Peaky.Tests
                     targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
                            .Add("production", "widgetapi", new Uri("http://widgets.com"))
                            .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
+                           .Add("staging", "parametrized", new Uri("http://staging.parametrized.com"))
                            .Add("production", "sprocketapi", new Uri("http://sprockets.com")));
 
             apiClient = peakyService.CreateHttpClient();
@@ -425,12 +429,12 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void when_a_public_method_has_non_optional_parameters_then_it_is_not_discovered_as_a_test()
+        public void when_a_public_method_has_non_optional_parameters_then_it_is_discovered_as_a_test()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
 
             response.ShouldSucceed();
-            response.Content.ReadAsStringAsync().Result.Should().NotContain("test_with_non_optional_parameters");
+            response.Content.ReadAsStringAsync().Result.Should().Contain("test_with_non_optional_parameters");
         }
 
         [Fact]
@@ -451,6 +455,16 @@ namespace Peaky.Tests
 
             response.ShouldSucceed();
             response.Content.ReadAsStringAsync().Result.Should().Contain("notbar");
+        }
+
+        [Fact]
+        public void when_a_test_with_optional_parameters_is_called_with_ecoded_values_then_values_are_decoded()
+        {
+            var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/" +
+                                              $"string_returning_test_with_optional_parameters?foo={HttpUtility.UrlEncode("//")}").Result;
+
+            response.ShouldSucceed();
+            response.Content.ReadAsStringAsync().Result.Should().Contain("//");
         }
 
         [Fact]
@@ -510,10 +524,9 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
-            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
-                   .Parameters.Should().ContainSingle(p => p.Name == "foo");
-            content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
-                   .Parameters.Should().ContainSingle(p => p.Name == "count");
+            var test = content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?count=1&foo=bar");
+            test.Parameters.Should().ContainSingle(p => p.Name == "foo");
+            test.Parameters.Should().ContainSingle(p => p.Name == "count");
         }
 
         [Fact]
@@ -524,14 +537,9 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
-            content.Tests
-                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
-                   .Parameters
-                   .Single(p => p.Name == "foo").DefaultValue.Should().BeEquivalentTo("bar");
-            content.Tests
-                   .Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters")
-                   .Parameters
-                   .Single(p => p.Name == "count").DefaultValue.Should().BeEquivalentTo(1);
+            var test = content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?count=1&foo=bar");
+            test.Parameters.Single(p => p.Name == "foo").DefaultValue.Should().BeEquivalentTo("bar");
+            test.Parameters.Single(p => p.Name == "count").DefaultValue.Should().BeEquivalentTo(1);
         }
 
         [Fact]
@@ -545,198 +553,22 @@ namespace Peaky.Tests
             content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/passing_test_returns_object")
                    .Parameters.Should().BeNull();
         }
-    }
 
-    public class GotTests : IPeakyTest
-    {
-        public string SomeProperty { get; set; }
-
-        public string passing_test_returns_object()
+        [Fact]
+        public void when_a_test_exposes_parametrized_test_cases_then_the_input_parameters_are_recorded()
         {
-            return "success!";
-        }
+            var response = apiClient.GetAsync("http://blammo.com/tests/staging/parametrized/").Result;
 
-        public bool passing_test_returns_struct()
-        {
-            return true;
-        }
+            response.ShouldSucceed();
+            var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
+            
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=true&testCaseId=case1", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=false&testCaseId=case2", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=true&testCaseId=case3", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=false&testCaseId=case4", StringComparison.OrdinalIgnoreCase));
 
-        public dynamic failing_test()
-        {
-            throw new Exception("oops!");
-        }
-
-        public void passing_void_test()
-        {
-        }
-
-        public void void_test_with_optional_parameters(string foo = "bar")
-        {
-        }
-
-        public void test_with_non_optional_parameters(string foo)
-        {
-        }
-
-        public string string_returning_test_with_optional_parameters(string foo = "bar", int count = 1)
-        {
-            return $"{foo} - {count}";
-        }
-
-        public void failing_void_test()
-        {
-            throw new Exception("oops!");
-        }
-
-        public async Task passing_void_async_test()
-        {
-            await Task.Yield();
-        }
-
-        public async Task failing_void_async_test()
-        {
-            await Task.Yield();
-
-            throw new Exception("oops!");
-        }
-
-        public static dynamic not_a_test()
-        {
-            return null;
-        }
-
-        private dynamic also_not_a_test()
-        {
-            return null;
-        }
-
-        public void no_more_than_10_percent_of_calls_have_failed()
-        {
-            Telemetry[] telemetry =
-            {
-                new Telemetry
-                {
-                    ElapsedMilliseconds = Any.Int(),
-                    OperationName = Any.CamelCaseName(),
-                    Succeeded = false,
-                    UserIdentifier = Any.Email(),
-                    Properties = { { "StatusCode", "500" } }
-                },
-                new Telemetry
-                {
-                    ElapsedMilliseconds = Any.Int(),
-                    OperationName = Any.CamelCaseName(),
-                    Succeeded = true,
-                    UserIdentifier = Any.Email(),
-                    Properties = { { "StatusCode", "200" } }
-                }
-            };
-
-            telemetry.PercentageOf(t => !t.Succeeded).Should().BeLessThanOrEqualTo(10.Percent());
-        }
-
-        public void telemetry_without_failures()
-        {
-            Telemetry[] telemetry =
-            {
-                new Telemetry
-                {
-                    ElapsedMilliseconds = Any.Int(),
-                    OperationName = Any.CamelCaseName(),
-                    Succeeded = true,
-                    UserIdentifier = Any.Email(),
-                    Properties = { { "StatusCode", "200" } }
-                },
-                new Telemetry
-                {
-                    ElapsedMilliseconds = Any.Int(),
-                    OperationName = Any.CamelCaseName(),
-                    Succeeded = true,
-                    UserIdentifier = Any.Email(),
-                    Properties = { { "StatusCode", "200" } }
-                }
-            };
-
-            telemetry.PercentageOf(t => t.Succeeded).Should().BeEqualTo(100.Percent());
-        }
-    }
-
-    public class BigAppleTests : IHaveTags
-    {
-        public string[] Tags => new[]
-        {
-            "Brooklyn", "Queens"
-        };
-
-        public dynamic manhattan() => "Empire State";
-    }
-
-    public class AppleTests : IHaveTags
-    {
-        public string[] Tags => new[]
-        {
-            "apple", "fruit"
-        };
-
-        public dynamic honeycrisp() => "Yum!";
-    }
-
-    public class OrangeTests : IHaveTags
-    {
-        public string[] Tags => new[]
-        {
-            "orange", "fruit"
-        };
-
-        public dynamic tangerine() => "Oooh!";
-    }
-
-    public class InternalOnlyTests : IApplyToEnvironment
-    {
-        public dynamic internal_only_test() => "success!";
-
-        public bool AppliesToEnvironment(string environment) => !environment.Equals("production", StringComparison.OrdinalIgnoreCase);
-    }
-
-    public class WidgetApiTests : IApplyToApplication
-    {
-        public dynamic widgetapi_only_test() => "success!";
-
-        public bool AppliesToApplication(string application) => application.Equals("widgetapi", StringComparison.OrdinalIgnoreCase);
-    }
-
-    public class CollisionTest1 : IPeakyTest
-    {
-        public dynamic name_collision()
-        {
-            return GetType().Name;
-        }
-    }
-
-    public class CollisionTest2 : IPeakyTest
-    {
-        public dynamic name_collision()
-        {
-            return GetType().Name;
-        }
-    }
-
-    public class TestDiscoveryResponse
-    {
-        public Test[] Tests { get; set; }
-
-        public class Test
-        {
-            public string Application { get; set; }
-            public string Environment { get; set; }
-            public string Url { get; set; }
-            public Parameter[] Parameters { get; set; }
-
-            public class Parameter
-            {
-                public string Name { get; set; }
-                public object DefaultValue { get; set; }
-            }
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?extectedResult=true&testCaseId=case1", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?extectedResult=false&testCaseId=case2", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

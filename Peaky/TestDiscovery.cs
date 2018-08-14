@@ -41,7 +41,10 @@ namespace Peaky
                             .GetMethods(BindingFlags.Public |
                                         BindingFlags.Instance |
                                         BindingFlags.DeclaredOnly)
-                            .Where(m => m.GetParameters().All(p => p.HasDefaultValue))
+                            .Where(m => m.NotDefinedOn<IApplyToApplication>())
+                            .Where(m => m.NotDefinedOn<IApplyToEnvironment>())
+                            .Where(m => m.NotDefinedOn<IApplyToTarget>())
+                            .Where(m => m.NotDefinedOn<IParametrizedTestCases>())
                             .Where(m => !m.IsSpecialName)
                             .Select(TestDefinition.Create));
 
@@ -61,6 +64,8 @@ namespace Peaky
         }
 
         public IEnumerator<TestDefinition> GetEnumerator() => tests.Values.GetEnumerator();
+
+       
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }

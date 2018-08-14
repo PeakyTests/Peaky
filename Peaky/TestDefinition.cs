@@ -22,9 +22,10 @@ namespace Peaky
 
         public virtual string[] Tags { get; set; } = Array.Empty<string>();
 
-        internal Type TestType { get; set; }
+        internal Type TestType { get;  set; }
 
-        internal abstract Task<object> Run(HttpContext httpContext, Func<Type, object> resolve);
+        internal MethodInfo TestMethod { get; set; }
+        internal abstract Task<object> Run(HttpContext httpContext, Func<Type, object> resolve, TestTarget target);
 
         internal static TestDefinition Create(MethodInfo methodInfo)
         {
@@ -36,10 +37,11 @@ namespace Peaky
                 null,
                 new object[] { methodInfo },
                 null);
+            testDefinition.TestMethod = methodInfo;
             testDefinition.TestType = testType;
             testDefinition.Parameters = methodInfo.GetParameters()
                                                   .Select(p =>
-                                                              new Parameter(p.Name, p.DefaultValue));
+                                                              new Parameter(p.Name, p.GetDefaultValue()));
             return testDefinition;
         }
 
