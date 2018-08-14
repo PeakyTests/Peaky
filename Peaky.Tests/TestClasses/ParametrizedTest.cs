@@ -14,7 +14,7 @@ namespace Peaky.Tests.TestClasses
            
         }
 
-        public void I_do_stuff(string testCaseId, bool extectedResult)
+        public void TestCase_should_meet_expectation(string testCaseId, bool extectedResult)
         {
             var env = _environmentLookup[testCaseId];
             env.Value.Should().Be(extectedResult);
@@ -34,19 +34,19 @@ namespace Peaky.Tests.TestClasses
 
         public void RegisterTestCasesTo(TestDependencyRegistry registry)
         {
-            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case1", true),
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.TestCase_should_meet_expectation("case1", true),
                 (test, target, dependencyRegistry) => test._environmentLookup["case1"] = new TestEnvironment { Value = true });
 
-            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case2", false),
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.TestCase_should_meet_expectation("case2", false),
                 (test, target, dependencyRegistry) => test._environmentLookup["case2"] = new TestEnvironment { Value = false });
 
-            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case3", true),
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.TestCase_should_meet_expectation("case3", true),
                 (test, target, dependencyRegistry) => test._environmentLookup["case3"] = new TestEnvironment { Value = true });
 
-            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case4", false),
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.TestCase_should_meet_expectation("case4", false),
                 (test, target, dependencyRegistry) => test._environmentLookup["case4"] = new TestEnvironment { Value = false });
 
-            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case5", true),
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.TestCase_should_meet_expectation("case5", true),
                 (test, target, dependencyRegistry) => test._environmentLookup["case5"] = new TestEnvironment { Value = true });
 
             registry.RegisterParameterFor<ParametrizedTest, bool>(testClass => testClass.I_do_stuff_and_return("case6", true),
