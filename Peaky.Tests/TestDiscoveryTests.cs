@@ -458,13 +458,21 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void when_a_test_with_optional_parameters_is_called_with_ecoded_values_then_values_are_decoded()
+        public void when_a_test_with_optional_parameters_is_called_with_encoded_values_then_values_are_decoded()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/" +
                                               $"string_returning_test_with_optional_parameters?foo={HttpUtility.UrlEncode("//")}").Result;
 
             response.ShouldSucceed();
             response.Content.ReadAsStringAsync().Result.Should().Contain("//");
+        }
+
+        [Fact]
+        public void when_a_testcase_is_called_then_the_test_will_execute()
+        {
+            var  response = apiClient.GetAsync("http://blammo.com/tests/staging/parametrized/I_do_stuff/?extectedResult=true&testCaseId=case5").Result;
+
+            response.ShouldSucceed();
         }
 
         [Fact]

@@ -45,6 +45,10 @@ namespace Peaky.Tests.TestClasses
             registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case3", true));
             registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case4", false));
 
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case5", true),
+
+                (test, target, dependencyRegistry) => test._environmentLookup["case5"] = new EnvironmentStuff { Value = true });
+
             registry.RegisterParameterFor<ParametrizedTest, bool>(testClass => testClass.I_do_stuff_and_return("case1", true));
             registry.RegisterParameterFor<ParametrizedTest, bool>(testClass => testClass.I_do_stuff_and_return("case2", false));
         }

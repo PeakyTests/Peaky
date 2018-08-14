@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +12,11 @@ using Pocket;
 
 namespace Peaky
 {
+    public delegate void TestCaseSetup<in T>(T test, TestTarget target, TestDependencyRegistry dependencyRegistry);
+
     public class TestDependencyRegistry
     {
-        private readonly ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, ParameterSet>> parametrizedTestCases = new ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string,ParameterSet>>();
+        private readonly ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>> parametrizedTestCases = new ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>>();
 
         internal TestDependencyRegistry(PocketContainer container)
         {
@@ -28,27 +31,26 @@ namespace Peaky
             return this;
         }
 
-        public TestDependencyRegistry RegisterParameterFor<T>(Expression<Action<T>> testCase)
+        public TestDependencyRegistry RegisterParameterFor<T>(Expression<Action<T>> testCase, TestCaseSetup<T> caseSetup = null)
         {
-            return RegisterParameterFor(testCase.Body as MethodCallExpression);
+            return RegisterParameterFor(testCase.Body as MethodCallExpression, caseSetup);
         }
 
-
-        public TestDependencyRegistry RegisterParameterFor<T, U>(Expression<Func<T, U>> testCase)
+        public TestDependencyRegistry RegisterParameterFor<T, U>(Expression<Func<T, U>> testCase, TestCaseSetup<T> caseSetup = null)
         {
-            return RegisterParameterFor(testCase.Body as MethodCallExpression);
+            return RegisterParameterFor(testCase.Body as MethodCallExpression, caseSetup);
         }
 
-        private TestDependencyRegistry RegisterParameterFor(MethodCallExpression expression)
+        private TestDependencyRegistry RegisterParameterFor(MethodCallExpression expression, Delegate caseSetup)
         {
-            var parametrizedTestCase = ExtractParametrizedTestCase(expression);
+            var parametrizedTestCase = ExtractParametrizedTestCase(expression, caseSetup);
             var testCases = parametrizedTestCases.GetOrAdd(parametrizedTestCase.method,
-                key => new ConcurrentDictionary<string,ParameterSet>());
-            testCases.TryAdd(parametrizedTestCase.parameters.GetQueryString(), parametrizedTestCase.parameters);
+                key => new ConcurrentDictionary<string, TestCase>());
+            testCases.TryAdd(parametrizedTestCase.testCase.Parameters.GetQueryString(), parametrizedTestCase.testCase);
             return this;
         }
 
-        private static (MethodInfo method, ParameterSet parameters) ExtractParametrizedTestCase(MethodCallExpression expression)
+        private static (MethodInfo method, TestCase testCase) ExtractParametrizedTestCase(MethodCallExpression expression, Delegate caseSetup)
         {
             var body = expression;
             var method = body.Method;
@@ -75,13 +77,23 @@ namespace Peaky
                 values.Add(new Parameter(argumentName, data));
             }
 
-            return (method, new ParameterSet( values ));
+            return (method, new TestCase( new ParameterSet( values ), caseSetup));
         }
 
         internal IEnumerable<ParameterSet> GetParameterSetsFor(MethodInfo method)
         {
-            return parametrizedTestCases.TryGetValue(method, out var parameters) ? parameters.Select(e => e.Value) : null;
+            return parametrizedTestCases.TryGetValue(method, out var testCases) ? testCases.Select(e => e.Value.Parameters) : null;
+        }
+
+        public IEnumerable<TestCaseSetup<T>> GetTestCasesSetupFor<T>(MethodInfo method) where T : IPeakyTest
+        {
+            if (parametrizedTestCases.TryGetValue(method, out var testCases))
+            {
+                foreach (var caseSetup in testCases.Where(tc => tc.Value.CaseSetup != null).Select(tc => tc.Value.CaseSetup))
+                {
+                    yield return (TestCaseSetup<T>) caseSetup;
+                }
+            }
         }
     }
-    
 }
