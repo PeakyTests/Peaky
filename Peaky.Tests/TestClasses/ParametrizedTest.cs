@@ -6,18 +6,12 @@ namespace Peaky.Tests.TestClasses
 {
     public class ParametrizedTest : IApplyToApplication, IParametrizedTestCases
     {
-        private readonly Dictionary<string, EnvironmentStuff> _environmentLookup;
+        private readonly Dictionary<string, TestEnvironment> _environmentLookup = new Dictionary<string, TestEnvironment>();
         public bool AppliesToApplication(string application) => application.Equals("parametrized", StringComparison.OrdinalIgnoreCase);
 
         public ParametrizedTest()
         {
-            _environmentLookup = new Dictionary<string, EnvironmentStuff>
-            {
-                { "case1", new EnvironmentStuff{Value = true} },
-                { "case2", new EnvironmentStuff {Value = false} },
-                { "case3", new EnvironmentStuff {Value = true} },
-                { "case4", new EnvironmentStuff{Value = false} }
-            };
+           
         }
 
         public void I_do_stuff(string testCaseId, bool extectedResult)
@@ -33,24 +27,33 @@ namespace Peaky.Tests.TestClasses
             return env.Value;
         }
 
-        private class EnvironmentStuff
+        private class TestEnvironment
         {
             public bool Value { get; set; }
         }
 
         public void RegisterTestCasesTo(TestDependencyRegistry registry)
         {
-            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case1", true));
-            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case2", false));
-            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case3", true));
-            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case4", false));
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case1", true),
+                (test, target, dependencyRegistry) => test._environmentLookup["case1"] = new TestEnvironment { Value = true });
+
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case2", false),
+                (test, target, dependencyRegistry) => test._environmentLookup["case2"] = new TestEnvironment { Value = false });
+
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case3", true),
+                (test, target, dependencyRegistry) => test._environmentLookup["case3"] = new TestEnvironment { Value = true });
+
+            registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case4", false),
+                (test, target, dependencyRegistry) => test._environmentLookup["case4"] = new TestEnvironment { Value = false });
 
             registry.RegisterParameterFor<ParametrizedTest>(testClass => testClass.I_do_stuff("case5", true),
+                (test, target, dependencyRegistry) => test._environmentLookup["case5"] = new TestEnvironment { Value = true });
 
-                (test, target, dependencyRegistry) => test._environmentLookup["case5"] = new EnvironmentStuff { Value = true });
+            registry.RegisterParameterFor<ParametrizedTest, bool>(testClass => testClass.I_do_stuff_and_return("case6", true),
+                (test, target, dependencyRegistry) => test._environmentLookup["case6"] = new TestEnvironment { Value = true });
 
-            registry.RegisterParameterFor<ParametrizedTest, bool>(testClass => testClass.I_do_stuff_and_return("case1", true));
-            registry.RegisterParameterFor<ParametrizedTest, bool>(testClass => testClass.I_do_stuff_and_return("case2", false));
+            registry.RegisterParameterFor<ParametrizedTest, bool>(testClass => testClass.I_do_stuff_and_return("case7", false),
+                (test, target, dependencyRegistry) => test._environmentLookup["case7"] = new TestEnvironment { Value = false });
         }
     }
 }

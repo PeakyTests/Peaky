@@ -575,8 +575,8 @@ namespace Peaky.Tests
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=true&testCaseId=case3", StringComparison.OrdinalIgnoreCase));
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=false&testCaseId=case4", StringComparison.OrdinalIgnoreCase));
 
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?extectedResult=true&testCaseId=case1", StringComparison.OrdinalIgnoreCase));
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?extectedResult=false&testCaseId=case2", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?extectedResult=true&testCaseId=case6", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?extectedResult=false&testCaseId=case7", StringComparison.OrdinalIgnoreCase));
         }
     }
 }
