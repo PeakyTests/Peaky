@@ -216,7 +216,8 @@ namespace Peaky
 
                         var returnValue = await testDefinition.Run(
                                               httpContext,
-                                              container.Resolve);
+                                              container.Resolve,
+                                              target);
 
                         if (returnValue is Task task)
                         {

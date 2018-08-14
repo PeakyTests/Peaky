@@ -25,7 +25,7 @@ namespace Peaky
         internal Type TestType { get;  set; }
 
         internal MethodInfo TestMethod { get; set; }
-        internal abstract Task<object> Run(HttpContext httpContext, Func<Type, object> resolve);
+        internal abstract Task<object> Run(HttpContext httpContext, Func<Type, object> resolve, TestTarget target);
 
         internal static TestDefinition Create(MethodInfo methodInfo)
         {

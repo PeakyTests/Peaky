@@ -45,7 +45,7 @@ namespace Peaky
             ??
             Array.Empty<string>();
 
-        internal override async Task<object> Run(HttpContext context, Func<Type, object> resolve)
+        internal override async Task<object> Run(HttpContext context, Func<Type, object> resolve, TestTarget target)
         {
             var executeTestMethod = defaultExecuteTestMethod;
             var methodParameters = TestMethod.GetParameters();
@@ -74,6 +74,12 @@ namespace Peaky
             }
 
             var testClassInstance = (T) resolve(typeof(T));
+            switch (testClassInstance)
+            {
+                case IParametrizedTestCases parametrizedTest:
+                    parametrizedTest.RegisterTestCasesTo(target.DependencyRegistry);
+                    break;
+            }
             return executeTestMethod(testClassInstance);
         }
 
