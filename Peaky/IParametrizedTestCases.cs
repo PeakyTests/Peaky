@@ -1,6 +1,6 @@
 namespace Peaky
 {
-    public interface IParametrizedTestCases : IPeakyTest
+    public interface IParameterizedTestCases : IPeakyTest
     {
         void RegisterTestCasesTo(TestDependencyRegistry registry);
     }

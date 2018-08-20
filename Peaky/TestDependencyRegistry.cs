@@ -16,7 +16,7 @@ namespace Peaky
 
     public class TestDependencyRegistry
     {
-        private readonly ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>> parametrizedTestCases = new ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>>();
+        private readonly ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>> parameterizedTestCases = new ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>>();
 
         internal TestDependencyRegistry(PocketContainer container)
         {
@@ -43,14 +43,14 @@ namespace Peaky
 
         private TestDependencyRegistry RegisterParameterFor(MethodCallExpression expression, Delegate caseSetup)
         {
-            var parametrizedTestCase = ExtractParametrizedTestCase(expression, caseSetup);
-            var testCases = parametrizedTestCases.GetOrAdd(parametrizedTestCase.method,
+            var parameterizedTestCase = ExtractParameterizedTestCase(expression, caseSetup);
+            var testCases = parameterizedTestCases.GetOrAdd(parameterizedTestCase.method,
                 key => new ConcurrentDictionary<string, TestCase>());
-            testCases.TryAdd(parametrizedTestCase.testCase.Parameters.GetQueryString(), parametrizedTestCase.testCase);
+            testCases.TryAdd(parameterizedTestCase.testCase.Parameters.GetQueryString(), parameterizedTestCase.testCase);
             return this;
         }
 
-        private static (MethodInfo method, TestCase testCase) ExtractParametrizedTestCase(MethodCallExpression expression, Delegate caseSetup)
+        private static (MethodInfo method, TestCase testCase) ExtractParameterizedTestCase(MethodCallExpression expression, Delegate caseSetup)
         {
             var body = expression;
             var method = body.Method;
@@ -82,12 +82,12 @@ namespace Peaky
 
         internal IEnumerable<ParameterSet> GetParameterSetsFor(MethodInfo method)
         {
-            return parametrizedTestCases.TryGetValue(method, out var testCases) ? testCases.Select(e => e.Value.Parameters) : null;
+            return parameterizedTestCases.TryGetValue(method, out var testCases) ? testCases.Select(e => e.Value.Parameters) : null;
         }
 
         public IEnumerable<TestCaseSetup<T>> GetTestCasesSetupFor<T>(MethodInfo method) where T : IPeakyTest
         {
-            if (parametrizedTestCases.TryGetValue(method, out var testCases))
+            if (parameterizedTestCases.TryGetValue(method, out var testCases))
             {
                 foreach (var caseSetup in testCases.Where(tc => tc.Value.CaseSetup != null).Select(tc => tc.Value.CaseSetup))
                 {

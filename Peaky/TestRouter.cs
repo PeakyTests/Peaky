@@ -121,7 +121,7 @@ namespace Peaky
                                                       tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
                                             .ToArray();
 
-                    DiscoverParametrizedTestCases(context, applicableTargets);
+                    DiscoverParameterizedTestCases(context, applicableTargets);
 
                     var tests = testDefinitions
                                 .SelectMany(
@@ -144,9 +144,9 @@ namespace Peaky
             }
         }
 
-        private void DiscoverParametrizedTestCases(RouteContext context, TestTarget[] applicableTargets)
+        private void DiscoverParameterizedTestCases(RouteContext context, TestTarget[] applicableTargets)
         {
-            foreach (var parametrizedTestCases in testDefinitions
+            foreach (var parameterizedTestCases in testDefinitions
                 .SelectMany(
                     definition =>
                         applicableTargets
@@ -154,13 +154,13 @@ namespace Peaky
                             .Where(_ => MatchesFilter(definition.Tags, context.HttpContext.Request.Query))
                             .Select(target => (type: definition.TestType, target: target)))
                 .GroupBy(e => e.type)
-                .Where(e => e.Key.GetInterfaces().Contains(typeof(IParametrizedTestCases)))
+                .Where(e => e.Key.GetInterfaces().Contains(typeof(IParameterizedTestCases)))
                 .Select(e => (type: e.Key, targets: e.Select(g => g.target))))
             {
-                foreach (var testTarget in parametrizedTestCases.targets)
+                foreach (var testTarget in parameterizedTestCases.targets)
                 {
                     var testClassInstance =
-                        (IParametrizedTestCases) testTarget.DependencyRegistry.Container.Resolve(parametrizedTestCases.type);
+                        (IParameterizedTestCases) testTarget.DependencyRegistry.Container.Resolve(parameterizedTestCases.type);
                     testClassInstance.RegisterTestCasesTo(testTarget.DependencyRegistry);
                 }
             }

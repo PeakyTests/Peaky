@@ -76,8 +76,8 @@ namespace Peaky
             var testClassInstance = (T) resolve(typeof(T));
             switch (testClassInstance)
             {
-                case IParametrizedTestCases parametrizedTest:
-                    parametrizedTest.RegisterTestCasesTo(target.DependencyRegistry);
+                case IParameterizedTestCases ParameterizedTest:
+                    ParameterizedTest.RegisterTestCasesTo(target.DependencyRegistry);
                     PerformTestCaseSetup(testClassInstance, target);
                     break;
             }

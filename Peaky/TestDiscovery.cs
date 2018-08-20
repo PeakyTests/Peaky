@@ -44,7 +44,7 @@ namespace Peaky
                             .Where(m => m.NotDefinedOn<IApplyToApplication>())
                             .Where(m => m.NotDefinedOn<IApplyToEnvironment>())
                             .Where(m => m.NotDefinedOn<IApplyToTarget>())
-                            .Where(m => m.NotDefinedOn<IParametrizedTestCases>())
+                            .Where(m => m.NotDefinedOn<IParameterizedTestCases>())
                             .Where(m => !m.IsSpecialName)
                             .Select(TestDefinition.Create));
 

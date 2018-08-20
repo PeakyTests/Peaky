@@ -33,7 +33,7 @@ namespace Peaky.Tests
                     targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
                            .Add("production", "widgetapi", new Uri("http://widgets.com"))
                            .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
-                           .Add("staging", "parametrized", new Uri("http://staging.parametrized.com"))
+                           .Add("staging", "parameterized", new Uri("http://staging.parameterized.com"))
                            .Add("production", "sprocketapi", new Uri("http://sprockets.com")));
 
             apiClient = peakyService.CreateHttpClient();
@@ -470,7 +470,7 @@ namespace Peaky.Tests
         [Fact]
         public void when_a_testcase_is_called_then_the_test_will_execute()
         {
-            var  response = apiClient.GetAsync("http://blammo.com/tests/staging/parametrized/TestCase_should_meet_expectation/?extectedResult=true&testCaseId=case5").Result;
+            var  response = apiClient.GetAsync("http://blammo.com/tests/staging/parameterized/TestCase_should_meet_expectation/?extectedResult=true&testCaseId=case5").Result;
 
             response.ShouldSucceed();
         }
@@ -563,9 +563,9 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void when_a_test_exposes_parametrized_test_cases_then_the_input_parameters_are_recorded()
+        public void when_a_test_exposes_Parameterized_test_cases_then_the_input_parameters_are_recorded()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/staging/parametrized/").Result;
+            var response = apiClient.GetAsync("http://blammo.com/tests/staging/Parameterized/").Result;
 
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
