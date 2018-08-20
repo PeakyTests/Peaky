@@ -551,7 +551,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void when_a_test_does_not_accept_input_parameters_then_queryParameters_is_null()
+        public void when_a_test_does_not_accept_input_parameters_then_queryParameters_is_empty()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/").Result;
 
@@ -559,7 +559,7 @@ namespace Peaky.Tests
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
             content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/passing_test_returns_object")
-                   .Parameters.Should().BeNull();
+                   .Parameters.Should().BeEmpty();
         }
 
         [Fact]
