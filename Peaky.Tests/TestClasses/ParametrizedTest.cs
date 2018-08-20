@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using FluentAssertions;
 
 namespace Peaky.Tests.TestClasses
@@ -20,8 +21,23 @@ namespace Peaky.Tests.TestClasses
             env.Value.Should().Be(extectedResult);
         }
 
-        public bool I_do_stuff_and_return(string testCaseId, bool extectedResult)
+        public bool I_do_stuff_and_return_bool(string testCaseId, bool extectedResult)
         {
+            var env = _environmentLookup[testCaseId];
+            env.Value.Should().Be(extectedResult);
+            return env.Value;
+        }
+
+        public async Task I_do_stuff_and_return_task(string testCaseId, bool extectedResult)
+        {
+            await Task.Yield();
+            var env = _environmentLookup[testCaseId];
+            env.Value.Should().Be(extectedResult);
+        }
+
+        public async Task<bool> I_do_stuff_and_return_task_of_bool(string testCaseId, bool extectedResult)
+        {
+            await Task.Yield();
             var env = _environmentLookup[testCaseId];
             env.Value.Should().Be(extectedResult);
             return env.Value;
@@ -49,11 +65,17 @@ namespace Peaky.Tests.TestClasses
             registry.RegisterParameterFor<ParameterizedTest>(testClass => testClass.TestCase_should_meet_expectation("case5", true),
                 (test, target, dependencyRegistry) => test._environmentLookup["case5"] = new TestEnvironment { Value = true });
 
-            registry.RegisterParameterFor<ParameterizedTest, bool>(testClass => testClass.I_do_stuff_and_return("case6", true),
+            registry.RegisterParameterFor<ParameterizedTest, bool>(testClass => testClass.I_do_stuff_and_return_bool("case6", true),
                 (test, target, dependencyRegistry) => test._environmentLookup["case6"] = new TestEnvironment { Value = true });
 
-            registry.RegisterParameterFor<ParameterizedTest, bool>(testClass => testClass.I_do_stuff_and_return("case7", false),
+            registry.RegisterParameterFor<ParameterizedTest, bool>(testClass => testClass.I_do_stuff_and_return_bool("case7", false),
                 (test, target, dependencyRegistry) => test._environmentLookup["case7"] = new TestEnvironment { Value = false });
+
+            registry.RegisterParameterFor<ParameterizedTest, Task>(testClass => testClass.I_do_stuff_and_return_task("case8", false),
+                (test, target, dependencyRegistry) => test._environmentLookup["case8"] = new TestEnvironment { Value = false });
+
+            registry.RegisterParameterFor<ParameterizedTest, Task<bool>>(testClass => testClass.I_do_stuff_and_return_task_of_bool("case9", false),
+                (test, target, dependencyRegistry) => test._environmentLookup["case9"] = new TestEnvironment { Value = false });
         }
     }
 }

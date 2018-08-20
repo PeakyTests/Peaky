@@ -575,8 +575,11 @@ namespace Peaky.Tests
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("testCase_should_meet_expectation/?extectedResult=true&testCaseId=case3", StringComparison.OrdinalIgnoreCase));
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("testCase_should_meet_expectation/?extectedResult=false&testCaseId=case4", StringComparison.OrdinalIgnoreCase));
 
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?extectedResult=true&testCaseId=case6", StringComparison.OrdinalIgnoreCase));
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return/?extectedResult=false&testCaseId=case7", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_bool/?extectedResult=true&testCaseId=case6", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_bool/?extectedResult=false&testCaseId=case7", StringComparison.OrdinalIgnoreCase));
+
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task/?extectedResult=false&testCaseId=case8", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task_of_bool/?extectedResult=false&testCaseId=case9", StringComparison.OrdinalIgnoreCase));
         }
     }
 }
