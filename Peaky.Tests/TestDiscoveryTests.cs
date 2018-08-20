@@ -563,7 +563,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void when_a_test_exposes_Parameterized_test_cases_then_the_input_parameters_are_recorded()
+        public void when_a_test_exposes_parameterized_test_cases_then_the_input_parameters_are_recorded()
         {
             var response = apiClient.GetAsync("http://blammo.com/tests/staging/Parameterized/").Result;
 
@@ -574,10 +574,27 @@ namespace Peaky.Tests
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("testCase_should_meet_expectation/?extectedResult=false&testCaseId=case2", StringComparison.OrdinalIgnoreCase));
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("testCase_should_meet_expectation/?extectedResult=true&testCaseId=case3", StringComparison.OrdinalIgnoreCase));
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("testCase_should_meet_expectation/?extectedResult=false&testCaseId=case4", StringComparison.OrdinalIgnoreCase));
+            
+        }
 
+        [Fact]
+        public void when_a_test_exposes_async_parameterized_test_cases_with_return_values_then_the_input_parameters_are_recorded()
+        {
+            var response = apiClient.GetAsync("http://blammo.com/tests/staging/Parameterized/").Result;
+
+            response.ShouldSucceed();
+            var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_bool/?extectedResult=true&testCaseId=case6", StringComparison.OrdinalIgnoreCase));
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_bool/?extectedResult=false&testCaseId=case7", StringComparison.OrdinalIgnoreCase));
+        }
 
+        [Fact]
+        public void when_a_test_exposes_async_parameterized_test_cases_then_the_input_parameters_are_recorded()
+        {
+            var response = apiClient.GetAsync("http://blammo.com/tests/staging/Parameterized/").Result;
+
+            response.ShouldSucceed();
+            var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task/?extectedResult=false&testCaseId=case8", StringComparison.OrdinalIgnoreCase));
             content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task_of_bool/?extectedResult=false&testCaseId=case9", StringComparison.OrdinalIgnoreCase));
         }
