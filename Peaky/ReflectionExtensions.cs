@@ -18,12 +18,21 @@ namespace Peaky
 
         public static bool NotDefinedOn<T>(this MethodInfo method)
         {
-            if (method.DeclaringType.GetInterface(typeof(T).Name) == null)
+            return method.NotDefinedOn(typeof(T));
+        }
+
+        public static bool NotDefinedOn(this MethodInfo method, Type @interface)
+        {
+            if (method == null)
+            {
+                throw new ArgumentNullException(nameof(method));
+            }
+            if (method.DeclaringType?.GetInterface(@interface.Name) == null)
             {
                 return true;
             }
 
-            var map = method.DeclaringType.GetInterfaceMap(typeof(T));
+            var map = method.DeclaringType.GetInterfaceMap(@interface);
             var found = map.TargetMethods.Contains(method);
             return !found;
         }
