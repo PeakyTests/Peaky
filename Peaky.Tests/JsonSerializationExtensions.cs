@@ -18,7 +18,7 @@ namespace Peaky.Tests
             {
                 return JToken.Parse(json);
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Console.WriteLine("Invalid Json: " + json);
                 throw;

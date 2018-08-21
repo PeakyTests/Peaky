@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
@@ -74,8 +75,10 @@ namespace Peaky
                 {
                     if (!allowedVerbs.Contains(context.HttpContext.Request.Method))
                     {
+                        await Task.Yield();
                         context.Handler = async httpContext =>
                         {
+                            await Task.Yield();
                             httpContext.Response.StatusCode = 405;
                         };
                     }

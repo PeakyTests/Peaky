@@ -2,12 +2,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 using Pocket;
 
 namespace Peaky
@@ -31,26 +31,26 @@ namespace Peaky
             return this;
         }
 
-        public TestDependencyRegistry RegisterParametersFor<T>(Expression<Action<T>> testCase, TestCaseSetup<T> caseSetup = null)
+        public TestDependencyRegistry RegisterParametersFor(Expression<Action> testCase)
         {
-            return RegisterParametersFor(testCase.Body as MethodCallExpression, caseSetup);
+            return RegisterParametersFor(testCase.Body as MethodCallExpression);
         }
 
-        public TestDependencyRegistry RegisterParametersFor<T, U>(Expression<Func<T, U>> testCase, TestCaseSetup<T> caseSetup = null)
+        public TestDependencyRegistry RegisterParametersFor(Expression<Func<Task>> testCase)
         {
-            return RegisterParametersFor(testCase.Body as MethodCallExpression, caseSetup);
+            return RegisterParametersFor(testCase.Body as MethodCallExpression);
         }
 
-        private TestDependencyRegistry RegisterParametersFor(MethodCallExpression expression, Delegate caseSetup)
+        private TestDependencyRegistry RegisterParametersFor(MethodCallExpression expression)
         {
-            var parameterizedTestCase = ExtractParameterizedTestCase(expression, caseSetup);
+            var parameterizedTestCase = ExtractParameterizedTestCase(expression);
             var testCases = parameterizedTestCases.GetOrAdd(parameterizedTestCase.method,
                 key => new ConcurrentDictionary<string, TestCase>());
             testCases.TryAdd(parameterizedTestCase.testCase.Parameters.GetQueryString(), parameterizedTestCase.testCase);
             return this;
         }
 
-        private static (MethodInfo method, TestCase testCase) ExtractParameterizedTestCase(MethodCallExpression expression, Delegate caseSetup)
+        private static (MethodInfo method, TestCase testCase) ExtractParameterizedTestCase(MethodCallExpression expression)
         {
             var body = expression;
             var method = body.Method;
@@ -77,23 +77,12 @@ namespace Peaky
                 values.Add(new Parameter(argumentName, data));
             }
 
-            return (method, new TestCase( new ParameterSet( values ), caseSetup));
+            return (method, new TestCase( new ParameterSet( values )));
         }
 
         internal IEnumerable<ParameterSet> GetParameterSetsFor(MethodInfo method)
         {
             return parameterizedTestCases.TryGetValue(method, out var testCases) ? testCases.Select(e => e.Value.Parameters) : null;
-        }
-
-        public IEnumerable<TestCaseSetup<T>> GetTestCasesSetupFor<T>(MethodInfo method) where T : IPeakyTest
-        {
-            if (parameterizedTestCases.TryGetValue(method, out var testCases))
-            {
-                foreach (var caseSetup in testCases.Where(tc => tc.Value.CaseSetup != null).Select(tc => tc.Value.CaseSetup))
-                {
-                    yield return (TestCaseSetup<T>) caseSetup;
-                }
-            }
         }
     }
 }

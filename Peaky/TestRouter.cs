@@ -182,7 +182,11 @@ namespace Peaky
                 }
                 catch (TestNotDefinedException)
                 {
-                    context.Handler = async httpContext => httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
+                    context.Handler = async httpContext =>
+                    {
+                        await Task.Yield();
+                        httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
+                    };
                     return;
                 }
 

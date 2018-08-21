@@ -78,19 +78,9 @@ namespace Peaky
             {
                 case IParameterizedTestCases ParameterizedTest:
                     ParameterizedTest.RegisterTestCasesTo(target.DependencyRegistry);
-                    PerformTestCaseSetup(testClassInstance, target);
                     break;
             }
             return executeTestMethod(testClassInstance);
-        }
-
-        private void PerformTestCaseSetup(T testClassInstance, TestTarget target)
-        {
-            var setupCalls = target.DependencyRegistry.GetTestCasesSetupFor<T>(TestMethod);
-            foreach (var setupCall in setupCalls)
-            {
-                setupCall(testClassInstance, target, target.DependencyRegistry);
-            }
         }
 
         public override string ToString() =>
