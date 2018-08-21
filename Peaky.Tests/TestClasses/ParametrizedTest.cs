@@ -23,7 +23,7 @@ namespace Peaky.Tests.TestClasses
                 contextLookup["case9"] = new ParameterizedTestContext { Value = false };
         }
 
-        public void TestCase_should_meet_expectation(string testCaseId, bool extectedResult)
+        public void I_do_stuff(string testCaseId, bool extectedResult)
         {
             var env = contextLookup[testCaseId];
             env.Value.Should().Be(extectedResult);
@@ -58,15 +58,15 @@ namespace Peaky.Tests.TestClasses
 
         public void RegisterTestCasesTo(TestDependencyRegistry registry)
         {
-            registry.RegisterParametersFor(() => TestCase_should_meet_expectation("case1", true));
+            registry.RegisterParametersFor(() => I_do_stuff("case1", true));
 
-            registry.RegisterParametersFor(() => TestCase_should_meet_expectation("case2", false));
+            registry.RegisterParametersFor(() => I_do_stuff("case2", false));
 
-            registry.RegisterParametersFor(() => TestCase_should_meet_expectation("case3", true));
+            registry.RegisterParametersFor(() => I_do_stuff("case3", true));
 
-            registry.RegisterParametersFor(() => TestCase_should_meet_expectation("case4", false));
+            registry.RegisterParametersFor(() => I_do_stuff("case4", false));
 
-            registry.RegisterParametersFor(() => TestCase_should_meet_expectation("case5", true));
+            registry.RegisterParametersFor(() => I_do_stuff("case5", true));
 
             registry.RegisterParametersFor(() => I_do_stuff_and_return_bool("case6", true));
 
