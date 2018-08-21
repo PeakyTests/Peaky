@@ -6,12 +6,12 @@ namespace Peaky
 {
     internal class ParameterSet : IEnumerable<Parameter>
     {
-        private readonly ImmutableDictionary<string, object> parameters;
+        private readonly ImmutableArray<Parameter> parameters;
         private readonly string queryString;
 
         public ParameterSet(IEnumerable<Parameter> parameters)
         {
-            this.parameters = parameters.ToImmutableDictionary(e => e.Name, e => e.DefaultValue);
+            this.parameters = parameters.ToImmutableArray();
             queryString = ToUrlQueryString();
         }
 
@@ -19,7 +19,7 @@ namespace Peaky
         {
             foreach (var parameter in parameters)
             {
-                yield return new Parameter(parameter.Key, parameter.Value);
+                yield return parameter;
             }
         }
 
