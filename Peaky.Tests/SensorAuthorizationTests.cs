@@ -36,7 +36,11 @@ namespace Peaky.Tests
         {
             authorize = context =>
             {
-                context.Handler = async httpContext => httpContext.Response.StatusCode = 403;
+                context.Handler = async httpContext =>
+                {
+                    await Task.Yield();
+                    httpContext.Response.StatusCode = 403;
+                };
             };
 
             var response = await apiClient.GetAsync("http://blammo.com/sensors/SensorMethod");

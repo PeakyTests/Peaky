@@ -15,7 +15,7 @@ namespace Peaky
             this.run = run ??
                        throw new ArgumentNullException(nameof(run));
 
-        internal override async Task<object> Run(HttpContext _, Func<Type, object> resolve) =>
+        internal override async Task<object> Run(HttpContext _, Func<Type, object> resolve, TestTarget target) =>
             await run(_);
 
         public override bool AppliesTo(TestTarget target) => false;

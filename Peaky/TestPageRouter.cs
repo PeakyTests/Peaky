@@ -21,6 +21,7 @@ namespace Peaky
 
         public override async Task RouteAsync(RouteContext context)
         {
+            await Task.Yield();
             context.Handler = async httpContext =>
             {
                 await testPageRenderer.Render(context.HttpContext);

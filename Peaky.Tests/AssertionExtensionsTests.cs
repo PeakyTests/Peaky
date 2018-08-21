@@ -10,7 +10,7 @@ namespace Peaky.Tests
     public class AssertionExtensionsTests
     {
         [Fact]
-        public async Task When_ShouldSucceed_is_passed_a_failed_response_it_throws()
+        public void When_ShouldSucceed_is_passed_a_failed_response_it_throws()
         {
             var response = new HttpResponseMessage(HttpStatusCode.BadRequest);
 
@@ -20,7 +20,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public async Task When_ShouldFailWith_is_passed_a_successful_response_it_throws()
+        public void When_ShouldFailWith_is_passed_a_successful_response_it_throws()
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK);
 
@@ -30,7 +30,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public async Task When_ShouldSucceed_is_passed_a_successful_response_it_doesnt_throw()
+        public void When_ShouldSucceed_is_passed_a_successful_response_it_doesnt_throw()
         {
             var response = new HttpResponseMessage(HttpStatusCode.Accepted);
 
@@ -40,7 +40,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public async Task When_ShouldFailWith_is_passed_a_failed_response_it_doesnt_throw()
+        public void When_ShouldFailWith_is_passed_a_failed_response_it_doesnt_throw()
         {
             var response = new HttpResponseMessage(HttpStatusCode.BadRequest);
 
@@ -50,7 +50,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public async Task When_ShouldSucceedAsync_is_passed_a_failed_response_it_throws()
+        public void When_ShouldSucceedAsync_is_passed_a_failed_response_it_throws()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.BadRequest));
 
@@ -60,7 +60,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public async Task When_ShouldFailWithAsync_is_passed_a_successful_response_it_throws()
+        public void When_ShouldFailWithAsync_is_passed_a_successful_response_it_throws()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.OK));
 
@@ -70,7 +70,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public async Task When_ShouldSucceedAsync_is_passed_a_successful_response_it_doesnt_throw()
+        public void When_ShouldSucceedAsync_is_passed_a_successful_response_it_doesnt_throw()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.Accepted));
 
@@ -83,7 +83,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public async Task When_ShouldFailWithAsync_is_passed_a_failed_response_it_doesnt_throw()
+        public void When_ShouldFailWithAsync_is_passed_a_failed_response_it_doesnt_throw()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.BadRequest));
 

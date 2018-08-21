@@ -121,6 +121,8 @@ namespace Peaky
                                                       tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
                                             .ToArray();
 
+                    DiscoverParameterizedTestCases(context, applicableTargets);
+
                     var tests = testDefinitions
                                 .SelectMany(
                                     definition =>
@@ -130,18 +132,8 @@ namespace Peaky
                                                        MatchesFilter(
                                                            definition.Tags,
                                                            context.HttpContext.Request.Query))
-                                            .Select(
-                                                target =>
-                                                    new Test
-                                                    {
-                                                        Environment = target.Environment,
-                                                        Application = target.Application,
-                                                        Url = context.HttpContext.Request.GetLink(target, definition),
-                                                        Tags = definition.Tags,
-                                                        Parameters = definition.Parameters.Any()
-                                                                         ? definition.Parameters.ToArray()
-                                                                         : null
-                                                    })
+                                            .SelectMany(
+                                                target => Test.CreateTests(target,definition, context.HttpContext.Request))
                                             .Where(l => l.Url != null))
                                 .OrderBy(t => t.Url.ToString());
 
@@ -149,6 +141,28 @@ namespace Peaky
 
                     await httpContext.Response.WriteAsync(json);
                 };
+            }
+        }
+
+        private void DiscoverParameterizedTestCases(RouteContext context, TestTarget[] applicableTargets)
+        {
+            foreach (var parameterizedTestCases in testDefinitions
+                .SelectMany(
+                    definition =>
+                        applicableTargets
+                            .Where(definition.AppliesTo)
+                            .Where(_ => MatchesFilter(definition.Tags, context.HttpContext.Request.Query))
+                            .Select(target => (type: definition.TestType, target: target)))
+                .GroupBy(e => e.type)
+                .Where(e => e.Key.GetInterfaces().Contains(typeof(IParameterizedTestCases)))
+                .Select(e => (type: e.Key, targets: e.Select(g => g.target))))
+            {
+                foreach (var testTarget in parameterizedTestCases.targets)
+                {
+                    var testClassInstance =
+                        (IParameterizedTestCases) testTarget.DependencyRegistry.Container.Resolve(parameterizedTestCases.type);
+                    testClassInstance.RegisterTestCasesTo(testTarget.DependencyRegistry);
+                }
             }
         }
 
@@ -168,7 +182,11 @@ namespace Peaky
                 }
                 catch (TestNotDefinedException)
                 {
-                    context.Handler = async httpContext => httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
+                    context.Handler = async httpContext =>
+                    {
+                        await Task.Yield();
+                        httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
+                    };
                     return;
                 }
 
@@ -202,7 +220,8 @@ namespace Peaky
 
                         var returnValue = await testDefinition.Run(
                                               httpContext,
-                                              container.Resolve);
+                                              container.Resolve,
+                                              target);
 
                         if (returnValue is Task task)
                         {

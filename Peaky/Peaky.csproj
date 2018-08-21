@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -7,6 +7,7 @@
   <PropertyGroup>
     <VersionPrefix>3.0.0</VersionPrefix>
     <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <VersionSuffix>beta</VersionSuffix>
     <FileVersion>3.0.0.0</FileVersion>
     <Authors>jonsequitur, phillippruett, cynicaloptimist, ckurt</Authors>
     <Product>Peaky</Product>

@@ -18,25 +18,21 @@ namespace Peaky
         where T : IPeakyTest
     {
         private readonly Func<T, dynamic> defaultExecuteTestMethod;
-        private readonly MethodInfo methodInfo;
+       
         private readonly ConcurrentDictionary<TestTarget, DetailsForTarget> applicabilityCache = new ConcurrentDictionary<TestTarget, DetailsForTarget>();
 
         internal TestDefinition(MethodInfo methodInfo)
         {
-            if (methodInfo == null)
-            {
-                throw new ArgumentNullException(nameof(methodInfo));
-            }
-
-            this.methodInfo = methodInfo;
+            TestMethod = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
 
             TestName = methodInfo.Name;
 
             defaultExecuteTestMethod = BuildTestMethodExpression(
                 methodInfo,
                 methodInfo.GetParameters()
-                          .Select(p => Expression.Constant(p.DefaultValue)));
+                          .Select(p => Expression.Constant(p.GetDefaultValue(), p.ParameterType)));
         }
+
 
         public override bool AppliesTo(TestTarget target) =>
             applicabilityCache.GetOrAdd(target, t => new DetailsForTarget(t))
@@ -49,17 +45,17 @@ namespace Peaky
             ??
             Array.Empty<string>();
 
-        internal override async Task<object> Run(HttpContext context, Func<Type, object> resolve)
+        internal override async Task<object> Run(HttpContext context, Func<Type, object> resolve, TestTarget target)
         {
             var executeTestMethod = defaultExecuteTestMethod;
-            var methodParameters = methodInfo.GetParameters();
+            var methodParameters = TestMethod.GetParameters();
 
             var queryParameters = context.Request.Query;
 
             if (queryParameters.Keys.Any(p => methodParameters.Select(pp => pp.Name).Contains(p)))
             {
                 executeTestMethod = BuildTestMethodExpression(
-                    methodInfo,
+                    TestMethod,
                     methodParameters
                         .Select(p =>
                         {
@@ -78,11 +74,17 @@ namespace Peaky
             }
 
             var testClassInstance = (T) resolve(typeof(T));
+            switch (testClassInstance)
+            {
+                case IParameterizedTestCases ParameterizedTest:
+                    ParameterizedTest.RegisterTestCasesTo(target.DependencyRegistry);
+                    break;
+            }
             return executeTestMethod(testClassInstance);
         }
 
         public override string ToString() =>
-            $"{base.ToString()} ({methodInfo.DeclaringType}.{methodInfo.Name})";
+            $"{base.ToString()} ({TestMethod.DeclaringType}.{TestMethod.Name})";
 
         private static Func<T, dynamic> BuildTestMethodExpression(MethodInfo methodInfo, IEnumerable<ConstantExpression> parameters)
         {
