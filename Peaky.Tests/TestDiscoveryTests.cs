@@ -468,12 +468,12 @@ namespace Peaky.Tests
         }
 
         [Theory]
-        [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff/?extectedResult=true&testCaseId=case5")]
-        [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff_and_return_bool/?extectedResult=true&testCaseId=case6")]
-        [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff_and_return_task/?extectedResult=false&testCaseId=case8")]
+        [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff?extectedResult=true&testCaseId=case5")]
+        [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff_and_return_bool?extectedResult=true&testCaseId=case6")]
+        [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff_and_return_task?extectedResult=false&testCaseId=case8")]
         [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff_and_return_task_of_bool/?extectedResult=false&testCaseId=case9")]
-        [InlineData("http://blammo.com/tests/staging/parameterized/I_use_enum/?value=valueone")]
-        [InlineData("http://blammo.com/tests/staging/parameterized/I_use_enum/?value=valueTwo")]
+        [InlineData("http://blammo.com/tests/staging/parameterized/I_use_enum?value=valueone")]
+        [InlineData("http://blammo.com/tests/staging/parameterized/I_use_enum?value=valueTwo")]
         public void when_a_testcase_is_called_then_the_test_will_execute(string url)
         {
             var  response = apiClient.GetAsync(url).Result;
@@ -537,7 +537,7 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
-            var test = content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?count=1&foo=bar");
+            var test = content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters?count=1&foo=bar");
             test.Parameters.Should().ContainSingle(p => p.Name == "foo");
             test.Parameters.Should().ContainSingle(p => p.Name == "count");
         }
@@ -550,7 +550,7 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
 
-            var test = content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters/?count=1&foo=bar");
+            var test = content.Tests.Single(t => t.Url == "http://blammo.com/tests/staging/widgetapi/string_returning_test_with_optional_parameters?count=1&foo=bar");
             test.Parameters.Single(p => p.Name == "foo").DefaultValue.Should().BeEquivalentTo("bar");
             test.Parameters.Single(p => p.Name == "count").DefaultValue.Should().BeEquivalentTo(1);
         }
@@ -575,10 +575,10 @@ namespace Peaky.Tests
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
             
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=true&testCaseId=case1", StringComparison.OrdinalIgnoreCase));
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=false&testCaseId=case2", StringComparison.OrdinalIgnoreCase));
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=true&testCaseId=case3", StringComparison.OrdinalIgnoreCase));
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff/?extectedResult=false&testCaseId=case4", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff?extectedResult=true&testCaseId=case1", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff?extectedResult=false&testCaseId=case2", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff?extectedResult=true&testCaseId=case3", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff?extectedResult=false&testCaseId=case4", StringComparison.OrdinalIgnoreCase));
             
         }
 
@@ -589,8 +589,8 @@ namespace Peaky.Tests
 
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_bool/?extectedResult=true&testCaseId=case6", StringComparison.OrdinalIgnoreCase));
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_bool/?extectedResult=false&testCaseId=case7", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_bool?extectedResult=true&testCaseId=case6", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_bool?extectedResult=false&testCaseId=case7", StringComparison.OrdinalIgnoreCase));
         }
 
         [Fact]
@@ -600,8 +600,8 @@ namespace Peaky.Tests
 
             response.ShouldSucceed();
             var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(response.Content.ReadAsStringAsync().Result);
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task/?extectedResult=false&testCaseId=case8", StringComparison.OrdinalIgnoreCase));
-            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task_of_bool/?extectedResult=false&testCaseId=case9", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task?extectedResult=false&testCaseId=case8", StringComparison.OrdinalIgnoreCase));
+            content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task_of_bool?extectedResult=false&testCaseId=case9", StringComparison.OrdinalIgnoreCase));
         }
     }
 }
