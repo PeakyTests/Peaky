@@ -63,7 +63,16 @@ namespace Peaky
                                         p.DefaultValue;
                             try
                             {
-                                var castedValue = Convert.ChangeType(value, p.ParameterType);
+                                object castedValue;
+                                if (p.ParameterType.IsEnum && value != null)
+                                {
+                                    castedValue = Enum.Parse(p.ParameterType, value.ToString(), true);
+                                }
+                                else
+                                {
+                                    castedValue = Convert.ChangeType(value, p.ParameterType);
+                                }
+                               
                                 return Expression.Constant(castedValue);
                             }
                             catch (FormatException e)
@@ -76,8 +85,8 @@ namespace Peaky
             var testClassInstance = (T) resolve(typeof(T));
             switch (testClassInstance)
             {
-                case IParameterizedTestCases ParameterizedTest:
-                    ParameterizedTest.RegisterTestCasesTo(target.DependencyRegistry);
+                case IParameterizedTestCases parameterizedTest:
+                    parameterizedTest.RegisterTestCasesTo(target.DependencyRegistry);
                     break;
             }
             return executeTestMethod(testClassInstance);

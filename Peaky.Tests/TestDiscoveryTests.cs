@@ -472,6 +472,8 @@ namespace Peaky.Tests
         [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff_and_return_bool/?extectedResult=true&testCaseId=case6")]
         [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff_and_return_task/?extectedResult=false&testCaseId=case8")]
         [InlineData("http://blammo.com/tests/staging/parameterized/I_do_stuff_and_return_task_of_bool/?extectedResult=false&testCaseId=case9")]
+        [InlineData("http://blammo.com/tests/staging/parameterized/I_use_enum/?value=valueone")]
+        [InlineData("http://blammo.com/tests/staging/parameterized/I_use_enum/?value=valueTwo")]
         public void when_a_testcase_is_called_then_the_test_will_execute(string url)
         {
             var  response = apiClient.GetAsync(url).Result;
