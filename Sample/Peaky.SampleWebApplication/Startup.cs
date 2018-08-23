@@ -32,6 +32,9 @@ namespace Peaky.SampleWebApplication
                                 new Uri("https://bing.com"))
                            .Add("production",
                                 "microsoft",
+                                new Uri("https://microsoft.com"))
+                           .Add("test",
+                                "parameterized",
                                 new Uri("https://microsoft.com"));
                 });
 

@@ -5,6 +5,10 @@ using FluentAssertions;
 
 namespace Peaky.Tests.TestClasses
 {
+    public enum ParameterizedTestEnum{
+        ValueOne,
+        ValueTwo,
+    }
     public class ParameterizedTest : IApplyToApplication, IParameterizedTestCases
     {
         private readonly Dictionary<string, ParameterizedTestContext> contextLookup = new Dictionary<string, ParameterizedTestContext>();
@@ -51,6 +55,11 @@ namespace Peaky.Tests.TestClasses
             return context.Value;
         }
 
+        public void I_use_enum(ParameterizedTestEnum value)
+        {
+
+        }
+
         private class ParameterizedTestContext
         {
             public bool Value { get; set; }
@@ -75,6 +84,10 @@ namespace Peaky.Tests.TestClasses
             registry.RegisterParametersFor(() => I_do_stuff_and_return_task("case8", false));
 
             registry.RegisterParametersFor(() => I_do_stuff_and_return_task_of_bool("case9", false));
+
+            registry.RegisterParametersFor(() => I_use_enum(ParameterizedTestEnum.ValueOne));
+
+            registry.RegisterParametersFor(() => I_use_enum(ParameterizedTestEnum.ValueTwo));
         }
     }
 }
