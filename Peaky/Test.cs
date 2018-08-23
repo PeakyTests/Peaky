@@ -41,17 +41,22 @@ namespace Peaky
                     };
                 }
             }
-
-            yield return new Test
+            else
             {
-                Environment = testTarget.Environment,
-                Application = testTarget.Application,
-                Url = definition.Parameters.Any()? request.GetLinkWithQuery(testTarget, definition, definition.Parameters) : request.GetLink(testTarget, definition),
-                Tags = definition.Tags,
-                Parameters = definition.Parameters.Any()
-                    ? definition.Parameters.ToArray()
-                    : Array.Empty<Parameter>()
-            };
+
+                yield return new Test
+                {
+                    Environment = testTarget.Environment,
+                    Application = testTarget.Application,
+                    Url = definition.Parameters.Any()
+                        ? request.GetLinkWithQuery(testTarget, definition, definition.Parameters)
+                        : request.GetLink(testTarget, definition),
+                    Tags = definition.Tags,
+                    Parameters = definition.Parameters.Any()
+                        ? definition.Parameters.ToArray()
+                        : Array.Empty<Parameter>()
+                };
+            }
         }
     }
 }
