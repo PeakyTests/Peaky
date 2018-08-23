@@ -27,7 +27,7 @@ namespace Peaky
             IEnumerable<Parameter> parameters)
         {
             var query = GetQueryString(parameters);
-            query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"/?{query}";
+            query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"?{query}";
             return $"{request.GetLink(testTarget, testDefinition)}{query}";
         }
 
@@ -38,7 +38,7 @@ namespace Peaky
             ParameterSet parameters)
         {
             var query = parameters.GetQueryString();
-            query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"/?{query}";
+            query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"?{query}";
             return $"{request.GetLink(testTarget, testDefinition)}{query}";
         }
 
