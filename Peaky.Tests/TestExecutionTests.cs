@@ -185,6 +185,19 @@ namespace Peaky.Tests
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }
 
+        [Theory]
+        [InlineData("tests/production/widgetapi/passing_test_returns_object")]
+        [InlineData("TESTS/production/widgetapi/passing_test_returns_object")]
+        [InlineData("tests/PRODUCTION/widgetapi/passing_test_returns_object")]
+        [InlineData("tests/production/WIDGETAPI/passing_test_returns_object")]
+        [InlineData("tests/production/widgetapi/PASSING_TEST_RETURNS_OBJECT")]
+        public async Task Test_invocation_is_case_insensitive(string relativeUri)
+        {
+            var response = await apiClient.GetAsync($"http://blammo.com/{relativeUri}");
+
+            response.StatusCode.Should().Be(200);
+        }
+
         [Fact]
         public async Task Tests_return_a_duration()
         {

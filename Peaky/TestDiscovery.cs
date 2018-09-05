@@ -25,7 +25,12 @@ namespace Peaky
 
         public TestDefinition Get(string testName)
         {
-            return tests[testName];
+            if (TryGet(testName, out var definition))
+            {
+                return definition;
+            }
+
+            throw new TestNotDefinedException($"Test named \"{testName}\" is not defined.");
         }
 
         public bool TryGet(string testName, out TestDefinition testDefinition) => 
@@ -48,7 +53,7 @@ namespace Peaky
                             .Where(m => !m.IsSpecialName)
                             .Select(TestDefinition.Create));
 
-            var dictionary = new Dictionary<string, TestDefinition>();
+            var dictionary = new Dictionary<string, TestDefinition>(StringComparer.OrdinalIgnoreCase);
             var collisionCount = 0;
 
             foreach (var definition in definitions)
