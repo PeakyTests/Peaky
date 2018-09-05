@@ -65,8 +65,6 @@ namespace Peaky
 
         public IEnumerator<TestDefinition> GetEnumerator() => tests.Values.GetEnumerator();
 
-       
-
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

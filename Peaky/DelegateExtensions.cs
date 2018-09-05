@@ -14,8 +14,5 @@ namespace Peaky
 
         public static AnonymousMethodInfo GetAnonymousMethodInfo<T>(this Func<T> anonymousMethod) =>
             anonymousMethodInfos.GetOrAdd(anonymousMethod.GetMethodInfo(), m => new AnonymousMethodInfo<T>(anonymousMethod));
-
-        public static AnonymousMethodInfo GetAnonymousMethodInfo(this Delegate anonymousMethod) =>
-            anonymousMethodInfos.GetOrAdd(anonymousMethod.GetMethodInfo(), m => new AnonymousMethodInfo(anonymousMethod.GetMethodInfo()));
     }
 }

@@ -16,10 +16,6 @@ namespace Peaky
 
         public string TestName { get; internal set; }
 
-        public string RouteName => "Peaky-Test-" + TestName;
-
-        public string RouteTemplate { get; set; }
-
         public virtual string[] Tags { get; set; } = Array.Empty<string>();
 
         internal Type TestType { get;  set; }

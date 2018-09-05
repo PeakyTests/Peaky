@@ -28,7 +28,6 @@ namespace Peaky
             TimeSpan duration,
             TestInfo test)
         {
-           
             var testResult = new TestResult
             {
                 ReturnValue = returnValue,
@@ -50,9 +49,7 @@ namespace Peaky
             {
                 throw new ArgumentNullException(nameof(exception));
             }
-
-          
-
+ 
             var testResult = new TestResult
             {
                 Log = TraceBuffer.Current?.ToString(),

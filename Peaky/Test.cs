@@ -25,9 +25,11 @@ namespace Peaky
 
         public static IEnumerable<Test> CreateTests(TestTarget testTarget, TestDefinition definition, HttpRequest request)
         {
-            var testCases = testTarget.DependencyRegistry.GetParameterSetsFor(definition.TestMethod)?.ToList();
+            var testCases = testTarget
+                            .DependencyRegistry
+                            .GetParameterSetsFor(definition.TestMethod);
 
-            if (testCases != null && testCases.Count > 0)
+            if (testCases.Any())
             {
                 foreach (var testCase in testCases)
                 {
@@ -35,7 +37,7 @@ namespace Peaky
                     {
                         Environment = testTarget.Environment,
                         Application = testTarget.Application,
-                        Url = request.GetLinkWithQuery(testTarget, definition,testCase),
+                        Url = request.GetLinkWithQuery(testTarget, definition, testCase),
                         Tags = definition.Tags,
                         Parameters = testCase.ToArray()
                     };
@@ -43,18 +45,17 @@ namespace Peaky
             }
             else
             {
-
                 yield return new Test
                 {
                     Environment = testTarget.Environment,
                     Application = testTarget.Application,
                     Url = definition.Parameters.Any()
-                        ? request.GetLinkWithQuery(testTarget, definition, definition.Parameters)
-                        : request.GetLink(testTarget, definition),
+                              ? request.GetLinkWithQuery(testTarget, definition, definition.Parameters)
+                              : request.GetLink(testTarget, definition),
                     Tags = definition.Tags,
                     Parameters = definition.Parameters.Any()
-                        ? definition.Parameters.ToArray()
-                        : Array.Empty<Parameter>()
+                                     ? definition.Parameters.ToArray()
+                                     : Array.Empty<Parameter>()
                 };
             }
         }
