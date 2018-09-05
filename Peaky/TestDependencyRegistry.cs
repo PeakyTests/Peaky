@@ -30,17 +30,17 @@ namespace Peaky
             return this;
         }
 
-        public TestDependencyRegistry RegisterParametersFor(Expression<Action> testCase)
+        public TestDependencyRegistry RegisterParameters(Expression<Action> testCase)
         {
-            return RegisterParametersFor(testCase.Body as MethodCallExpression);
+            return RegisterParameters(testCase.Body as MethodCallExpression);
         }
 
-        public TestDependencyRegistry RegisterParametersFor(Expression<Func<Task>> testCase)
+        public TestDependencyRegistry RegisterParameters(Expression<Func<Task>> testCase)
         {
-            return RegisterParametersFor(testCase.Body as MethodCallExpression);
+            return RegisterParameters(testCase.Body as MethodCallExpression);
         }
 
-        private TestDependencyRegistry RegisterParametersFor(MethodCallExpression expression)
+        private TestDependencyRegistry RegisterParameters(MethodCallExpression expression)
         {
             var parameterized = ExtractParameterizedTestCase(expression);
 

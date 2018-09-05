@@ -67,27 +67,27 @@ namespace Peaky.Tests.TestClasses
 
         public void RegisterTestCasesTo(TestDependencyRegistry registry)
         {
-            registry.RegisterParametersFor(() => I_do_stuff("case1", true));
+            registry.RegisterParameters(() => I_do_stuff("case1", true));
 
-            registry.RegisterParametersFor(() => I_do_stuff("case2", false));
+            registry.RegisterParameters(() => I_do_stuff("case2", false));
 
-            registry.RegisterParametersFor(() => I_do_stuff("case3", true));
+            registry.RegisterParameters(() => I_do_stuff("case3", true));
 
-            registry.RegisterParametersFor(() => I_do_stuff("case4", false));
+            registry.RegisterParameters(() => I_do_stuff("case4", false));
 
-            registry.RegisterParametersFor(() => I_do_stuff("case5", true));
+            registry.RegisterParameters(() => I_do_stuff("case5", true));
 
-            registry.RegisterParametersFor(() => I_do_stuff_and_return_bool("case6", true));
+            registry.RegisterParameters(() => I_do_stuff_and_return_bool("case6", true));
 
-            registry.RegisterParametersFor(() => I_do_stuff_and_return_bool("case7", false));
+            registry.RegisterParameters(() => I_do_stuff_and_return_bool("case7", false));
 
-            registry.RegisterParametersFor(() => I_do_stuff_and_return_task("case8", false));
+            registry.RegisterParameters(() => I_do_stuff_and_return_task("case8", false));
 
-            registry.RegisterParametersFor(() => I_do_stuff_and_return_task_of_bool("case9", false));
+            registry.RegisterParameters(() => I_do_stuff_and_return_task_of_bool("case9", false));
 
-            registry.RegisterParametersFor(() => I_use_enum(ParameterizedTestEnum.ValueOne));
+            registry.RegisterParameters(() => I_use_enum(ParameterizedTestEnum.ValueOne));
 
-            registry.RegisterParametersFor(() => I_use_enum(ParameterizedTestEnum.ValueTwo));
+            registry.RegisterParameters(() => I_use_enum(ParameterizedTestEnum.ValueTwo));
         }
     }
 }

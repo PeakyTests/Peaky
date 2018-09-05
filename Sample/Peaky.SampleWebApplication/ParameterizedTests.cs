@@ -41,13 +41,13 @@ namespace Peaky.SampleWebApplication
 
         public void RegisterTestCasesTo(TestDependencyRegistry registry)
         {
-            registry.RegisterParametersFor(() => parameterised_test(1));
-            registry.RegisterParametersFor(() => parameterised_test(2));
-            registry.RegisterParametersFor(() => parameterised_test(3));
-            registry.RegisterParametersFor(() => parameterised_test(4));
+            registry.RegisterParameters(() => parameterised_test(1));
+            registry.RegisterParameters(() => parameterised_test(2));
+            registry.RegisterParameters(() => parameterised_test(3));
+            registry.RegisterParameters(() => parameterised_test(4));
 
-            registry.RegisterParametersFor(() => parameterised_test_with_enum(TestParameterEnum.First));
-            registry.RegisterParametersFor(() => parameterised_test_with_enum(TestParameterEnum.Second));
+            registry.RegisterParameters(() => parameterised_test_with_enum(TestParameterEnum.First));
+            registry.RegisterParameters(() => parameterised_test_with_enum(TestParameterEnum.Second));
         }
     }
 
