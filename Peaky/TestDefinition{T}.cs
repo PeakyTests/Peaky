@@ -32,7 +32,6 @@ namespace Peaky
                           .Select(p => Expression.Constant(p.GetDefaultValue(), p.ParameterType)));
         }
 
-
         public override bool AppliesTo(TestTarget target) =>
             applicabilityCache.GetOrAdd(target, t => new DetailsForTarget(t))
                               .IsApplicable;
@@ -88,6 +87,7 @@ namespace Peaky
                     parameterizedTest.RegisterTestCasesTo(target.DependencyRegistry);
                     break;
             }
+
             return executeTestMethod(testClassInstance);
         }
 

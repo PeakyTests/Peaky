@@ -9,6 +9,7 @@ namespace Peaky.Tests.TestClasses
         ValueOne,
         ValueTwo,
     }
+
     public class ParameterizedTest : IApplyToApplication, IParameterizedTestCases
     {
         private readonly Dictionary<string, ParameterizedTestContext> contextLookup = new Dictionary<string, ParameterizedTestContext>();
@@ -27,31 +28,31 @@ namespace Peaky.Tests.TestClasses
                 contextLookup["case9"] = new ParameterizedTestContext { Value = false };
         }
 
-        public void I_do_stuff(string testCaseId, bool extectedResult)
+        public void I_do_stuff(string testCaseId, bool expectedResult)
         {
             var env = contextLookup[testCaseId];
-            env.Value.Should().Be(extectedResult);
+            env.Value.Should().Be(expectedResult);
         }
 
-        public bool I_do_stuff_and_return_bool(string testCaseId, bool extectedResult)
+        public bool I_do_stuff_and_return_bool(string testCaseId, bool expectedResult)
         {
             var context = contextLookup[testCaseId];
-            context.Value.Should().Be(extectedResult);
+            context.Value.Should().Be(expectedResult);
             return context.Value;
         }
 
-        public async Task I_do_stuff_and_return_task(string testCaseId, bool extectedResult)
+        public async Task I_do_stuff_and_return_task(string testCaseId, bool expectedResult)
         {
             await Task.Yield();
             var context = contextLookup[testCaseId];
-            context.Value.Should().Be(extectedResult);
+            context.Value.Should().Be(expectedResult);
         }
 
-        public async Task<bool> I_do_stuff_and_return_task_of_bool(string testCaseId, bool extectedResult)
+        public async Task<bool> I_do_stuff_and_return_task_of_bool(string testCaseId, bool expectedResult)
         {
             await Task.Yield();
             var context = contextLookup[testCaseId];
-            context.Value.Should().Be(extectedResult);
+            context.Value.Should().Be(expectedResult);
             return context.Value;
         }
 
