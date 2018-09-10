@@ -52,7 +52,12 @@ namespace Peaky.Tests
                     .UseStartup<TestApiStartup>());
         }
 
-        public HttpClient CreateHttpClient() => httpClient ?? (httpClient = testServer.CreateClient());
+        public HttpClient CreateHttpClient()
+        {
+            var httpMessageHandler = testServer.CreateHandler();
+            var clientHandler = new DelegatingHandlerWithCookies(httpMessageHandler);
+            return httpClient = new HttpClient(clientHandler);
+        }
 
         public void Dispose() => httpClient.Dispose();
 

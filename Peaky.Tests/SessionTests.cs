@@ -1,77 +1,109 @@
 using System;
-using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Peaky.Tests
 {
     public class SessionTests
     {
-        private readonly ITestOutputHelper output;
-
-        public SessionTests(ITestOutputHelper output)
-        {
-            this.output = output;
-        }
-
         [Fact]
-        public async Task Clients_can_access_session_state_by_sending_a_session_header()
+        public async Task Repeat_requests_can_access_persistent_session_state()
         {
-            var sessionId = Guid.NewGuid().ToString();
-
-            using (var peakyService = new PeakyService(targets => targets.Add(
-                                                           "production",
-                                                           "counter",
-                                                           new Uri("http://example.com"),
-                                                           t => t.Register<HttpClient>(() => new FakeHttpClient(_ => new HttpResponseMessage(HttpStatusCode.OK))
-                                                           {
-                                                               BaseAddress = new Uri("http://example.com")
-                                                           })), testTypes: new[] { typeof(SessionfulTests) }))
+            using (var peakyService = CreatePeakyService())
             {
-                var response1 = await peakyService
-                                      .CreateHttpClient()
-                                      .SendAsync(CreateRequest(sessionId));
-                var response2 = await peakyService
-                                      .CreateHttpClient()
-                                      .SendAsync(CreateRequest(sessionId));
+                var client = peakyService.CreateHttpClient();
+
+                var response1 = await client.SendAsync(CounterRequest());
+                var response2 = await client.SendAsync(CounterRequest());
 
                 var result1 = (long) (await response1.AsTestResult()).ReturnValue;
                 var result2 = (long) (await response2.AsTestResult()).ReturnValue;
 
                 result2.Should().Be(result1 + 1);
             }
+        }
 
-            HttpRequestMessage CreateRequest(string s)
+        [Fact]
+        public async Task Tests_for_different_applications_and_environments_can_share_session_data()
+        {
+            using (var peakyService = CreatePeakyService())
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/tests/production/counter/increment");
-                request.Headers.Add("peaky-session", s);
-                return request;
+                var client = peakyService.CreateHttpClient();
+
+                var response1 = await client.SendAsync(CounterRequest("production"));
+                var response2 = await client.SendAsync(CounterRequest("staging"));
+
+                var result1 = (long) (await response1.AsTestResult()).ReturnValue;
+                var result2 = (long) (await response2.AsTestResult()).ReturnValue;
+
+                result2.Should().Be(result1 + 1);
             }
         }
-    }
 
-    public class SessionfulTests
-    {
-        private readonly CounterState counterState;
-
-        public SessionfulTests(CounterState counterState)
+        [Fact]
+        public async Task When_a_different_session_used_then_a_different_state_is_accessed()
         {
-            this.counterState = counterState ?? throw new ArgumentNullException(nameof(counterState));
+            using (var peakyService = CreatePeakyService())
+            {
+                var response1 = await peakyService
+                                      .CreateHttpClient()
+                                      .SendAsync(CounterRequest());
+                var response2 = await peakyService
+                                      .CreateHttpClient()
+                                      .SendAsync(CounterRequest());
+
+                var result1 = (long) (await response1.AsTestResult()).ReturnValue;
+                var result2 = (long) (await response2.AsTestResult()).ReturnValue;
+
+                result1.Should().Be(1);
+                result2.Should().Be(1);
+            }
         }
 
-        public int increment()
-        {
-            counterState.Count++;
+        private HttpRequestMessage CounterRequest(string environment = "production") =>
+            new HttpRequestMessage(HttpMethod.Get,
+                                   $"http://example.com/tests/{environment}/counter/increment");
 
-            return counterState.Count;
+        private static PeakyService CreatePeakyService()
+        {
+            return new PeakyService(
+                targets => targets
+                           .Add(
+                               "production",
+                               "counter",
+                               new Uri("http://example.com"))
+                           .Add(
+                               "staging",
+                               "counter",
+                               new Uri("http://example.com")),
+                testTypes: new[] { typeof(Counter) });
         }
     }
 
-    public class CounterState
+    public class Counter : IPeakyTest
     {
-        public int Count { get; set; }
+        private readonly TestSession session;
+
+        public Counter(TestSession session)
+        {
+            this.session = session;
+        }
+
+        public int Increment()
+        {
+            var counterString = session.GetString("counter");
+
+            var counter = string.IsNullOrEmpty(counterString)
+                              ? 0
+                              : int.Parse(counterString);
+
+            counter++;
+
+            session.SetString("counter", counter.ToString());
+
+            return counter;
+        }
     }
 }

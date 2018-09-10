@@ -6,6 +6,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Pocket;
 
 namespace Peaky
@@ -31,21 +33,26 @@ namespace Peaky
             {
                 throw new ArgumentNullException(nameof(baseAddress));
             }
+
             if (!baseAddress.IsAbsoluteUri)
             {
                 throw new ArgumentException("Base address must be an absolute URI.");
             }
+
             if (string.IsNullOrWhiteSpace(environment))
             {
                 throw new ArgumentException("Value cannot be null or whitespace.", nameof(environment));
             }
+
             if (string.IsNullOrWhiteSpace(application))
             {
                 throw new ArgumentException("Value cannot be null or whitespace.", nameof(application));
             }
 
             var container = new PocketContainer()
-                .Register(c => new HttpClient());
+                            .Register(c => new HttpClient())
+                            .Register(c => new TestSession(c.Resolve<IHttpContextAccessor>()))
+                            .Register(c => services.GetRequiredService<IHttpContextAccessor>());
 
             var testDependencyRegistry = new TestDependencyRegistry(container);
 
