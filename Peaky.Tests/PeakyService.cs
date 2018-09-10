@@ -16,7 +16,6 @@ namespace Peaky.Tests
     public class PeakyService : IDisposable
     {
         private readonly TestServer testServer;
-        private HttpClient httpClient;
 
         public PeakyService(
             Action<TestTargetRegistry> configureTargets = null,
@@ -56,10 +55,10 @@ namespace Peaky.Tests
         {
             var httpMessageHandler = testServer.CreateHandler();
             var clientHandler = new DelegatingHandlerWithCookies(httpMessageHandler);
-            return httpClient = new HttpClient(clientHandler);
+            return new HttpClient(clientHandler);
         }
 
-        public void Dispose() => httpClient.Dispose();
+        public void Dispose() => testServer.Dispose();
 
         internal class TestApiStartup
         {
