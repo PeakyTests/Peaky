@@ -3,13 +3,13 @@
 
 using System;
 using System.IO;
-using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Its.Recipes;
 using Xunit;
 
-namespace Peaky
+namespace Peaky.Tests
 {
     public class DiagnosticSensorTests : IDisposable
     {
@@ -79,21 +79,20 @@ namespace Peaky
         }
 
         [Fact]
-        public void Sensor_methods_are_invoked_per_Read_call()
+        public async Task Sensor_methods_are_invoked_per_Read_call()
         {
-            var first = DiagnosticSensor.DiscoverSensors().Single(s => s.Name == "CounterSensor").Read().Result;
-            var second = DiagnosticSensor.DiscoverSensors().Single(s => s.Name == "CounterSensor").Read().Result;
+            var first = await DiagnosticSensor.DiscoverSensors().Single(s => s.Name == "CounterSensor").Read();
+            var second = await DiagnosticSensor.DiscoverSensors().Single(s => s.Name == "CounterSensor").Read();
 
             first.Should().NotBe(second);
         }
 
         [Fact]
-        public void When_sensor_throws_an_exception_then_the_exception_is_returned()
+        public async Task When_sensor_throws_an_exception_then_the_exception_is_returned()
         {
-            var result = DiagnosticSensor.DiscoverSensors()
+            var result = (await DiagnosticSensor.DiscoverSensors()
                                          .Single(s => s.Name == "ExceptionSensor")
-                                         .Read()
-                                         .Result
+                                         .Read())
                                          .Exception;
 
             result.Should().BeOfType<DataMisalignedException>();
@@ -114,13 +113,16 @@ namespace Peaky
         }
 
         [Fact]
-        public void When_registered_sensor_is_anonymous_then_default_name_is_derived_from_method_doing_registration()
+        public async Task When_registered_sensor_is_anonymous_then_default_name_is_derived_from_method_doing_registration()
         {
             var newGuid = Guid.NewGuid();
 
-            var registry = new SensorRegistry {() => newGuid};
+            var registry = new SensorRegistry { () => newGuid };
 
-            var sensor = registry.Single(s => s.Read().Result.Value.Equals(newGuid));
+            var sensorsWithReadings = await Task.WhenAll(
+                                          registry.Select(async s => (s, await s.Read())));
+
+            var sensor = sensorsWithReadings.Single(s => s.Item2.Value.Equals(newGuid)).Item1;
 
             sensor.Name.Should().Contain(nameof(When_registered_sensor_is_anonymous_then_default_name_is_derived_from_method_doing_registration));
         }
@@ -130,18 +132,22 @@ namespace Peaky
         {
             var registry = new SensorRegistry {SensorNameTester};
 
-            registry.Count(s => s.Name == "SensorNameTester").Should().Be(1);}
+            registry.Count(s => s.Name == "SensorNameTester").Should().Be(1);
+        }
 
         [Fact]
-        public void When_registered_sensor_is_anonymous_then_DeclaringType_is_the_containing_type()
+        public async Task When_registered_sensor_is_anonymous_then_DeclaringType_is_the_containing_type()
         {
             var newGuid = Guid.NewGuid();
 
             var registry = new SensorRegistry {() => newGuid};
 
-            var sensor = registry.Single(s => s.Read().Result.Value.Equals(newGuid));
+            var sensorsWithReadings = await Task.WhenAll(
+                                          registry.Select(async s => (s, await s.Read())));
 
-            sensor.DeclaringType.Should().Be(GetType());
+            var sensor = sensorsWithReadings.Single(s => s.Item2.Value.Equals(newGuid));
+
+            sensor.Item1.DeclaringType.Should().Be(GetType());
         }
 
         [Fact]

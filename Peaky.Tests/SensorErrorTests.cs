@@ -40,7 +40,7 @@ namespace Peaky.Tests
         {
             registry.Add<string>(() => throw new Exception("oops!"), sensorName);
 
-            var result =await apiClient.GetAsync("http://blammo.com/sensors/" + sensorName);
+            var result = await apiClient.GetAsync("http://blammo.com/sensors/" + sensorName);
 
             var body = await result.Content.ReadAsStringAsync();
 
@@ -58,7 +58,7 @@ namespace Peaky.Tests
 
             var result = await apiClient.GetAsync("http://blammo.com/sensors/");
 
-            var body = result.Content.ReadAsStringAsync().Result;
+            var body = await result.Content.ReadAsStringAsync();
 
             result.StatusCode
                   .Should()
@@ -68,7 +68,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void Cyclical_references_in_object_graphs_do_not_cause_serialization_errors()
+        public async Task Cyclical_references_in_object_graphs_do_not_cause_serialization_errors()
         {
             registry.Add(() =>
             {
@@ -80,11 +80,11 @@ namespace Peaky.Tests
                 return parent;
             }, sensorName);
 
-            apiClient.GetAsync("http://blammo.com/sensors/").Result
+            (await apiClient.GetAsync("http://blammo.com/sensors/"))
                      .StatusCode
                      .Should()
                      .Be(HttpStatusCode.OK);
-            apiClient.GetAsync("http://blammo.com/sensors/" + sensorName).Result
+            (await apiClient.GetAsync($"http://blammo.com/sensors/{sensorName}"))
                      .StatusCode
                      .Should()
                      .Be(HttpStatusCode.OK);

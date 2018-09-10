@@ -64,7 +64,7 @@ namespace Peaky.Tests
             var response = await CreateApiClient(() => true)
                                .GetAsync("http://tests.com/tests");
 
-            JArray tests = response.JsonContent().Tests;
+            JArray tests = (await response.JsonContent()).Tests;
 
             tests.Should().Contain(t => t.Value<string>("Url").Contains("target_based_constraint_test"));
         }

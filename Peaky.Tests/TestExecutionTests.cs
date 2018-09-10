@@ -56,9 +56,9 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_a_test_with_a_void_return_value_passes_then_a_200_is_returned()
+        public async Task When_a_test_with_a_void_return_value_passes_then_a_200_is_returned()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_void_test").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_void_test");
 
             response.ShouldSucceed(HttpStatusCode.OK);
         }
@@ -82,30 +82,30 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_a_test_passes_and_returns_an_object_then_the_response_contains_the_test_return_value()
+        public async Task When_a_test_passes_and_returns_an_object_then_the_response_contains_the_test_return_value()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object");
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = await response.Content.ReadAsStringAsync();
 
             result.Should().Contain("success!");
         }
 
         [Fact]
-        public void When_a_test_passes_and_returns_a_struct_then_the_response_contains_the_test_return_value()
+        public async Task When_a_test_passes_and_returns_a_struct_then_the_response_contains_the_test_return_value()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct");
 
-            var result = JsonConvert.DeserializeObject<TestResult>(response.Content.ReadAsStringAsync().Result);
+            var result = JsonConvert.DeserializeObject<TestResult>(await response.Content.ReadAsStringAsync());
             result.Passed.Should().BeTrue();
         }
 
         [Fact]
-        public void When_a_test_executes_and_returns_a_struct_then_the_response_contains_test_metadata()
+        public async Task When_a_test_executes_and_returns_a_struct_then_the_response_contains_test_metadata()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct");
 
-            var result = JsonConvert.DeserializeObject<TestResult>(response.Content.ReadAsStringAsync().Result);
+            var result = JsonConvert.DeserializeObject<TestResult>(await response.Content.ReadAsStringAsync());
             result.Test.Should().NotBeNull();
             result.Test.Application.Should().Be("widgetapi");
             result.Test.Environment.Should().Be("production");
@@ -114,73 +114,71 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_a_test_with_a_return_value_throws_then_a_500_Test_Failed_is_returned()
+        public async Task When_a_test_with_a_return_value_throws_then_a_500_Test_Failed_is_returned()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test");
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
         }
 
         [Fact]
-        public void When_a_test_with_a_void_return_value_throws_then_a_500_Test_Failed_is_returned()
+        public async Task When_a_test_with_a_void_return_value_throws_then_a_500_Test_Failed_is_returned()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test");
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
 
-            response.Content
-                    .ReadAsStringAsync()
-                    .Result
+            (await response.Content
+                    .ReadAsStringAsync())
                     .Should()
                     .Contain("oops!");
         }
 
         [Fact]
-        public void When_a_test_with_a_Task_return_value_throws_then_a_500_Test_Failed_is_returned()
+        public async Task When_a_test_with_a_Task_return_value_throws_then_a_500_Test_Failed_is_returned()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_async_test").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_async_test");
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
 
-            response.Content
-                    .ReadAsStringAsync()
-                    .Result
+            (await response.Content
+                    .ReadAsStringAsync())
                     .Should()
                     .Contain("oops!");
         }
 
         [Fact]
-        public void When_a_test_with_a_return_value_fails_then_the_response_contains_the_test_return_value_and_exception_details()
+        public async Task When_a_test_with_a_return_value_fails_then_the_response_contains_the_test_return_value_and_exception_details()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test");
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = await response.Content.ReadAsStringAsync();
 
             result.Should().Contain("oops!");
         }
 
         [Fact]
-        public void When_a_test_with_a_void_return_value_fails_then_the_response_contains_the_test_return_value_and_exception_details()
+        public async Task When_a_test_with_a_void_return_value_fails_then_the_response_contains_the_test_return_value_and_exception_details()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test");
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = await response.Content.ReadAsStringAsync();
 
             result.Should().Contain("oops!");
         }
 
         [Fact]
-        public void When_a_test_is_not_valid_for_a_given_environment_then_calling_it_returns_404()
+        public async Task When_a_test_is_not_valid_for_a_given_environment_then_calling_it_returns_404()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/internal_only_test").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/internal_only_test");
 
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }
 
         [Fact]
-        public void When_a_test_is_not_valid_for_a_given_application_then_calling_it_returns_404()
+        public async Task When_a_test_is_not_valid_for_a_given_application_then_calling_it_returns_404()
         {
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/sprocketapi/widgetapi_only_test").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/sprocketapi/widgetapi_only_test");
 
             response.ShouldFailWith(HttpStatusCode.NotFound);
         }

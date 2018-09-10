@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft. All rights reserved. 
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Net;
 using System.Net.Http;
@@ -74,9 +77,9 @@ namespace Peaky.Tests
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.Accepted));
 
-            Action assert = () =>
+            Func<Task> assert = async () =>
             {
-                var x = response.ShouldSucceedAsync().Result;
+                var x = await response.ShouldSucceedAsync();
             };
 
             assert.Should().NotThrow();
@@ -87,9 +90,9 @@ namespace Peaky.Tests
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.BadRequest));
 
-            Action assert = () =>
+            Func<Task> assert = async () =>
             {
-                var x = response.ShouldFailWithAsync(HttpStatusCode.BadRequest).Result;
+                var x = await response.ShouldFailWithAsync(HttpStatusCode.BadRequest);
             };
 
             assert.Should().NotThrow();

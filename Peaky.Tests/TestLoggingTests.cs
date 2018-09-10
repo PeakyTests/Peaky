@@ -34,24 +34,24 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_a_test_passes_then_the_response_contains_trace_output_written_by_the_test()
+        public async Task When_a_test_passes_then_the_response_contains_trace_output_written_by_the_test()
         {
             var apiClient = CreatePeakyClient();
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = await response.Content.ReadAsStringAsync();
 
             result.Should().Contain("Application = widgetapi | Environment = production");
             result.Should().Contain("...and the response\"");
         }
 
         [Fact]
-        public void When_a_test_passes_then_the_response_contains_ILogger_output_written_by_the_test()
+        public async Task When_a_test_passes_then_the_response_contains_ILogger_output_written_by_the_test()
         {
             var apiClient = CreatePeakyClient(c => c.AddSingleton<ILoggerFactory, LoggerFactory>());
-            var response = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger").Result;
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger");
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = await response.Content.ReadAsStringAsync();
 
             result.Should().Contain("Application = widgetapi | Environment = production");
             result.Should().Contain("...and the response\"");
@@ -63,11 +63,11 @@ namespace Peaky.Tests
             TestsWithTraceOutput.Barrier = new Barrier(2);
 
             var apiClient = CreatePeakyClient();
-            var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
-            var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
+            var productionResponse = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
+            var stagingResponse = await apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
 
-            var productionResult = await productionResponse.Result.Content.ReadAsStringAsync();
-            var stagingResult = await stagingResponse.Result.Content.ReadAsStringAsync();
+            var productionResult = await productionResponse.Content.ReadAsStringAsync();
+            var stagingResult = await stagingResponse.Content.ReadAsStringAsync();
 
             productionResult.Should().Contain("Environment = production");
             productionResult.Should().NotContain("Environment = staging");
@@ -80,11 +80,11 @@ namespace Peaky.Tests
         {
             TestsWithTraceOutput.Barrier = new Barrier(2);
             var apiClient = CreatePeakyClient(c => c.AddSingleton<ILoggerFactory, LoggerFactory>());
-            var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger");
-            var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_logger");
+            var productionResponse = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger");
+            var stagingResponse = await apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_logger");
 
-            var productionResult = await productionResponse.Result.Content.ReadAsStringAsync();
-            var stagingResult = await stagingResponse.Result.Content.ReadAsStringAsync();
+            var productionResult = await productionResponse.Content.ReadAsStringAsync();
+            var stagingResult = await stagingResponse.Content.ReadAsStringAsync();
 
             productionResult.Should().Contain("Environment = production");
             productionResult.Should().NotContain("Environment = staging");
@@ -122,11 +122,11 @@ namespace Peaky.Tests
             TestsWithTraceOutput.Barrier = new Barrier(2);
             TestsWithTraceOutput.GetResponse = () => throw new Exception("oh noes!");
             var apiClient = CreatePeakyClient();
-            var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
-            var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
+            var productionResponse = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_trace");
+            var stagingResponse = await apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_trace");
 
-            var productionResult = await productionResponse.Result.Content.ReadAsStringAsync();
-            var stagingResult = await stagingResponse.Result.Content.ReadAsStringAsync();
+            var productionResult = await productionResponse.Content.ReadAsStringAsync();
+            var stagingResult = await stagingResponse.Content.ReadAsStringAsync();
 
             productionResult.Should().Contain("Environment = production");
             productionResult.Should().NotContain("Environment = staging");
@@ -142,11 +142,11 @@ namespace Peaky.Tests
             TestsWithLoggerOutput.Barrier = new Barrier(2);
             TestsWithLoggerOutput.GetResponse = () => throw new Exception("oh noes!");
             var apiClient = CreatePeakyClient(c => c.AddSingleton<ILoggerFactory, LoggerFactory>());
-            var productionResponse = apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger");
-            var stagingResponse = apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_logger");
+            var productionResponse = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/write_to_logger");
+            var stagingResponse = await apiClient.GetAsync("http://blammo.com/tests/staging/widgetapi/write_to_logger");
 
-            var productionResult = await productionResponse.Result.Content.ReadAsStringAsync();
-            var stagingResult = await stagingResponse.Result.Content.ReadAsStringAsync();
+            var productionResult = await productionResponse.Content.ReadAsStringAsync();
+            var stagingResult = await stagingResponse.Content.ReadAsStringAsync();
 
             productionResult.Should().Contain("Environment = production");
             productionResult.Should().NotContain("Environment = staging");
@@ -176,9 +176,12 @@ namespace Peaky.Tests
                          })),
                 configureServices: configureServices);
 
+            var httpClient = peakyService.CreateHttpClient();
+
+            disposables.Add(httpClient);
             disposables.Add(peakyService);
 
-            return peakyService.CreateHttpClient();
+            return httpClient;
         }
     }
 
