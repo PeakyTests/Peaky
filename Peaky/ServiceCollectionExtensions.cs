@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -27,6 +28,8 @@ namespace Peaky
             builder.TryAddSingleton(c => new TestDefinitionRegistry(testTypes));
 
             builder.TryAddTransient<ITestPageRenderer>(c => new TestPageRenderer());
+            
+            builder.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             return builder;
         }

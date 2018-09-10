@@ -8,24 +8,24 @@ namespace Peaky
 {
     internal class TestInfo
     {
-        public string Application { get;  }
+        public string Application { get; }
 
-        public string Name { get;  }
+        public string Name { get; }
 
         public string Environment { get; }
 
-        public Uri Url { get;  }
+        public Uri Url { get; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string[] Tags { get; }
 
-        public TestInfo(string application,
+        public TestInfo(
+            string application,
             string environment,
             string name,
             Uri testUrl,
             string[] testTags = null)
         {
-            
             if (string.IsNullOrWhiteSpace(application))
             {
                 throw new ArgumentException("Value cannot be null or whitespace.", nameof(application));
@@ -46,8 +46,6 @@ namespace Peaky
             Tags = testTags;
             Name = name;
             Url = testUrl ?? throw new ArgumentNullException(nameof(testUrl));
-
         }
-
     }
 }

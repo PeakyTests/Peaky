@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Pocket;
 using Pocket.For.MicrosoftExtensionsLogging;
 
 namespace Peaky.Tests
@@ -16,7 +17,7 @@ namespace Peaky.Tests
     public class PeakyService : IDisposable
     {
         private readonly TestServer testServer;
-        private HttpClient httpClient;
+        private readonly CompositeDisposable disposables = new CompositeDisposable();
 
         public PeakyService(
             Action<TestTargetRegistry> configureTargets = null,
@@ -27,6 +28,8 @@ namespace Peaky.Tests
                 configureTargets,
                 configureServices,
                 testTypes);
+
+            disposables.Add(testServer);
         }
 
         private static TestServer Configure(
@@ -47,14 +50,18 @@ namespace Peaky.Tests
                 services.AddPeakyTests(configureTargets, testTypes);
             });
 
-            return new TestServer(
-                webHostBuilder
-                    .UseStartup<TestApiStartup>());
+            return new TestServer(webHostBuilder.UseStartup<TestApiStartup>());
         }
 
-        public HttpClient CreateHttpClient() => httpClient ?? (httpClient = testServer.CreateClient());
+        public HttpClient CreateHttpClient()
+        {
+            var httpMessageHandler = testServer.CreateHandler();
+            var clientHandler = new DelegatingHandlerWithCookies(httpMessageHandler);
+            var httpClient = new HttpClient(clientHandler);
+            return httpClient;
+        }
 
-        public void Dispose() => httpClient.Dispose();
+        public void Dispose() => disposables.Dispose();
 
         internal class TestApiStartup
         {

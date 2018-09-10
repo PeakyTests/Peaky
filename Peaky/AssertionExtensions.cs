@@ -6,31 +6,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using Its.Recipes;
 
 namespace Peaky
 {
     public static class AssertionExtensions
     {
-        static AssertionExtensions()
-        {
-//            Formatter<ObjectContent>.RegisterForAllMembers();
-//            Formatter<StringContent>.Register(c => new
-//            {
-//                c.ReadAsStringAsync().Result,
-//                c.Headers
-//            }.ToLogString());
-//            Formatter<StreamContent>.Register(c => new
-//            {
-//                c.ReadAsStringAsync().Result,
-//                c.Headers
-//            }.ToLogString());
-//            Formatter<HttpContentHeaders>.RegisterForAllMembers();
-//            Formatter<HttpError>.RegisterForAllMembers();
-        }
-
         public static HttpResponseMessage ShouldSucceed(
             this HttpResponseMessage response,
             HttpStatusCode? expected = null)
@@ -39,18 +20,14 @@ namespace Peaky
             {
                 if (!response.IsSuccessStatusCode)
                 {
-                    throw new HttpRequestException(string.Format("Response does not indicate success: {0}: {1}",
-                                                                 response.StatusCode,
-                                                                 response.ReasonPhrase));
+                    throw new HttpRequestException($"Response does not indicate success: {response.StatusCode}: {response.ReasonPhrase}");
                 }
 
                 var actualStatusCode = response.StatusCode;
                 if (expected != null && actualStatusCode != expected.Value)
                 {
                     throw new AssertionFailedException(
-                        string.Format("Status code was successful but not of the expected type: {0} was expected but {1} was returned.",
-                                      expected,
-                                      actualStatusCode));
+                        $"Status code was successful but not of the expected type: {expected} was expected but {actualStatusCode} was returned.");
                 }
             }
             catch
@@ -119,7 +96,7 @@ namespace Peaky
             var message = string.Format("{0}{1}{1}{2}",
                                         response,
                                         Environment.NewLine,
-                                        response?.ToString());
+                                        response);
             throw new AssertionFailedException(message);
         }
     }

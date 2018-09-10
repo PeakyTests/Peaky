@@ -15,7 +15,6 @@ using static Pocket.Logger<Peaky.TestDefinition>;
 namespace Peaky
 {
     internal class TestDefinition<T> : TestDefinition
-        where T : IPeakyTest
     {
         private readonly Func<T, dynamic> defaultExecuteTestMethod;
        
@@ -32,7 +31,6 @@ namespace Peaky
                 methodInfo.GetParameters()
                           .Select(p => Expression.Constant(p.GetDefaultValue(), p.ParameterType)));
         }
-
 
         public override bool AppliesTo(TestTarget target) =>
             applicabilityCache.GetOrAdd(target, t => new DetailsForTarget(t))
@@ -89,6 +87,7 @@ namespace Peaky
                     parameterizedTest.RegisterTestCasesTo(target.DependencyRegistry);
                     break;
             }
+
             return executeTestMethod(testClassInstance);
         }
 

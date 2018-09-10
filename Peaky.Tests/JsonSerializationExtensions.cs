@@ -11,9 +11,9 @@ namespace Peaky.Tests
 {
     public static class JsonSerializationExtensions
     {
-        public static dynamic JsonContent(this HttpResponseMessage response)
+        public static async Task<dynamic> JsonContent(this HttpResponseMessage response)
         {
-            var json = response.Content.ReadAsStringAsync().Result;
+            var json = await response.Content.ReadAsStringAsync();
             try
             {
                 return JToken.Parse(json);

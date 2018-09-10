@@ -3,7 +3,6 @@
 
 using System;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Its.Recipes;
@@ -29,6 +28,8 @@ namespace Peaky.Tests
             apiClient = peaky.CreateHttpClient();
 
             sensorName = Any.AlphanumericString(10, 20);
+
+            disposables.Add(peaky);
         }
 
         public void Dispose()
@@ -77,7 +78,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_all_sensors_are_requested_and_some_are_slow_async_they_are_combined_with_synchronous_sensors()
+        public async Task When_all_sensors_are_requested_and_some_are_slow_async_they_are_combined_with_synchronous_sensors()
         {
             registry.Add(() => "fast sensor result", "fast sensor");
 
@@ -87,7 +88,7 @@ namespace Peaky.Tests
                 return "slow sensor result";
             }), "slow sensor");
 
-            var result = apiClient.GetStringAsync("http://blammo.com/sensors/").Result;
+            var result = await apiClient.GetStringAsync("http://blammo.com/sensors/");
 
             result.Should()
                   .Contain("\"slow sensor\":{\"Value\":\"slow sensor result\"")

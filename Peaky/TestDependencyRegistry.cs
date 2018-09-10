@@ -12,11 +12,10 @@ using Pocket;
 
 namespace Peaky
 {
-    public delegate void TestCaseSetup<in T>(T test, TestTarget target, TestDependencyRegistry dependencyRegistry);
-
     public class TestDependencyRegistry
     {
-        private readonly ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>> parameterizedTestCases = new ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>>();
+        private readonly ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>> parameterizedTestCases =
+            new ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>>();
 
         internal TestDependencyRegistry(PocketContainer container)
         {
@@ -31,22 +30,28 @@ namespace Peaky
             return this;
         }
 
-        public TestDependencyRegistry RegisterParametersFor(Expression<Action> testCase)
+        public TestDependencyRegistry RegisterParameters(Expression<Action> testCase)
         {
-            return RegisterParametersFor(testCase.Body as MethodCallExpression);
+            return RegisterParameters(testCase.Body as MethodCallExpression);
         }
 
-        public TestDependencyRegistry RegisterParametersFor(Expression<Func<Task>> testCase)
+        public TestDependencyRegistry RegisterParameters(Expression<Func<Task>> testCase)
         {
-            return RegisterParametersFor(testCase.Body as MethodCallExpression);
+            return RegisterParameters(testCase.Body as MethodCallExpression);
         }
 
-        private TestDependencyRegistry RegisterParametersFor(MethodCallExpression expression)
+        private TestDependencyRegistry RegisterParameters(MethodCallExpression expression)
         {
-            var parameterizedTestCase = ExtractParameterizedTestCase(expression);
-            var testCases = parameterizedTestCases.GetOrAdd(parameterizedTestCase.method,
+            var parameterized = ExtractParameterizedTestCase(expression);
+
+            var testCases = parameterizedTestCases.GetOrAdd(
+                parameterized.method,
                 key => new ConcurrentDictionary<string, TestCase>());
-            testCases.TryAdd(parameterizedTestCase.testCase.Parameters.GetQueryString(), parameterizedTestCase.testCase);
+
+            testCases.TryAdd(
+                parameterized.testCase.Parameters.GetQueryString(),
+                parameterized.testCase);
+
             return this;
         }
 
@@ -58,6 +63,7 @@ namespace Peaky
 
             var parameters = body.Method.GetParameters();
             var arguments = parameters.Select((p, i) => new { p.Name, Argument = body.Arguments[i].Reduce() });
+
             foreach (var argument in arguments)
             {
                 var argumentName = argument.Name;
@@ -77,12 +83,13 @@ namespace Peaky
                 values.Add(new Parameter(argumentName, data));
             }
 
-            return (method, new TestCase( new ParameterSet( values )));
+            return (method, new TestCase(new ParameterSet(values)));
         }
 
-        internal IEnumerable<ParameterSet> GetParameterSetsFor(MethodInfo method)
-        {
-            return parameterizedTestCases.TryGetValue(method, out var testCases) ? testCases.Select(e => e.Value.Parameters) : null;
-        }
+        internal IReadOnlyCollection<ParameterSet> GetParameterSetsFor(MethodInfo method) =>
+            parameterizedTestCases.TryGetValue(method, out var testCases)
+                ? testCases.Select(e => e.Value.Parameters)
+                           .ToArray()
+                : Array.Empty<ParameterSet>();
     }
 }

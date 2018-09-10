@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -28,15 +27,15 @@ namespace Peaky.Tests
         public void Dispose() => disposables.Dispose();
 
         [Fact]
-        public void Target_environment_is_available_by_declaring_a_dependency_on_Target_when_no_resolver_is_specified()
+        public async Task Target_environment_is_available_by_declaring_a_dependency_on_Target_when_no_resolver_is_specified()
         {
             var api = new PeakyService(targets => targets.Add("staging", "widgetapi", new Uri("http://localhost:81")));
 
-            var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/staging/widgetapi/get_target").Result;
+            var response = await api.CreateHttpClient().GetAsync("http://blammo.com/tests/staging/widgetapi/get_target");
 
             response.ShouldSucceed(HttpStatusCode.OK);
 
-            var result = response.Content.ReadAsStringAsync().Result;
+            var result = await response.Content.ReadAsStringAsync();
 
             string environment = JsonConvert.DeserializeObject<dynamic>(result)
                                             .ReturnValue
@@ -109,7 +108,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void Test_targets_require_absolute_URIs()
+        public async Task Test_targets_require_absolute_URIs()
         {
             Action configure = () =>
             {
@@ -126,13 +125,13 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void HttpClient_is_configured_by_default_using_TestTarget_BaseAddress()
+        public async Task HttpClient_is_configured_by_default_using_TestTarget_BaseAddress()
         {
             var api = new PeakyService(targets => targets.Add("production", "widgetapi", new Uri("http://localhost:42")));
 
-            var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress").Result;
+            var response = await api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress");
 
-            var message = response.Content.ReadAsStringAsync().Result;
+            var message = await response.Content.ReadAsStringAsync();
 
             response.ShouldSucceed();
 
@@ -140,7 +139,7 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_HttpClient_BaseAddress_is_set_in_dependency_registration_then_it_is_not_overridden()
+        public async Task When_HttpClient_BaseAddress_is_set_in_dependency_registration_then_it_is_not_overridden()
         {
             var api = new PeakyService(targets =>
                                            targets
@@ -150,9 +149,9 @@ namespace Peaky.Tests
                                                         BaseAddress = new Uri("http://bing.com")
                                                     })));
 
-            var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress").Result;
+            var response = await api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress");
 
-            var message = response.Content.ReadAsStringAsync().Result;
+            var message = await response.Content.ReadAsStringAsync();
 
             Console.WriteLine(message);
 
@@ -162,16 +161,16 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_HttpClient_BaseAddress_is_not_set_in_dependency_registration_then_it_is_set_to_the_test_target_configured_value()
+        public async Task When_HttpClient_BaseAddress_is_not_set_in_dependency_registration_then_it_is_set_to_the_test_target_configured_value()
         {
             var api = new PeakyService(targets =>
                                            targets
                                                .Add("production", "widgetapi", new Uri("http://bing.com"),
                                                     dependencies => dependencies.Register(() => new HttpClient())));
 
-            var response = api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress").Result;
+            var response = await api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress");
 
-            var message = response.Content.ReadAsStringAsync().Result;
+            var message = await response.Content.ReadAsStringAsync();
 
             Console.WriteLine(message);
 
