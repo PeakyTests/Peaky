@@ -23,6 +23,11 @@ namespace Peaky.Tests.TestClasses
             throw new Exception("oops!");
         }
 
+        public dynamic retryable_test()
+        {
+            throw new SuggestRetryException("service not available, retry later");
+        }
+
         public void passing_void_test()
         {
         }

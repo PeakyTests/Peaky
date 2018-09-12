@@ -5,12 +5,12 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json;
 using Pocket;
+using static Pocket.Logger<Peaky.TestRouter>;
 
 namespace Peaky
 {

@@ -23,6 +23,8 @@ namespace Peaky
 
         public TestInfo Test { get; private set; }
 
+        public bool SupportsRetry { get; private set; }
+
         public static TestResult Pass(
             object returnValue,
             TimeSpan duration,
@@ -35,6 +37,29 @@ namespace Peaky
                 Passed = true,
                 Duration = duration,
                 Test = test
+            };
+
+            return testResult;
+        }
+
+        public static TestResult Fail(
+            SuggestRetryException exception,
+            TimeSpan duration,
+            TestInfo test)
+        {
+            if (exception == null)
+            {
+                throw new ArgumentNullException(nameof(exception));
+            }
+
+            var testResult = new TestResult
+            {
+                Log = TraceBuffer.Current?.ToString(),
+                Passed = false,
+                Exception = exception,
+                Duration = duration,
+                Test = test,
+                SupportsRetry = true
             };
 
             return testResult;

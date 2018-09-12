@@ -122,6 +122,14 @@ namespace Peaky.Tests
         }
 
         [Fact]
+        public async Task When_a_test_throws_then_a_503_Test_Failed_is_returned()
+        {
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/retryable_test");
+
+            response.ShouldFailWith(HttpStatusCode.ServiceUnavailable);
+        }
+
+        [Fact]
         public async Task When_a_test_with_a_void_return_value_throws_then_a_500_Test_Failed_is_returned()
         {
             var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test");
