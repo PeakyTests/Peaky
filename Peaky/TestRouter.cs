@@ -5,12 +5,12 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json;
 using Pocket;
-using static Pocket.Logger<Peaky.TestRouter>;
 
 namespace Peaky
 {
@@ -219,9 +219,9 @@ namespace Peaky
                         }
 
                         var returnValue = await testDefinition.Run(
-                                              httpContext,
-                                              container.Resolve,
-                                              target);
+                            httpContext,
+                            container.Resolve,
+                            target);
 
                         if (returnValue is Task task)
                         {
@@ -242,13 +242,18 @@ namespace Peaky
                                 }
                             }
                         }
-                       
+
                         result = TestResult.Pass(returnValue, stopwatch.Elapsed, testInfo);
                     }
                     catch (ParameterFormatException exception)
                     {
                         result = TestResult.Fail(exception, stopwatch.Elapsed, testInfo);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                    }
+                    catch (SuggestRetryException re)
+                    {
+                        result = TestResult.Fail(re, stopwatch.Elapsed,testInfo);
+                        httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
                     }
                     catch (Exception exception)
                     {
