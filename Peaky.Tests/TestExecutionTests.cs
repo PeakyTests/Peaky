@@ -116,15 +116,31 @@ namespace Peaky.Tests
         [Fact]
         public async Task When_a_test_with_a_return_value_throws_then_a_500_Test_Failed_is_returned()
         {
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/throwing_test");
+
+            response.ShouldFailWith(HttpStatusCode.InternalServerError);
+        }
+
+        [Fact]
+        public async Task When_a_test_throws_TestFailedException_then_a_500_Test_Failed_is_returned()
+        {
             var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test");
 
             response.ShouldFailWith(HttpStatusCode.InternalServerError);
         }
 
         [Fact]
-        public async Task When_a_test_throws_then_a_503_Test_Failed_is_returned()
+        public async Task When_a_test_throws_TestTimeoutException_then_a_503_Test_Failed_is_returned()
         {
-            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/retryable_test");
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/timingout_test");
+
+            response.ShouldFailWith(HttpStatusCode.GatewayTimeout);
+        }
+
+        [Fact]
+        public async Task When_a_test_throws_TestInconclusiveException_then_a_503_Test_Failed_is_returned()
+        {
+            var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/inconclusive_test");
 
             response.ShouldFailWith(HttpStatusCode.ServiceUnavailable);
         }

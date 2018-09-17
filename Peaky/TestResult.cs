@@ -44,7 +44,7 @@ namespace Peaky
         }
 
         public static TestResult Inconclusive(
-            Exception exception,
+            TestInconclusiveException exception,
             TimeSpan duration,
             TestInfo test)
         {
@@ -61,6 +61,28 @@ namespace Peaky
                 Test = test,
                 SupportsRetry = true,
                 Outcome = TestOutcome.Inconclusive
+            };
+
+            return testResult;
+        }
+
+        public static TestResult Timeout(
+            TestTimeoutException exception,
+            TimeSpan duration,
+            TestInfo test)
+        {
+            if (exception == null)
+            {
+                throw new ArgumentNullException(nameof(exception));
+            }
+
+            var testResult = new TestResult
+            {
+                Log = TraceBuffer.Current?.ToString(),
+                Exception = exception,
+                Duration = duration,
+                Test = test,
+                Outcome = TestOutcome.Timeout
             };
 
             return testResult;

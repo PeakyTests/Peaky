@@ -20,12 +20,22 @@ namespace Peaky.Tests.TestClasses
 
         public dynamic failing_test()
         {
+            throw new TestFailedException("oops!");
+        }
+
+        public dynamic throwing_test()
+        {
             throw new Exception("oops!");
         }
 
-        public dynamic retryable_test()
+        public dynamic inconclusive_test()
         {
-            throw new SuggestRetryException("service not available, retry later");
+            throw new TestInconclusiveException("service not available, retry later");
+        }
+
+        public dynamic timingout_test()
+        {
+            throw new TestTimeoutException("timing out!!!");
         }
 
         public void passing_void_test()

@@ -5,7 +5,6 @@ namespace Peaky
         Passed,
         Failed,
         Inconclusive,
-        Error,
         Timeout
 
     }

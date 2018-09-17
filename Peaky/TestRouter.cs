@@ -261,10 +261,20 @@ namespace Peaky
                         result = TestResult.Fail(exception, stopwatch.Elapsed, testInfo);
                         httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                     }
-                    catch (SuggestRetryException re)
+                    catch (TestInconclusiveException tie)
                     {
-                        result = TestResult.Inconclusive(re, stopwatch.Elapsed,testInfo);
-                        httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
+                        result = TestResult.Inconclusive(tie, stopwatch.Elapsed, testInfo);
+                        httpContext.Response.StatusCode = (int) HttpStatusCode.ServiceUnavailable;
+                    }
+                    catch (TestTimeoutException tte)
+                    {
+                        result = TestResult.Timeout(tte, stopwatch.Elapsed, testInfo);
+                        httpContext.Response.StatusCode = (int) HttpStatusCode.GatewayTimeout;
+                    }
+                    catch (TestFailedException tfe)
+                    {
+                        result = TestResult.Fail(tfe, stopwatch.Elapsed, testInfo);
+                        httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
                     }
                     catch (Exception exception)
                     {
