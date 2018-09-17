@@ -5,15 +5,6 @@ using System;
 
 namespace Peaky
 {
-    internal enum TestOutcome
-    {
-        Passed,
-        Failed,
-        Inconclusive,
-        Error,
-        Timeout
-
-    }
     internal class TestResult
     {
         private TestResult()
