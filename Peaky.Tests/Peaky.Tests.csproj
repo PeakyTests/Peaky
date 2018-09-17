@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="fluentassertions" Version="5.4.1" />
+    <PackageReference Include="fluentassertions" Version="5.4.2" />
     <PackageReference Include="microsoft.aspnetcore.mvc" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />

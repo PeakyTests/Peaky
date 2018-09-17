@@ -31,3 +31,5 @@ Its.Log.Monitoring.UI/styles/monitoring.css
 /.vs/*
 *.stackdump
 .vscode/
+
+Peaky\.UI/\.vs/config/

@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Pocket;
 using static Pocket.Logger<Peaky.TestRouter>;
 
@@ -19,6 +21,15 @@ namespace Peaky
         private readonly TestTargetRegistry testTargets;
         private readonly TestDefinitionRegistry testDefinitions;
         private readonly string pathBase;
+        private static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
+        {
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            Converters = new List<JsonConverter> { new StringEnumConverter { CamelCaseText = true } },
+            Error = (sender, args) =>
+            {
+                args.ErrorContext.Handled = true;
+            }
+        };
 
         public TestRouter(
             TestTargetRegistry testTargets,
@@ -252,7 +263,7 @@ namespace Peaky
                     }
                     catch (SuggestRetryException re)
                     {
-                        result = TestResult.Fail(re, stopwatch.Elapsed,testInfo);
+                        result = TestResult.Inconclusive(re, stopwatch.Elapsed,testInfo);
                         httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
                     }
                     catch (Exception exception)
@@ -267,15 +278,6 @@ namespace Peaky
                 };
             }
         }
-
-        private static readonly JsonSerializerSettings SerializerSettings = new JsonSerializerSettings
-        {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            Error = (sender, args) =>
-            {
-                args.ErrorContext.Handled = true;
-            }
-        };
 
         private static bool MatchesFilter(
             string[] testTags,

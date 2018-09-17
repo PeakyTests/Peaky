@@ -5,15 +5,25 @@ using System;
 
 namespace Peaky
 {
+    internal enum TestOutcome
+    {
+        Passed,
+        Failed,
+        Inconclusive,
+        Error,
+        Timeout
+
+    }
     internal class TestResult
     {
         private TestResult()
         {
         }
 
+        public TestOutcome Outcome { get; private set; }
         public object ReturnValue { get; private set; }
 
-        public bool Passed { get; private set; }
+        public bool Passed => Outcome == TestOutcome.Passed;
 
         public string Log { get; private set; }
 
@@ -34,16 +44,16 @@ namespace Peaky
             {
                 ReturnValue = returnValue,
                 Log = TraceBuffer.Current?.ToString(),
-                Passed = true,
                 Duration = duration,
-                Test = test
+                Test = test,
+                Outcome = TestOutcome.Passed
             };
 
             return testResult;
         }
 
-        public static TestResult Fail(
-            SuggestRetryException exception,
+        public static TestResult Inconclusive(
+            Exception exception,
             TimeSpan duration,
             TestInfo test)
         {
@@ -55,11 +65,11 @@ namespace Peaky
             var testResult = new TestResult
             {
                 Log = TraceBuffer.Current?.ToString(),
-                Passed = false,
                 Exception = exception,
                 Duration = duration,
                 Test = test,
-                SupportsRetry = true
+                SupportsRetry = true,
+                Outcome = TestOutcome.Inconclusive
             };
 
             return testResult;
@@ -78,10 +88,10 @@ namespace Peaky
             var testResult = new TestResult
             {
                 Log = TraceBuffer.Current?.ToString(),
-                Passed = false,
                 Exception = exception,
                 Duration = duration,
-                Test = test
+                Test = test,
+                Outcome = TestOutcome.Failed
             };
 
             return testResult;
