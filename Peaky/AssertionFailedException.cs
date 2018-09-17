@@ -6,6 +6,7 @@ using System;
 namespace Peaky
 {
     [Serializable]
+    [Obsolete("Use TestFailedException instead.")]
     public class AssertionFailedException : Exception
     {
         public AssertionFailedException(string error) : base(error)
