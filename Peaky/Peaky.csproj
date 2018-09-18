@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.aspnetcore" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.4.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="pocket.disposable" Version="1.0.4">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

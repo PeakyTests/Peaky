@@ -11,9 +11,10 @@ namespace Peaky
         {
         }
 
+        public TestOutcome Outcome { get; private set; }
         public object ReturnValue { get; private set; }
 
-        public bool Passed { get; private set; }
+        public bool Passed => Outcome == TestOutcome.Passed;
 
         public string Log { get; private set; }
 
@@ -22,6 +23,8 @@ namespace Peaky
         public Exception Exception { get; private set; }
 
         public TestInfo Test { get; private set; }
+
+        public bool SupportsRetry { get; private set; }
 
         public static TestResult Pass(
             object returnValue,
@@ -32,9 +35,54 @@ namespace Peaky
             {
                 ReturnValue = returnValue,
                 Log = TraceBuffer.Current?.ToString(),
-                Passed = true,
                 Duration = duration,
-                Test = test
+                Test = test,
+                Outcome = TestOutcome.Passed
+            };
+
+            return testResult;
+        }
+
+        public static TestResult Inconclusive(
+            TestInconclusiveException exception,
+            TimeSpan duration,
+            TestInfo test)
+        {
+            if (exception == null)
+            {
+                throw new ArgumentNullException(nameof(exception));
+            }
+
+            var testResult = new TestResult
+            {
+                Log = TraceBuffer.Current?.ToString(),
+                Exception = exception,
+                Duration = duration,
+                Test = test,
+                SupportsRetry = true,
+                Outcome = TestOutcome.Inconclusive
+            };
+
+            return testResult;
+        }
+
+        public static TestResult Timeout(
+            TestTimeoutException exception,
+            TimeSpan duration,
+            TestInfo test)
+        {
+            if (exception == null)
+            {
+                throw new ArgumentNullException(nameof(exception));
+            }
+
+            var testResult = new TestResult
+            {
+                Log = TraceBuffer.Current?.ToString(),
+                Exception = exception,
+                Duration = duration,
+                Test = test,
+                Outcome = TestOutcome.Timeout
             };
 
             return testResult;
@@ -53,10 +101,10 @@ namespace Peaky
             var testResult = new TestResult
             {
                 Log = TraceBuffer.Current?.ToString(),
-                Passed = false,
                 Exception = exception,
                 Duration = duration,
-                Test = test
+                Test = test,
+                Outcome = TestOutcome.Failed
             };
 
             return testResult;
