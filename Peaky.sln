@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Peaky.Tests", "Peaky.Tests\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sample", "Sample", "{CE4A4BEF-36B0-4AEE-A618-59D4E886458E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Peaky.SampleWebApplication", "Sample\Peaky.SampleWebApplication\Peaky.SampleWebApplication.csproj", "{FAEFA359-2A5C-48A0-9FFB-F9FDF4242DE8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,12 @@ Global
 		{23B1A4D6-6FB3-4FDB-BC35-A4F5A3B87063}.Development|Any CPU.Build.0 = Debug|Any CPU
 		{23B1A4D6-6FB3-4FDB-BC35-A4F5A3B87063}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{23B1A4D6-6FB3-4FDB-BC35-A4F5A3B87063}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAEFA359-2A5C-48A0-9FFB-F9FDF4242DE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAEFA359-2A5C-48A0-9FFB-F9FDF4242DE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAEFA359-2A5C-48A0-9FFB-F9FDF4242DE8}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAEFA359-2A5C-48A0-9FFB-F9FDF4242DE8}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{FAEFA359-2A5C-48A0-9FFB-F9FDF4242DE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAEFA359-2A5C-48A0-9FFB-F9FDF4242DE8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -39,6 +47,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{16720C36-CC74-4884-B13F-E19D9DE7D96A} = {9C803CA4-398F-4747-98AE-8B12D40A5A35}
 		{23B1A4D6-6FB3-4FDB-BC35-A4F5A3B87063} = {6EEAB5F0-597E-43CF-9A7C-1842292E9C2E}
+		{FAEFA359-2A5C-48A0-9FFB-F9FDF4242DE8} = {CE4A4BEF-36B0-4AEE-A618-59D4E886458E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD6549AC-34F7-4BE4-B086-25D854FA4240}
