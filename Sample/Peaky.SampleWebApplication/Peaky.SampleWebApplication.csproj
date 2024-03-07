@@ -12,9 +12,4 @@
     <ProjectReference Include="..\..\Peaky\Peaky.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="wwwroot\" />
-    <Folder Include="Scripts\" />
-  </ItemGroup>
-
 </Project>
