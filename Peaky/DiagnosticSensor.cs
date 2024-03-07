@@ -146,20 +146,34 @@ namespace Peaky
         public static IReadOnlyCollection<DiagnosticSensor> DiscoverSensors()
         {
             return Discover
-                .Types()
-                .SelectMany(t =>
-                {
-                    return t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
-                                        BindingFlags.Static)
-                            .Where(m =>
-                            {
-                                return m.GetCustomAttributes()
-                                        .Any(a => a.GetType().Name.Equals("DiagnosticSensor") ||
-                                                  a.GetType().Name.Equals("DiagnosticSensorAttribute"));
-                            });
-                })
-                .Select(m => new DiagnosticSensor(m))
-                .ToArray();
+                   .Types()
+                   .SelectMany(t =>
+                   {
+                       return t.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |
+                                           BindingFlags.Static)
+                               .Where(m =>
+                               {
+                                   IEnumerable<Attribute> customAttributes;
+
+                                   try
+                                   {
+                                       customAttributes = m.GetCustomAttributes();
+                                   }
+                                   catch
+                                   {
+                                       return false;
+                                   }
+
+                                   return customAttributes
+                                       .Any(a =>
+                                       {
+                                           return a.GetType().Name.Equals("DiagnosticSensor") ||
+                                                  a.GetType().Name.Equals("DiagnosticSensorAttribute");
+                                       });
+                               });
+                   })
+                   .Select(m => new DiagnosticSensor(m))
+                   .ToArray();
         }
 
         /// <summary>

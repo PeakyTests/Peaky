@@ -28,31 +28,32 @@ namespace Peaky
                            throw new ArgumentNullException(nameof(sensors));
         }
 
-        public override async Task RouteAsync(RouteContext context)
+        public override Task RouteAsync(RouteContext context)
         {
             authorizeSensors(context);
-            if (context.Handler != null)
+
+            if (context.Handler is null)
             {
-                return;
+                var segments = context.HttpContext
+                                      .Request
+                                      .Path
+                                      .Value[PathBase.Value.Length..]
+                                      .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+                switch (segments.Length)
+                {
+                    case 0:
+                        ListSensors(context);
+                        break;
+
+                    case 1:
+                        ReadSensor(segments[0], context);
+                        break;
+                }
+
             }
 
-            var segments = context.HttpContext
-                                  .Request
-                                  .Path
-                                  .Value
-                                  .Substring(PathBase.Value.Length)
-                                  .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-
-            switch (segments.Length)
-            {
-                case 0:
-                    ListSensors(context);
-                    break;
-
-                case 1:
-                    ReadSensor(segments[0], context);
-                    break;
-            }
+            return Task.CompletedTask;
         }
 
         private void ReadSensor(string sensorName, RouteContext context)

@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pocket;
-using Pocket.For.MicrosoftExtensionsLogging;
 
 namespace Peaky.Tests
 {
@@ -65,13 +64,13 @@ namespace Peaky.Tests
 
         internal class TestApiStartup
         {
-            public TestApiStartup(IHostingEnvironment environment)
+            public TestApiStartup(IWebHostEnvironment environment)
             {
             }
 
             public IServiceProvider ConfigureServices(IServiceCollection services)
             {
-                services.AddMvc();
+                services.AddMvc(options => options.EnableEndpointRouting = false);
 
                 return services.BuildServiceProvider();
             }
@@ -80,7 +79,7 @@ namespace Peaky.Tests
                 IApplicationBuilder app,
                 ILoggerFactory loggerFactory)
             {
-                loggerFactory.AddPocketLogger();
+                // FIX: (Configure)     loggerFactory.AddPocketLogger();
 
                 app.UseMvc();
 

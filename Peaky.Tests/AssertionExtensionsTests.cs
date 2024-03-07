@@ -19,7 +19,7 @@ namespace Peaky.Tests
 
             Action assert = () => response.ShouldSucceed();
 
-            assert.Should().Throw<AssertionFailedException>();
+            assert.Should().Throw<TestFailedException>();
         }
 
         [Fact]
@@ -29,7 +29,7 @@ namespace Peaky.Tests
 
             Action assert = () => response.ShouldFailWith(HttpStatusCode.Forbidden);
 
-            assert.Should().Throw<AssertionFailedException>();
+            assert.Should().Throw<TestFailedException>();
         }
 
         [Fact]
@@ -53,40 +53,40 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public void When_ShouldSucceedAsync_is_passed_a_failed_response_it_throws()
+        public async Task When_ShouldSucceedAsync_is_passed_a_failed_response_it_throws()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.BadRequest));
 
             Func<Task> assert = () => response.ShouldSucceedAsync();
 
-            assert.Should().Throw<AssertionFailedException>();
+            await assert.Should().ThrowAsync<TestFailedException>();
         }
 
         [Fact]
-        public void When_ShouldFailWithAsync_is_passed_a_successful_response_it_throws()
+        public async Task When_ShouldFailWithAsync_is_passed_a_successful_response_it_throws()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.OK));
 
             Func<Task> assert = () => response.ShouldFailWithAsync(HttpStatusCode.Forbidden);
 
-            assert.Should().Throw<AssertionFailedException>();
+            await assert.Should().ThrowAsync<TestFailedException>();
         }
 
         [Fact]
-        public void When_ShouldSucceedAsync_is_passed_a_successful_response_it_doesnt_throw()
+        public async Task When_ShouldSucceedAsync_is_passed_a_successful_response_it_doesnt_throw()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.Accepted));
 
             Func<Task> assert = async () =>
             {
-                var x = await response.ShouldSucceedAsync();
+                await response.ShouldSucceedAsync();
             };
 
-            assert.Should().NotThrow();
+            await assert.Should().NotThrowAsync();
         }
 
         [Fact]
-        public void When_ShouldFailWithAsync_is_passed_a_failed_response_it_doesnt_throw()
+        public async Task When_ShouldFailWithAsync_is_passed_a_failed_response_it_doesnt_throw()
         {
             var response = Task.Run(() => new HttpResponseMessage(HttpStatusCode.BadRequest));
 
@@ -95,7 +95,7 @@ namespace Peaky.Tests
                 var x = await response.ShouldFailWithAsync(HttpStatusCode.BadRequest);
             };
 
-            assert.Should().NotThrow();
+            await assert.Should().NotThrowAsync();
         }
     }
 }

@@ -2,7 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Routing;
 
@@ -22,7 +21,8 @@ namespace Peaky
         public override async Task RouteAsync(RouteContext context)
         {
             await Task.Yield();
-            context.Handler = async httpContext =>
+
+            context.Handler = async _ =>
             {
                 await testPageRenderer.Render(context.HttpContext);
             };

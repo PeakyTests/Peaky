@@ -14,14 +14,41 @@ namespace Peaky
             this.value = value;
         }
 
-        public override string ToString()
-        {
-            return string.Format("{0}%", value);
-        }
+        public override string ToString() => $"{value}%";
 
         public int CompareTo(Percentage other)
         {
             return value.CompareTo(other.value);
+        }
+
+        protected bool Equals(Percentage other)
+        {
+            return value == other.value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((Percentage)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return value;
         }
     }
 }

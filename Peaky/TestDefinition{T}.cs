@@ -18,7 +18,7 @@ namespace Peaky
     {
         private readonly Func<T, dynamic> defaultExecuteTestMethod;
        
-        private readonly ConcurrentDictionary<TestTarget, DetailsForTarget> applicabilityCache = new ConcurrentDictionary<TestTarget, DetailsForTarget>();
+        private readonly ConcurrentDictionary<TestTarget, DetailsForTarget> applicabilityCache = new();
 
         internal TestDefinition(MethodInfo methodInfo)
         {
@@ -62,7 +62,7 @@ namespace Peaky
                             try
                             {
                                 object castedValue;
-                                if (p.ParameterType.IsEnum && value != null)
+                                if (p.ParameterType.IsEnum && value is not null)
                                 {
                                     castedValue = Enum.Parse(p.ParameterType, value.ToString(), true);
                                 }
@@ -81,6 +81,7 @@ namespace Peaky
             }
 
             var testClassInstance = (T) resolve(typeof(T));
+
             switch (testClassInstance)
             {
                 case IParameterizedTestCases parameterizedTest:
