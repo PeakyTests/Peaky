@@ -1,10 +1,9 @@
 // Copyright (c) Microsoft. All rights reserved. 
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace Peaky
+namespace Peaky;
+
+public interface IApplyToEnvironment : IPeakyTest
 {
-    public interface IApplyToEnvironment : IPeakyTest
-    {
-        bool AppliesToEnvironment(string environment);
-    }
+    bool AppliesToEnvironment(string environment);
 }

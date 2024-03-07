@@ -6,51 +6,50 @@ using System.Linq;
 using System.Web;
 using Microsoft.AspNetCore.Http;
 
-namespace Peaky
+namespace Peaky;
+
+internal static class HttpRequestExtensions
 {
-    internal static class HttpRequestExtensions
+    internal static string GetLink(
+        this HttpRequest request,
+        TestTarget testTarget,
+        TestDefinition testDefinition)
     {
-        internal static string GetLink(
-            this HttpRequest request,
-            TestTarget testTarget,
-            TestDefinition testDefinition)
-        {
-            var scheme = request.Scheme;
-            var host = request.Host;
+        var scheme = request.Scheme;
+        var host = request.Host;
 
-            return $"{scheme}://{host}/tests/{testTarget.Environment}/{testTarget.Application}/{testDefinition.TestName}";
-        }
-        internal static string GetLinkWithQuery(
-            this HttpRequest request,
-            TestTarget testTarget,
-            TestDefinition testDefinition,
-            IEnumerable<Parameter> parameters)
-        {
-            var query = GetQueryString(parameters);
-            query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"?{query}";
-            return $"{request.GetLink(testTarget, testDefinition)}{query}";
-        }
+        return $"{scheme}://{host}/tests/{testTarget.Environment}/{testTarget.Application}/{testDefinition.TestName}";
+    }
+    internal static string GetLinkWithQuery(
+        this HttpRequest request,
+        TestTarget testTarget,
+        TestDefinition testDefinition,
+        IEnumerable<Parameter> parameters)
+    {
+        var query = GetQueryString(parameters);
+        query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"?{query}";
+        return $"{request.GetLink(testTarget, testDefinition)}{query}";
+    }
 
-        internal static string GetLinkWithQuery(
-            this HttpRequest request,
-            TestTarget testTarget,
-            TestDefinition testDefinition,
-            ParameterSet parameters)
-        {
-            var query = parameters.GetQueryString();
-            query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"?{query}";
-            return $"{request.GetLink(testTarget, testDefinition)}{query}";
-        }
+    internal static string GetLinkWithQuery(
+        this HttpRequest request,
+        TestTarget testTarget,
+        TestDefinition testDefinition,
+        ParameterSet parameters)
+    {
+        var query = parameters.GetQueryString();
+        query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"?{query}";
+        return $"{request.GetLink(testTarget, testDefinition)}{query}";
+    }
 
 
-        internal static string GetQueryString(IEnumerable<Parameter> parameters)
-        {
-            return string.Join(
-                "&",
-                parameters
-                    .OrderBy(p => p.Name)
-                    .Where(p => p.DefaultValue != null)
-                    .Select(p => $"{p.Name}={HttpUtility.UrlEncode(p.DefaultValue.ToString())}"));
-        }
+    internal static string GetQueryString(IEnumerable<Parameter> parameters)
+    {
+        return string.Join(
+            "&",
+            parameters
+                .OrderBy(p => p.Name)
+                .Where(p => p.DefaultValue != null)
+                .Select(p => $"{p.Name}={HttpUtility.UrlEncode(p.DefaultValue.ToString())}"));
     }
 }

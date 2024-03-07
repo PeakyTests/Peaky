@@ -3,21 +3,20 @@
 
 using System;
 
-namespace Peaky
+namespace Peaky;
+
+public class TestInconclusiveException : Exception
 {
-    public class TestInconclusiveException : Exception
+    public TestInconclusiveException()
     {
-        public TestInconclusiveException()
-        {
-        }
+    }
 
-        public TestInconclusiveException(string message) : base(message)
-        {
+    public TestInconclusiveException(string message) : base(message)
+    {
 
-        }
+    }
 
-        public TestInconclusiveException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
+    public TestInconclusiveException(string message, Exception innerException) : base(message, innerException)
+    {
     }
 }

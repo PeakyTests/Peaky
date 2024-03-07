@@ -2,40 +2,39 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace Peaky
+namespace Peaky;
+
+internal class ParameterSet : IEnumerable<Parameter>
 {
-    internal class ParameterSet : IEnumerable<Parameter>
+    private readonly ImmutableArray<Parameter> parameters;
+    private readonly string queryString;
+
+    public ParameterSet(IEnumerable<Parameter> parameters)
     {
-        private readonly ImmutableArray<Parameter> parameters;
-        private readonly string queryString;
+        this.parameters = parameters.ToImmutableArray();
+        queryString = ToUrlQueryString();
+    }
 
-        public ParameterSet(IEnumerable<Parameter> parameters)
+    public IEnumerator<Parameter> GetEnumerator()
+    {
+        foreach (var parameter in parameters)
         {
-            this.parameters = parameters.ToImmutableArray();
-            queryString = ToUrlQueryString();
+            yield return parameter;
         }
+    }
 
-        public IEnumerator<Parameter> GetEnumerator()
-        {
-            foreach (var parameter in parameters)
-            {
-                yield return parameter;
-            }
-        }
+    public string GetQueryString()
+    {
+        return queryString;
+    }
 
-        public string GetQueryString()
-        {
-            return queryString;
-        }
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
-
-        private string ToUrlQueryString()
-        {
-            return HttpRequestExtensions.GetQueryString(this);
-        }
+    private string ToUrlQueryString()
+    {
+        return HttpRequestExtensions.GetQueryString(this);
     }
 }

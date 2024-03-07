@@ -3,12 +3,11 @@
 
 using System;
 
-namespace Peaky
+namespace Peaky;
+
+internal class ParameterFormatException : FormatException
 {
-    internal class ParameterFormatException : FormatException
-    {
-        public ParameterFormatException(string parameterName, Type parameterType, FormatException e) 
-            : base($"The value specified for parameter '{parameterName}' could not be parsed as {parameterType}", e)
-        {}
-    }
+    public ParameterFormatException(string parameterName, Type parameterType, FormatException e) 
+        : base($"The value specified for parameter '{parameterName}' could not be parsed as {parameterType}", e)
+    {}
 }

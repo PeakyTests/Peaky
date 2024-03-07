@@ -3,14 +3,13 @@
 
 using System;
 
-namespace Peaky
+namespace Peaky;
+
+/// <summary>
+/// Marks a method as a diagnostic sensor.
+/// </summary>
+/// <remarks>The method can be a static or instance member and need not be public.</remarks>
+[AttributeUsage(AttributeTargets.Method)]
+public class DiagnosticSensorAttribute : Attribute
 {
-    /// <summary>
-    /// Marks a method as a diagnostic sensor.
-    /// </summary>
-    /// <remarks>The method can be a static or instance member and need not be public.</remarks>
-    [AttributeUsage(AttributeTargets.Method)]
-    public class DiagnosticSensorAttribute : Attribute
-    {
-    }
 }

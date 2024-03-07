@@ -4,20 +4,19 @@
 using System.Text;
 using System.Threading;
 
-namespace Peaky
+namespace Peaky;
+
+internal class TraceBuffer
 {
-    internal class TraceBuffer
-    {
-        private readonly StringBuilder buffer = new StringBuilder();
+    private readonly StringBuilder buffer = new();
 
-        private static readonly AsyncLocal<TraceBuffer> current = new AsyncLocal<TraceBuffer>();
+    private static readonly AsyncLocal<TraceBuffer> current = new();
 
-        public void Write(string message) => buffer.Append(message);
+    public void Write(string message) => buffer.Append(message);
 
-        public override string ToString() => buffer.ToString().Trim();
+    public override string ToString() => buffer.ToString().Trim();
 
-        public static void Initialize() => current.Value = new TraceBuffer();
+    public static void Initialize() => current.Value = new TraceBuffer();
 
-        public static TraceBuffer Current => current.Value;
-    }
+    public static TraceBuffer Current => current.Value;
 }

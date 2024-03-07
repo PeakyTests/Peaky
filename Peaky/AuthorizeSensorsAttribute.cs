@@ -5,24 +5,23 @@ using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace Peaky
+namespace Peaky;
+
+internal class AuthorizeSensorsAttribute : Attribute, IAuthorizationFilter
 {
-    internal class AuthorizeSensorsAttribute : Attribute, IAuthorizationFilter
+    private static Func<AuthorizationFilterContext, bool> authorizeRequest = context => false;
+
+    public static Func<AuthorizationFilterContext, bool> AuthorizeRequest
     {
-        private static Func<AuthorizationFilterContext, bool> authorizeRequest = context => false;
+        get => authorizeRequest;
+        set => authorizeRequest = value ?? (authorizeRequest = context => false);
+    }
 
-        public static Func<AuthorizationFilterContext, bool> AuthorizeRequest
+    public void OnAuthorization(AuthorizationFilterContext context)
+    {
+        if (!AuthorizeRequest(context))
         {
-            get => authorizeRequest;
-            set => authorizeRequest = value ?? (authorizeRequest = context => false);
-        }
-
-        public void OnAuthorization(AuthorizationFilterContext context)
-        {
-            if (!AuthorizeRequest(context))
-            {
-                context.Result = new ForbidResult();
-            }
+            context.Result = new ForbidResult();
         }
     }
 }

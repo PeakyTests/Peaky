@@ -12,8 +12,8 @@ using Pocket;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Peaky.Tests
-{
+namespace Peaky.Tests;
+
     public class TestLoggingTests : IDisposable
     {
         private readonly CompositeDisposable disposables = new CompositeDisposable();
@@ -237,4 +237,4 @@ namespace Peaky.Tests
             return GetResponse();
         }
     }
-}
+

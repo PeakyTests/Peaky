@@ -12,105 +12,104 @@ using Pocket;
 using static Peaky.DiagnosticSensor;
 using static Pocket.Logger<Peaky.SensorRouter>;
 
-namespace Peaky
+namespace Peaky;
+
+internal class SensorRouter : PeakyRouter
 {
-    internal class SensorRouter : PeakyRouter
+    private readonly AuthorizeSensors authorizeSensors;
+
+    private readonly SensorRegistry sensors;
+
+    public SensorRouter(SensorRegistry sensors, AuthorizeSensors authorizeSensors, string pathBase = "/sensors") : base(pathBase)
     {
-        private readonly AuthorizeSensors authorizeSensors;
+        this.authorizeSensors = authorizeSensors ??
+                                throw new ArgumentNullException(nameof(authorizeSensors));
+        this.sensors = sensors ??
+                       throw new ArgumentNullException(nameof(sensors));
+    }
 
-        private readonly SensorRegistry sensors;
+    public override Task RouteAsync(RouteContext context)
+    {
+        authorizeSensors(context);
 
-        public SensorRouter(SensorRegistry sensors, AuthorizeSensors authorizeSensors, string pathBase = "/sensors") : base(pathBase)
+        if (context.Handler is null)
         {
-            this.authorizeSensors = authorizeSensors ??
-                                    throw new ArgumentNullException(nameof(authorizeSensors));
-            this.sensors = sensors ??
-                           throw new ArgumentNullException(nameof(sensors));
+            var segments = context.HttpContext
+                                  .Request
+                                  .Path
+                                  .Value[PathBase.Value.Length..]
+                                  .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+
+            switch (segments.Length)
+            {
+                case 0:
+                    ListSensors(context);
+                    break;
+
+                case 1:
+                    ReadSensor(segments[0], context);
+                    break;
+            }
+
         }
 
-        public override Task RouteAsync(RouteContext context)
+        return Task.CompletedTask;
+    }
+
+    private void ReadSensor(string sensorName, RouteContext context)
+    {
+        using (Log.OnEnterAndExit())
         {
-            authorizeSensors(context);
-
-            if (context.Handler is null)
+            if (!sensors.TryGet(sensorName, out var sensor))
             {
-                var segments = context.HttpContext
-                                      .Request
-                                      .Path
-                                      .Value[PathBase.Value.Length..]
-                                      .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+                return;
+            }
 
-                switch (segments.Length)
+            context.Handler = async httpContext =>
+            {
+                var reading = await sensor.Read();
+
+                var sensorResponse = new SensorResponse(reading, httpContext.Request.Path.Value);
+
+                httpContext.Response.StatusCode = sensorResponse.StatusCode;
+
+                var readingJson = JsonConvert.SerializeObject(sensorResponse, SerializerSettings);
+
+                await httpContext.Response.WriteAsync(readingJson);
+            };
+        }
+    }
+
+    private void ListSensors(RouteContext context)
+    {
+        using (Log.OnEnterAndExit())
+        {
+            context.Handler = async httpContext =>
+            {
+                var results = await Task.WhenAll(sensors.Select(s => s.Read()));
+
+                var readings = results.ToDictionary(s => s.SensorName, s => (object) s);
+
+                // add a self link
+                var localPath = httpContext.Request.Path;
+                var links = new Dictionary<string, string>
                 {
-                    case 0:
-                        ListSensors(context);
-                        break;
+                    { "self", localPath }
+                };
 
-                    case 1:
-                        ReadSensor(segments[0], context);
-                        break;
+                foreach (var sensorName in readings.Keys)
+                {
+                    links.Add(
+                        sensorName,
+                        localPath.Add("/" + sensorName.ToLowerInvariant()).Value);
                 }
 
-            }
+                readings["_links"] = links;
 
-            return Task.CompletedTask;
-        }
+                var readingJson = JsonConvert.SerializeObject(readings, SerializerSettings);
 
-        private void ReadSensor(string sensorName, RouteContext context)
-        {
-            using (Log.OnEnterAndExit())
-            {
-                if (!sensors.TryGet(sensorName, out var sensor))
-                {
-                    return;
-                }
-
-                context.Handler = async httpContext =>
-                {
-                    var reading = await sensor.Read();
-
-                    var sensorResponse = new SensorResponse(reading, httpContext.Request.Path.Value);
-
-                    httpContext.Response.StatusCode = sensorResponse.StatusCode;
-
-                    var readingJson = JsonConvert.SerializeObject(sensorResponse, SerializerSettings);
-
-                    await httpContext.Response.WriteAsync(readingJson);
-                };
-            }
-        }
-
-        private void ListSensors(RouteContext context)
-        {
-            using (Log.OnEnterAndExit())
-            {
-                context.Handler = async httpContext =>
-                {
-                    var results = await Task.WhenAll(sensors.Select(s => s.Read()));
-
-                    var readings = results.ToDictionary(s => s.SensorName, s => (object) s);
-
-                    // add a self link
-                    var localPath = httpContext.Request.Path;
-                    var links = new Dictionary<string, string>
-                    {
-                        { "self", localPath }
-                    };
-
-                    foreach (var sensorName in readings.Keys)
-                    {
-                        links.Add(
-                            sensorName,
-                            localPath.Add("/" + sensorName.ToLowerInvariant()).Value);
-                    }
-
-                    readings["_links"] = links;
-
-                    var readingJson = JsonConvert.SerializeObject(readings, SerializerSettings);
-
-                    await httpContext.Response.WriteAsync(readingJson);
-                };
-            }
+                await httpContext.Response.WriteAsync(readingJson);
+            };
         }
     }
 }

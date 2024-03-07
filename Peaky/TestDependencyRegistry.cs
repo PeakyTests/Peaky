@@ -10,86 +10,84 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Pocket;
 
-namespace Peaky
+namespace Peaky;
+
+public class TestDependencyRegistry
 {
-    public class TestDependencyRegistry
+    private readonly ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>> parameterizedTestCases = new();
+
+    internal TestDependencyRegistry(PocketContainer container)
     {
-        private readonly ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>> parameterizedTestCases =
-            new ConcurrentDictionary<MethodInfo, ConcurrentDictionary<string, TestCase>>();
+        Container = container ?? throw new ArgumentNullException(nameof(container));
+    }
 
-        internal TestDependencyRegistry(PocketContainer container)
+    internal PocketContainer Container { get; }
+
+    public TestDependencyRegistry Register<T>(Func<T> getDependency)
+    {
+        Container.Register(typeof(T), c => getDependency());
+        return this;
+    }
+
+    public TestDependencyRegistry RegisterParameters(Expression<Action> testCase)
+    {
+        return RegisterParameters(testCase.Body as MethodCallExpression);
+    }
+
+    public TestDependencyRegistry RegisterParameters(Expression<Func<Task>> testCase)
+    {
+        return RegisterParameters(testCase.Body as MethodCallExpression);
+    }
+
+    private TestDependencyRegistry RegisterParameters(MethodCallExpression expression)
+    {
+        var parameterized = ExtractParameterizedTestCase(expression);
+
+        var testCases = parameterizedTestCases.GetOrAdd(
+            parameterized.method,
+            _ => new ConcurrentDictionary<string, TestCase>());
+
+        testCases.TryAdd(
+            parameterized.testCase.Parameters.GetQueryString(),
+            parameterized.testCase);
+
+        return this;
+    }
+
+    private static (MethodInfo method, TestCase testCase) ExtractParameterizedTestCase(MethodCallExpression expression)
+    {
+        var body = expression;
+        var method = body.Method;
+        var values = new List<Parameter>();
+
+        var parameters = body.Method.GetParameters();
+        var arguments = parameters.Select((p, i) => new { p.Name, Argument = body.Arguments[i].Reduce() });
+
+        foreach (var argument in arguments)
         {
-            Container = container ?? throw new ArgumentNullException(nameof(container));
-        }
+            var argumentName = argument.Name;
+            object data;
 
-        internal PocketContainer Container { get; }
-
-        public TestDependencyRegistry Register<T>(Func<T> getDependency)
-        {
-            Container.Register(typeof(T), c => getDependency());
-            return this;
-        }
-
-        public TestDependencyRegistry RegisterParameters(Expression<Action> testCase)
-        {
-            return RegisterParameters(testCase.Body as MethodCallExpression);
-        }
-
-        public TestDependencyRegistry RegisterParameters(Expression<Func<Task>> testCase)
-        {
-            return RegisterParameters(testCase.Body as MethodCallExpression);
-        }
-
-        private TestDependencyRegistry RegisterParameters(MethodCallExpression expression)
-        {
-            var parameterized = ExtractParameterizedTestCase(expression);
-
-            var testCases = parameterizedTestCases.GetOrAdd(
-                parameterized.method,
-                key => new ConcurrentDictionary<string, TestCase>());
-
-            testCases.TryAdd(
-                parameterized.testCase.Parameters.GetQueryString(),
-                parameterized.testCase);
-
-            return this;
-        }
-
-        private static (MethodInfo method, TestCase testCase) ExtractParameterizedTestCase(MethodCallExpression expression)
-        {
-            var body = expression;
-            var method = body.Method;
-            var values = new List<Parameter>();
-
-            var parameters = body.Method.GetParameters();
-            var arguments = parameters.Select((p, i) => new { p.Name, Argument = body.Arguments[i].Reduce() });
-
-            foreach (var argument in arguments)
+            switch (argument.Argument)
             {
-                var argumentName = argument.Name;
-                object data;
-
-                switch (argument.Argument)
-                {
-                    case ConstantExpression ce:
-                        data = ce.Value;
-                        break;
-                    default:
-                        var e = Expression.Lambda(argument.Argument);
-                        data = e.Compile().DynamicInvoke();
-                        break;
-                }
-
-                values.Add(new Parameter(argumentName, data));
+                case ConstantExpression ce:
+                    data = ce.Value;
+                    break;
+                default:
+                    var e = Expression.Lambda(argument.Argument);
+                    data = e.Compile().DynamicInvoke();
+                    break;
             }
 
-            return (method, new TestCase(new ParameterSet(values)));
+            values.Add(new Parameter(argumentName, data));
         }
 
-        internal IReadOnlyCollection<ParameterSet> GetParameterSetsFor(MethodInfo method) =>
-            parameterizedTestCases.TryGetValue(method, out var testCases)
-                ? testCases.Select(e => e.Value.Parameters)
-                           .ToArray()
-                : Array.Empty<ParameterSet>();
+        return (method, new TestCase(new ParameterSet(values)));
     }
+
+    internal IReadOnlyCollection<ParameterSet> GetParameterSetsFor(MethodInfo method) =>
+        parameterizedTestCases.TryGetValue(method, out var testCases)
+            ? testCases.Select(e => e.Value.Parameters)
+                       .ToArray()
+            : Array.Empty<ParameterSet>();
 }

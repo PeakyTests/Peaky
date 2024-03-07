@@ -2,39 +2,38 @@ using System;
 using System.Linq;
 using System.Reflection;
 
-namespace Peaky
+namespace Peaky;
+
+internal static class ReflectionExtensions
 {
-    internal static class ReflectionExtensions
+    public static object GetDefaultValue(this ParameterInfo parameter)
     {
-        public static object GetDefaultValue(this ParameterInfo parameter)
+        if (parameter.HasDefaultValue)
         {
-            if (parameter.HasDefaultValue)
-            {
-                return parameter.DefaultValue;
-            }
-
-            return parameter.ParameterType.IsValueType ? Activator.CreateInstance(parameter.ParameterType) : null;
+            return parameter.DefaultValue;
         }
 
-        public static bool NotDefinedOn<T>(this MethodInfo method)
+        return parameter.ParameterType.IsValueType ? Activator.CreateInstance(parameter.ParameterType) : null;
+    }
+
+    public static bool NotDefinedOn<T>(this MethodInfo method)
+    {
+        return method.NotDefinedOn(typeof(T));
+    }
+
+    public static bool NotDefinedOn(this MethodInfo method, Type @interface)
+    {
+        if (method == null)
         {
-            return method.NotDefinedOn(typeof(T));
+            throw new ArgumentNullException(nameof(method));
+        }
+        if (method.DeclaringType?.GetInterface(@interface.Name) == null)
+        {
+            return true;
         }
 
-        public static bool NotDefinedOn(this MethodInfo method, Type @interface)
-        {
-            if (method == null)
-            {
-                throw new ArgumentNullException(nameof(method));
-            }
-            if (method.DeclaringType?.GetInterface(@interface.Name) == null)
-            {
-                return true;
-            }
-
-            var map = method.DeclaringType.GetInterfaceMap(@interface);
-            var found = map.TargetMethods.Contains(method);
-            return !found;
-        }
+        var map = method.DeclaringType.GetInterfaceMap(@interface);
+        var found = map.TargetMethods.Contains(method);
+        return !found;
     }
 }

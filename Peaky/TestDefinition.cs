@@ -8,46 +8,45 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Peaky
+namespace Peaky;
+
+public abstract class TestDefinition
 {
-    public abstract class TestDefinition
+    private IEnumerable<Parameter> testParameters;
+
+    public string TestName { get; internal set; }
+
+    public virtual string[] Tags { get; set; } = Array.Empty<string>();
+
+    internal Type TestType { get;  set; }
+
+    internal MethodInfo TestMethod { get; set; }
+    internal abstract Task<object> Run(HttpContext httpContext, Func<Type, object> resolve, TestTarget target);
+
+    internal static TestDefinition Create(MethodInfo methodInfo)
     {
-        private IEnumerable<Parameter> testParameters;
-
-        public string TestName { get; internal set; }
-
-        public virtual string[] Tags { get; set; } = Array.Empty<string>();
-
-        internal Type TestType { get;  set; }
-
-        internal MethodInfo TestMethod { get; set; }
-        internal abstract Task<object> Run(HttpContext httpContext, Func<Type, object> resolve, TestTarget target);
-
-        internal static TestDefinition Create(MethodInfo methodInfo)
-        {
-            var testType = methodInfo.DeclaringType;
-            var testDefinitionType = typeof(TestDefinition<>).MakeGenericType(testType);
-            var testDefinition = (TestDefinition) Activator.CreateInstance(
-                testDefinitionType,
-                BindingFlags.NonPublic | BindingFlags.Instance,
-                null,
-                new object[] { methodInfo },
-                null);
-            testDefinition.TestMethod = methodInfo;
-            testDefinition.TestType = testType;
-            testDefinition.Parameters = methodInfo.GetParameters()
-                                                  .Select(p =>
-                                                              new Parameter(p.Name, p.GetDefaultValue()));
-            return testDefinition;
-        }
-
-        internal IEnumerable<Parameter> Parameters
-        {
-            get => testParameters ??
-                   (testParameters = Enumerable.Empty<Parameter>());
-            set => testParameters = value;
-        }
-
-        public abstract bool AppliesTo(TestTarget target);
+        var testType = methodInfo.DeclaringType;
+        var testDefinitionType = typeof(TestDefinition<>).MakeGenericType(testType);
+        var testDefinition = (TestDefinition) Activator.CreateInstance(
+            testDefinitionType,
+            BindingFlags.NonPublic | BindingFlags.Instance,
+            null,
+            new object[] { methodInfo },
+            null);
+        testDefinition.TestMethod = methodInfo;
+        testDefinition.TestType = testType;
+        testDefinition.Parameters = methodInfo.GetParameters()
+                                              .Select(p =>
+                                                          new Parameter(p.Name, p.GetDefaultValue()));
+        return testDefinition;
     }
+
+    internal IEnumerable<Parameter> Parameters
+    {
+        get => testParameters ??
+               (testParameters = Enumerable.Empty<Parameter>());
+        set => testParameters = value;
+    }
+
+    public abstract bool AppliesTo(TestTarget target);
 }

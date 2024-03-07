@@ -4,10 +4,9 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Peaky
+namespace Peaky;
+
+public interface ITestPageRenderer
 {
-    public interface ITestPageRenderer
-    {
-        Task Render(HttpContext httpContext);
-    }
+    Task Render(HttpContext httpContext);
 }

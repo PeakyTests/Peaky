@@ -7,57 +7,56 @@ using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 
-namespace Peaky
+namespace Peaky;
+
+internal class Test
 {
-    internal class Test
+    public string Application { get; set; }
+
+    public string Environment { get; set; }
+
+    public string Url { get; set; }
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public string[] Tags { get; set; }
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public Parameter[] Parameters { get; set; }
+
+    public static IEnumerable<Test> CreateTests(TestTarget testTarget, TestDefinition definition, HttpRequest request)
     {
-        public string Application { get; set; }
+        var testCases = testTarget
+                        .DependencyRegistry
+                        .GetParameterSetsFor(definition.TestMethod);
 
-        public string Environment { get; set; }
-
-        public string Url { get; set; }
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string[] Tags { get; set; }
-
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public Parameter[] Parameters { get; set; }
-
-        public static IEnumerable<Test> CreateTests(TestTarget testTarget, TestDefinition definition, HttpRequest request)
+        if (testCases.Any())
         {
-            var testCases = testTarget
-                            .DependencyRegistry
-                            .GetParameterSetsFor(definition.TestMethod);
-
-            if (testCases.Any())
-            {
-                foreach (var testCase in testCases)
-                {
-                    yield return new Test
-                    {
-                        Environment = testTarget.Environment,
-                        Application = testTarget.Application,
-                        Url = request.GetLinkWithQuery(testTarget, definition, testCase),
-                        Tags = definition.Tags,
-                        Parameters = testCase.ToArray()
-                    };
-                }
-            }
-            else
+            foreach (var testCase in testCases)
             {
                 yield return new Test
                 {
                     Environment = testTarget.Environment,
                     Application = testTarget.Application,
-                    Url = definition.Parameters.Any()
-                              ? request.GetLinkWithQuery(testTarget, definition, definition.Parameters)
-                              : request.GetLink(testTarget, definition),
+                    Url = request.GetLinkWithQuery(testTarget, definition, testCase),
                     Tags = definition.Tags,
-                    Parameters = definition.Parameters.Any()
-                                     ? definition.Parameters.ToArray()
-                                     : Array.Empty<Parameter>()
+                    Parameters = testCase.ToArray()
                 };
             }
+        }
+        else
+        {
+            yield return new Test
+            {
+                Environment = testTarget.Environment,
+                Application = testTarget.Application,
+                Url = definition.Parameters.Any()
+                          ? request.GetLinkWithQuery(testTarget, definition, definition.Parameters)
+                          : request.GetLink(testTarget, definition),
+                Tags = definition.Tags,
+                Parameters = definition.Parameters.Any()
+                                 ? definition.Parameters.ToArray()
+                                 : Array.Empty<Parameter>()
+            };
         }
     }
 }

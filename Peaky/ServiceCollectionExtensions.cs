@@ -7,52 +7,51 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Peaky
+namespace Peaky;
+
+public static class ServiceCollectionExtensions
 {
-    public static class ServiceCollectionExtensions
+    public static IServiceCollection AddPeakyTests(
+        this IServiceCollection builder,
+        Action<TestTargetRegistry> configure = null,
+        IEnumerable<Type> testTypes = null)
     {
-        public static IServiceCollection AddPeakyTests(
-            this IServiceCollection builder,
-            Action<TestTargetRegistry> configure = null,
-            IEnumerable<Type> testTypes = null)
+        builder.TryAddSingleton(c =>
         {
-            builder.TryAddSingleton(c =>
-            {
-                var registry = new TestTargetRegistry(c);
+            var registry = new TestTargetRegistry(c);
 
-                configure?.Invoke(registry);
+            configure?.Invoke(registry);
 
-                return registry;
-            });
+            return registry;
+        });
 
-            builder.TryAddSingleton(c => new TestDefinitionRegistry(testTypes));
+        builder.TryAddSingleton(c => new TestDefinitionRegistry(testTypes));
 
-            builder.TryAddTransient<ITestPageRenderer>(c => new TestPageRenderer());
+        builder.TryAddTransient<ITestPageRenderer>(c => new TestPageRenderer());
             
-            builder.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+        builder.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-            return builder;
-        }
+        return builder;
+    }
 
-        public static IServiceCollection AddPeakySensors(
-            this IServiceCollection builder,
-            AuthorizeSensors authorize = null,
-            string baseUri = "sensors")
+    public static IServiceCollection AddPeakySensors(
+        this IServiceCollection builder,
+        AuthorizeSensors authorize = null,
+        string baseUri = "sensors")
+    {
+        if (builder == null)
         {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
-
-            authorize = authorize ?? (_ =>
-            {
-            });
-
-            builder.TryAddSingleton(authorize);
-
-            builder.TryAddSingleton(c => new SensorRegistry(DiagnosticSensor.DiscoverSensors()));
-
-            return builder;
+            throw new ArgumentNullException(nameof(builder));
         }
+
+        authorize = authorize ?? (_ =>
+                                     {
+                                     });
+
+        builder.TryAddSingleton(authorize);
+
+        builder.TryAddSingleton(c => new SensorRegistry(DiagnosticSensor.DiscoverSensors()));
+
+        return builder;
     }
 }

@@ -4,12 +4,11 @@
 using System;
 using System.Reflection;
 
-namespace Peaky
+namespace Peaky;
+
+internal class AnonymousMethodInfo<T> : AnonymousMethodInfo
 {
-    internal class AnonymousMethodInfo<T> : AnonymousMethodInfo
+    public AnonymousMethodInfo(Func<T> anonymousMethod) : base(anonymousMethod.GetMethodInfo())
     {
-        public AnonymousMethodInfo(Func<T> anonymousMethod) : base(anonymousMethod.GetMethodInfo())
-        {
-        }
     }
 }
