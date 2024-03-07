@@ -108,9 +108,9 @@ namespace Peaky.Tests
         }
 
         [Fact]
-        public async Task Test_targets_require_absolute_URIs()
+        public void Test_targets_require_absolute_URIs()
         {
-            Action configure = () =>
+            var configure = () =>
             {
                 new PeakyService(targets =>
                                      targets.Add("this", "that", new Uri("/relative/uri", UriKind.Relative)));
@@ -171,8 +171,6 @@ namespace Peaky.Tests
             var response = await api.CreateHttpClient().GetAsync("http://blammo.com/tests/production/widgetapi/HttpClient_BaseAddress");
 
             var message = await response.Content.ReadAsStringAsync();
-
-            Console.WriteLine(message);
 
             response.ShouldSucceed();
 
@@ -249,7 +247,7 @@ namespace Peaky.Tests
                               throw new ArgumentNullException(nameof(testTarget));
         }
 
-        public async Task<dynamic> get_target() => testTarget;
+        public Task<dynamic> get_target() => Task.FromResult<dynamic>(testTarget);
     }
 
     public class TestWithUnsatisfiableDependencies : IPeakyTest

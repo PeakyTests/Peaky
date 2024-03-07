@@ -8,60 +8,60 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Peaky
+namespace Peaky;
+
+public class TestPageRenderer : ITestPageRenderer
 {
-    public class TestPageRenderer : ITestPageRenderer
+    private static readonly string version = typeof(TestPageRouter)
+                                             .Assembly
+                                             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                                             .InformationalVersion;
+
+    private readonly string scriptUrl;
+    private readonly IEnumerable<PathString> libraryUrls;
+    private readonly IEnumerable<PathString> styleSheets;
+    private readonly string html;
+
+    public TestPageRenderer(
+        string scriptUrl = "//peakytests.github.io/Peaky/javascripts/peaky.js",
+        IEnumerable<PathString> libraryUrls = null,
+        IEnumerable<PathString> styleSheets = null)
     {
-        private static readonly string version = typeof(TestPageRouter)
-            .Assembly
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            .InformationalVersion;
-
-        private readonly string scriptUrl;
-        private readonly IEnumerable<PathString> libraryUrls;
-        private readonly IEnumerable<PathString> styleSheets;
-        private readonly string html;
-
-        public TestPageRenderer(
-            string scriptUrl = "//peakytests.github.io/Peaky/javascripts/peaky.js",
-            IEnumerable<PathString> libraryUrls = null,
-            IEnumerable<PathString> styleSheets = null)
+        if (string.IsNullOrWhiteSpace(scriptUrl))
         {
-            if (string.IsNullOrWhiteSpace(scriptUrl))
-            {
-                throw new ArgumentException("Value cannot be null or whitespace.", nameof(scriptUrl));
-            }
-            this.scriptUrl = scriptUrl;
-            this.libraryUrls = libraryUrls;
-            this.styleSheets = styleSheets;
-            html = Html();
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(scriptUrl));
         }
+        this.scriptUrl = scriptUrl;
+        this.libraryUrls = libraryUrls;
+        this.styleSheets = styleSheets;
+        html = Html();
+    }
 
-        public async Task Render(HttpContext httpContext)
-        {
-            httpContext.Response.Headers.Add("Content-Type", "text/html");
-            await httpContext.Response.WriteAsync(html);
-        }
+    public async Task Render(HttpContext httpContext)
+    {
+        httpContext.Response.Headers.Add("Content-Type", "text/html");
+        await httpContext.Response.WriteAsync(html);
+    }
 
-        private string Html()
-        {
-            var libraryScriptRefs = string.Join("\n",
-                                                (libraryUrls ??
-                                                 Array.Empty<PathString>())
-                                                .Select(u => $@"<script src=""{u}""></script>"));
+    private string Html()
+    {
+        var libraryScriptRefs = string.Join("\n",
+                                            (libraryUrls ??
+                                             Array.Empty<PathString>())
+                                            .Select(u => $@"<script src=""{u}""></script>"));
 
-            var defaultStylesheet =
-                new PathString($"//peakytests.github.io/Peaky/stylesheets/peaky.css")
-                    .Add(new QueryString($"?version={version}"));
+        var defaultStylesheet =
+            new PathString($"//peakytests.github.io/Peaky/stylesheets/peaky.css")
+                .Add(new QueryString($"?version={version}"));
 
-            var styleSheetRefs =
-                string.Join("\n",
-                            (styleSheets ??
-                             new PathString[] { defaultStylesheet })
-                            .Select(u => $@"<link rel=""stylesheet"" href=""{u.Value}"" >"));
+        var styleSheetRefs =
+            string.Join("\n",
+                        (styleSheets ??
+                         new PathString[] { defaultStylesheet })
+                        .Select(u => $@"<link rel=""stylesheet"" href=""{u.Value}"" >"));
 
-            return
-                $@"<!doctype html>
+        return
+            $@"<!doctype html>
 <html lang=""en"">
     <head>
 	    <meta charset=""UTF-8"">
@@ -74,6 +74,5 @@ namespace Peaky
 	    <script src=""{scriptUrl}?version={version}""></script>
     </body>
 </html>";
-        }
     }
 }

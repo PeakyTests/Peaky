@@ -1,11 +1,10 @@
-namespace Peaky
-{
-    internal enum TestOutcome
-    {
-        Passed,
-        Failed,
-        Inconclusive,
-        Timeout
+namespace Peaky;
 
-    }
+internal enum TestOutcome
+{
+    Passed,
+    Failed,
+    Inconclusive,
+    Timeout
+
 }

@@ -1,9 +1,8 @@
 using System.Threading.Tasks;
 
-namespace Peaky
+namespace Peaky;
+
+public interface IPerformServiceWarmup
 {
-    public interface IPerformServiceWarmup
-    {
-        Task WarmUp();
-    }
+    Task WarmUp();
 }

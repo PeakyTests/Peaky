@@ -3,23 +3,22 @@
 
 using System;
 
-namespace Peaky
-{
-    internal class Parameter
-    {
-        public Parameter(string name, object defaultValue)
-        {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new ArgumentException("Argument is null or whitespace", nameof(name));
-            }
+namespace Peaky;
 
-            Name = name;
-            DefaultValue = defaultValue;
+internal class Parameter
+{
+    public Parameter(string name, object defaultValue)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Argument is null or whitespace", nameof(name));
         }
 
-        public string Name { get; }
-
-        public object DefaultValue { get; }
+        Name = name;
+        DefaultValue = defaultValue;
     }
+
+    public string Name { get; }
+
+    public object DefaultValue { get; }
 }

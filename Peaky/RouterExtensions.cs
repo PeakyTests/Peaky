@@ -9,83 +9,82 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
 
-namespace Peaky
+namespace Peaky;
+
+internal static class RouterExtensions
 {
-    internal static class RouterExtensions
+    public static PeakyRouter Accept(
+        this PeakyRouter router,
+        params string[] mediaTypes)
     {
-        public static PeakyRouter Accept(
-            this PeakyRouter router,
-            params string[] mediaTypes)
+        if (router == null)
         {
-            if (router == null)
+            throw new ArgumentNullException(nameof(router));
+        }
+
+        var acceptedMediaTypes = mediaTypes.ToMediaTypeCollection();
+
+        return new AnonymousRouter(
+            routeAsync: async context =>
             {
-                throw new ArgumentNullException(nameof(router));
-            }
+                var acceptHeader = context.HttpContext.Request.Headers[HeaderNames.Accept];
 
-            var acceptedMediaTypes = mediaTypes.ToMediaTypeCollection();
-
-            return new AnonymousRouter(
-                routeAsync: async context =>
+                if (acceptHeader.IsSubsetOfAny(acceptedMediaTypes))
                 {
-                    var acceptHeader = context.HttpContext.Request.Headers[HeaderNames.Accept];
+                    await router.RouteAsync(context);
+                }
+            },
+            pathBase: router.PathBase);
+    }
 
-                    if (acceptHeader.IsSubsetOfAny(acceptedMediaTypes))
-                    {
-                        await router.RouteAsync(context);
-                    }
-                },
-                pathBase: router.PathBase);
+    private static MediaTypeCollection ToMediaTypeCollection(this string[] mediaTypes)
+    {
+        var acceptedMediaTypes = new MediaTypeCollection();
+        foreach (var arg in mediaTypes)
+        {
+            acceptedMediaTypes.Add(arg);
+        }
+        return acceptedMediaTypes;
+    }
+
+    private static bool IsSubsetOfAny(
+        this StringValues requestedMediaType,
+        MediaTypeCollection mediaTypes)
+    {
+        if (requestedMediaType == default(StringValues))
+        {
+            return false;
         }
 
-        private static MediaTypeCollection ToMediaTypeCollection(this string[] mediaTypes)
+        var requested = new MediaType(requestedMediaType);
+
+        return mediaTypes.Any(mediaType => requested.IsSubsetOf(new MediaType(mediaType)));
+    }
+
+    public static PeakyRouter AllowVerbs(this PeakyRouter router, params string[] verbs)
+    {
+        if (router == null)
         {
-            var acceptedMediaTypes = new MediaTypeCollection();
-            foreach (var arg in mediaTypes)
-            {
-                acceptedMediaTypes.Add(arg);
-            }
-            return acceptedMediaTypes;
+            throw new ArgumentNullException(nameof(router));
         }
 
-        private static bool IsSubsetOfAny(
-            this StringValues requestedMediaType,
-            MediaTypeCollection mediaTypes)
-        {
-            if (requestedMediaType == default(StringValues))
+        var allowedVerbs = new HashSet<string>(verbs, StringComparer.OrdinalIgnoreCase);
+
+        return new AnonymousRouter(
+            routeAsync: async context =>
             {
-                return false;
-            }
-
-            var requested = new MediaType(requestedMediaType);
-
-            return mediaTypes.Any(mediaType => requested.IsSubsetOf(new MediaType(mediaType)));
-        }
-
-        public static PeakyRouter AllowVerbs(this PeakyRouter router, params string[] verbs)
-        {
-            if (router == null)
-            {
-                throw new ArgumentNullException(nameof(router));
-            }
-
-            var allowedVerbs = new HashSet<string>(verbs, StringComparer.OrdinalIgnoreCase);
-
-            return new AnonymousRouter(
-                routeAsync: async context =>
+                if (!allowedVerbs.Contains(context.HttpContext.Request.Method))
                 {
-                    if (!allowedVerbs.Contains(context.HttpContext.Request.Method))
+                    await Task.Yield();
+                    context.Handler = async httpContext =>
                     {
                         await Task.Yield();
-                        context.Handler = async httpContext =>
-                        {
-                            await Task.Yield();
-                            httpContext.Response.StatusCode = 405;
-                        };
-                    }
+                        httpContext.Response.StatusCode = 405;
+                    };
+                }
 
-                    await router.RouteAsync(context);
-                },
-                pathBase: router.PathBase);
-        }
+                await router.RouteAsync(context);
+            },
+            pathBase: router.PathBase);
     }
 }

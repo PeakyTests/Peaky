@@ -3,12 +3,11 @@
 
 using System;
 
-namespace Peaky
+namespace Peaky;
+
+internal class TestNotDefinedException : Exception
 {
-    internal class TestNotDefinedException : Exception
+    public TestNotDefinedException(string message) : base(message)
     {
-        public TestNotDefinedException(string message) : base(message)
-        {
-        }
     }
 }

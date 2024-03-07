@@ -84,9 +84,10 @@ namespace Peaky.Tests
 
         public static void ResetCount() => WarmupCount = 0;
 
-        public async Task WarmUp()
+        public Task WarmUp()
         {
             WarmupCount++;
+            return Task.CompletedTask;
         }
     }
 }

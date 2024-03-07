@@ -3,25 +3,51 @@
 
 using System;
 
-namespace Peaky
+namespace Peaky;
+
+public class Percentage : IComparable<Percentage>
 {
-    public class Percentage : IComparable<Percentage>
+    private readonly int value;
+
+    public Percentage(int value)
     {
-        private readonly int value;
+        this.value = value;
+    }
 
-        public Percentage(int value)
+    public override string ToString() => $"{value}%";
+
+    public int CompareTo(Percentage other)
+    {
+        return value.CompareTo(other.value);
+    }
+
+    protected bool Equals(Percentage other)
+    {
+        return value == other.value;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (ReferenceEquals(null, obj))
         {
-            this.value = value;
+            return false;
         }
 
-        public override string ToString()
+        if (ReferenceEquals(this, obj))
         {
-            return string.Format("{0}%", value);
+            return true;
         }
 
-        public int CompareTo(Percentage other)
+        if (obj.GetType() != this.GetType())
         {
-            return value.CompareTo(other.value);
+            return false;
         }
+
+        return Equals((Percentage)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return value;
     }
 }

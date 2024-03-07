@@ -33,3 +33,5 @@ Its.Log.Monitoring.UI/styles/monitoring.css
 .vscode/
 
 Peaky\.UI/\.vs/config/
+
+*.cache

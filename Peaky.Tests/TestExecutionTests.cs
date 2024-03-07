@@ -217,7 +217,7 @@ namespace Peaky.Tests
         {
             var response = await apiClient.GetAsync($"http://blammo.com/{relativeUri}");
 
-            response.StatusCode.Should().Be(200);
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
         [Fact]

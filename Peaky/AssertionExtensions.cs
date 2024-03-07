@@ -8,96 +8,92 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-namespace Peaky
+namespace Peaky;
+
+public static class AssertionExtensions
 {
-    public static class AssertionExtensions
+    public static HttpResponseMessage ShouldSucceed(
+        this HttpResponseMessage response,
+        HttpStatusCode? expected = null)
     {
-        public static HttpResponseMessage ShouldSucceed(
-            this HttpResponseMessage response,
-            HttpStatusCode? expected = null)
+        try
         {
-            try
+            if (!response.IsSuccessStatusCode)
             {
-                if (!response.IsSuccessStatusCode)
-                {
-                    throw new HttpRequestException($"Response does not indicate success: {response.StatusCode}: {response.ReasonPhrase}");
-                }
-
-                var actualStatusCode = response.StatusCode;
-                if (expected != null && actualStatusCode != expected.Value)
-                {
-                    throw new AssertionFailedException(
-                        $"Status code was successful but not of the expected type: {expected} was expected but {actualStatusCode} was returned.");
-                }
-            }
-            catch
-            {
-                ThrowVerboseAssertion(response);
-            }
-            return response;
-        }
-
-        public static async Task<HttpResponseMessage> ShouldSucceedAsync(
-            this Task<HttpResponseMessage> response,
-            HttpStatusCode? expected = null) =>
-                (await response).ShouldSucceed(expected);
-
-        public static HttpResponseMessage ShouldFailWith(
-            this HttpResponseMessage response,
-            HttpStatusCode code)
-        {
-            if (response.StatusCode != code)
-            {
-                ThrowVerboseAssertion(response);
+                throw new HttpRequestException($"Response does not indicate success: {response.StatusCode}: {response.ReasonPhrase}");
             }
 
-            return response;
-        }
-
-        public static async Task<HttpResponseMessage> ShouldFailWithAsync(
-            this Task<HttpResponseMessage> response,
-            HttpStatusCode code) =>
-                (await response).ShouldFailWith(code);
-
-        public static Aggregation<IEnumerable<T>, long> CountOf<T>(this IEnumerable<T> sequence, Func<T, bool> selector)
-        {
-            var filteredResults = sequence.Where(selector).ToArray();
-
-            return new Aggregation<IEnumerable<T>, long>(filteredResults, filteredResults.Length);
-        }
-
-        public static Aggregation<IEnumerable<T>, Percentage> PercentageOf<T>(this IEnumerable<T> sequence, Func<T, bool> selector)
-        {
-            var count = 0;
-
-            var filteredResults = sequence.Where(_ =>
+            var actualStatusCode = response.StatusCode;
+            if (expected is not null && actualStatusCode != expected.Value)
             {
-                count++;
-                return selector(_);
-            }).ToArray();
-
-            var percentage = count == 0 ? 0 : (double)filteredResults.Length / count;
-
-            return new Aggregation<IEnumerable<T>, Percentage>(filteredResults, new Percentage((int)(percentage * 100)));
+                throw new TestFailedException(
+                    $"Status code was successful but not of the expected type: {expected} was expected but {actualStatusCode} was returned.");
+            }
         }
-
-        public static AggregationAssertions<TState, TResult> Should<TState, TResult>(this Aggregation<TState, TResult> aggregation) where TResult : IComparable<TResult>
+        catch
         {
-            return new AggregationAssertions<TState, TResult>(aggregation);
+            ThrowVerboseAssertion(response);
         }
 
-        public static Percentage Percent(this int i)
+        return response;
+    }
+
+    public static async Task<HttpResponseMessage> ShouldSucceedAsync(
+        this Task<HttpResponseMessage> response,
+        HttpStatusCode? expected = null) =>
+        (await response).ShouldSucceed(expected);
+
+    public static HttpResponseMessage ShouldFailWith(
+        this HttpResponseMessage response,
+        HttpStatusCode code)
+    {
+        if (response.StatusCode != code)
         {
-            return new Percentage(i);
+            ThrowVerboseAssertion(response);
         }
 
-        private static void ThrowVerboseAssertion(HttpResponseMessage response)
+        return response;
+    }
+
+    public static async Task<HttpResponseMessage> ShouldFailWithAsync(
+        this Task<HttpResponseMessage> response,
+        HttpStatusCode code) =>
+        (await response).ShouldFailWith(code);
+
+    public static Aggregation<IEnumerable<T>, long> CountOf<T>(this IEnumerable<T> sequence, Func<T, bool> selector)
+    {
+        var filteredResults = sequence.Where(selector).ToArray();
+
+        return new Aggregation<IEnumerable<T>, long>(filteredResults, filteredResults.Length);
+    }
+
+    public static Aggregation<IEnumerable<T>, Percentage> PercentageOf<T>(this IEnumerable<T> sequence, Func<T, bool> selector)
+    {
+        var count = 0;
+
+        var filteredResults = sequence.Where(_ =>
         {
-            var message = string.Format("{0}{1}{1}{2}",
-                                        response,
-                                        Environment.NewLine,
-                                        response);
-            throw new AssertionFailedException(message);
-        }
+            count++;
+            return selector(_);
+        }).ToArray();
+
+        var percentage = count == 0 ? 0 : (double)filteredResults.Length / count;
+
+        return new Aggregation<IEnumerable<T>, Percentage>(filteredResults, new Percentage((int)(percentage * 100)));
+    }
+
+    public static AggregationAssertions<TState, TResult> Should<TState, TResult>(this Aggregation<TState, TResult> aggregation) where TResult : IComparable<TResult>
+    {
+        return new AggregationAssertions<TState, TResult>(aggregation);
+    }
+
+    public static Percentage Percent(this int i)
+    {
+        return new Percentage(i);
+    }
+
+    private static void ThrowVerboseAssertion(HttpResponseMessage response)
+    {
+        throw new TestFailedException(response.ToString());
     }
 }

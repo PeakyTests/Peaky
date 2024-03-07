@@ -6,38 +6,37 @@ using System.Threading.Tasks;
 using System.Timers;
 using Pocket;
 
-namespace Peaky
+namespace Peaky;
+
+internal class ServiceWarmupTracker : IDisposable
 {
-    internal class ServiceWarmupTracker : IDisposable
+    private readonly IPerformServiceWarmup warmup;
+
+    private readonly Timer timer;
+
+    private bool warmedUp;
+
+    public ServiceWarmupTracker(IPerformServiceWarmup warmup)
     {
-        private readonly IPerformServiceWarmup warmup;
+        this.warmup = warmup ?? throw new ArgumentNullException(nameof(warmup));
 
-        private readonly Timer timer;
+        timer = new Timer(15000);
 
-        private bool warmedUp;
-
-        public ServiceWarmupTracker(IPerformServiceWarmup warmup)
-        {
-            this.warmup = warmup ?? throw new ArgumentNullException(nameof(warmup));
-
-            timer = new Timer(15000);
-
-            timer.Elapsed += (sender, args) => warmedUp = false;
-        }
-
-        public async Task WarmUp()
-        {
-            if (!warmedUp)
-            {
-                using (Logger.Log.OnEnterAndExit())
-                {
-                    await warmup.WarmUp();
-                }
-
-                warmedUp = true;
-            }
-        }
-
-        public void Dispose() => timer?.Dispose();
+        timer.Elapsed += (sender, args) => warmedUp = false;
     }
+
+    public async Task WarmUp()
+    {
+        if (!warmedUp)
+        {
+            using (Logger.Log.OnEnterAndExit())
+            {
+                await warmup.WarmUp();
+            }
+
+            warmedUp = true;
+        }
+    }
+
+    public void Dispose() => timer?.Dispose();
 }

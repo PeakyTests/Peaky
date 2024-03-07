@@ -2,30 +2,29 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Routing;
 
-namespace Peaky
+namespace Peaky;
+
+internal class TestPageRouter : PeakyRouter
 {
-    internal class TestPageRouter : PeakyRouter
+    private readonly ITestPageRenderer testPageRenderer;
+
+    public TestPageRouter(
+        ITestPageRenderer testPageRenderer,
+        string pathBase = "/tests") : base(pathBase)
     {
-        private readonly ITestPageRenderer testPageRenderer;
+        this.testPageRenderer = testPageRenderer ?? throw new ArgumentNullException(nameof(testPageRenderer));
+    }
 
-        public TestPageRouter(
-            ITestPageRenderer testPageRenderer,
-            string pathBase = "/tests") : base(pathBase)
-        {
-            this.testPageRenderer = testPageRenderer ?? throw new ArgumentNullException(nameof(testPageRenderer));
-        }
+    public override async Task RouteAsync(RouteContext context)
+    {
+        await Task.Yield();
 
-        public override async Task RouteAsync(RouteContext context)
+        context.Handler = async _ =>
         {
-            await Task.Yield();
-            context.Handler = async httpContext =>
-            {
-                await testPageRenderer.Render(context.HttpContext);
-            };
-        }
+            await testPageRenderer.Render(context.HttpContext);
+        };
     }
 }

@@ -4,23 +4,22 @@
 using System;
 using System.Linq;
 
-namespace Peaky
+namespace Peaky;
+
+public class TestTarget
 {
-    public class TestTarget
+    public TestTarget(TestDependencyRegistry testDependencyRegistry)
     {
-        public TestTarget(TestDependencyRegistry testDependencyRegistry)
-        {
-            DependencyRegistry = testDependencyRegistry ?? throw new ArgumentNullException(nameof(testDependencyRegistry));
-        }
-
-        public string Application { get; internal set; }
-
-        public string Environment { get; internal set; }
-
-        public Uri BaseAddress { get; internal set; }
-
-        public TestDependencyRegistry DependencyRegistry { get; }
-
-        public bool RequiresServiceWarmup => DependencyRegistry.Container.Any(r => typeof(ServiceWarmupTracker).IsAssignableFrom(r.Key));
+        DependencyRegistry = testDependencyRegistry ?? throw new ArgumentNullException(nameof(testDependencyRegistry));
     }
+
+    public string Application { get; internal set; }
+
+    public string Environment { get; internal set; }
+
+    public Uri BaseAddress { get; internal set; }
+
+    public TestDependencyRegistry DependencyRegistry { get; }
+
+    public bool RequiresServiceWarmup => DependencyRegistry.Container.Any(r => typeof(ServiceWarmupTracker).IsAssignableFrom(r.Key));
 }

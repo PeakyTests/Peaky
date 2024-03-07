@@ -3,18 +3,17 @@
 
 using System;
 
-namespace Peaky
+namespace Peaky;
+
+public class SensorResult
 {
-    public class SensorResult
+    internal SensorResult()
     {
-        internal SensorResult()
-        {
-        }
-
-        public object Value { get; internal set; }
-
-        public Exception Exception { get; internal set; }
-
-        public string SensorName { get; internal set; }
     }
+
+    public object Value { get; internal set; }
+
+    public Exception Exception { get; internal set; }
+
+    public string SensorName { get; internal set; }
 }

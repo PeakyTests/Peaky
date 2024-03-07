@@ -4,74 +4,73 @@
 using System;
 using System.Reflection;
 
-namespace Peaky
+namespace Peaky;
+
+/// <summary>
+/// Gets information relating to an anonymous method.
+/// </summary>
+internal class AnonymousMethodInfo
 {
+    private readonly MethodInfo anonymousMethod;
+
     /// <summary>
-    /// Gets information relating to an anonymous method.
+    ///   Initializes a new instance of the <see cref = "AnonymousMethodInfo" /> class.
     /// </summary>
-    internal class AnonymousMethodInfo
+    /// <param name = "anonymousMethod">An anonymous method.</param>
+    public AnonymousMethodInfo(MethodInfo anonymousMethod)
     {
-        private readonly MethodInfo anonymousMethod;
-
-        /// <summary>
-        ///   Initializes a new instance of the <see cref = "AnonymousMethodInfo" /> class.
-        /// </summary>
-        /// <param name = "anonymousMethod">An anonymous method.</param>
-        public AnonymousMethodInfo(MethodInfo anonymousMethod)
+        if (anonymousMethod == null)
         {
-            if (anonymousMethod == null)
-            {
-                throw new ArgumentNullException(nameof(anonymousMethod));
-            }
-            this.anonymousMethod = anonymousMethod;
+            throw new ArgumentNullException(nameof(anonymousMethod));
+        }
+        this.anonymousMethod = anonymousMethod;
 
-            var declaringType = this.anonymousMethod.DeclaringType;
+        var declaringType = this.anonymousMethod.DeclaringType;
 
-            var methodName = this.anonymousMethod.Name;
-            var indexOfGt = methodName.IndexOf(">", StringComparison.OrdinalIgnoreCase);
+        var methodName = this.anonymousMethod.Name;
+        var indexOfGt = methodName.IndexOf(">", StringComparison.OrdinalIgnoreCase);
 
-            if (indexOfGt < 0)
-            {
-                EnclosingType = declaringType;
-                EnclosingMethodName = this.anonymousMethod.Name;
-                return;
-            }
-
-            EnclosingMethodName = methodName.Substring(0, indexOfGt).TrimStart('<');
-
-            if (declaringType.IsCompilerGenerated() &&
-                (declaringType
-                     ?.DeclaringType
-                     ?.IsGenericTypeDefinition ?? false))
-            {
-                EnclosingType = declaringType
-                    .DeclaringType
-                    ?.MakeGenericType(declaringType.GenericTypeArguments);
-            }
-            else
-            {
-                EnclosingType = declaringType;
-            }
-
-            while (EnclosingType?.DeclaringType != null &&
-                   EnclosingType.IsCompilerGenerated())
-            {
-                EnclosingType = EnclosingType.DeclaringType;
-            }
+        if (indexOfGt < 0)
+        {
+            EnclosingType = declaringType;
+            EnclosingMethodName = this.anonymousMethod.Name;
+            return;
         }
 
-        public string MethodName => anonymousMethod.Name;
+        EnclosingMethodName = methodName.Substring(0, indexOfGt).TrimStart('<');
 
-        /// <summary>
-        ///   Gets the name of the enclosing method.
-        /// </summary>
-        /// <value>The name of the method in which the anonymous method is declared.</value>
-        public string EnclosingMethodName { get; }
+        if (declaringType.IsCompilerGenerated() &&
+            (declaringType
+             ?.DeclaringType
+             ?.IsGenericTypeDefinition ?? false))
+        {
+            EnclosingType = declaringType
+                            .DeclaringType
+                            ?.MakeGenericType(declaringType.GenericTypeArguments);
+        }
+        else
+        {
+            EnclosingType = declaringType;
+        }
 
-        /// <summary>
-        ///   Gets the type of the enclosing.
-        /// </summary>
-        /// <value>The name of the class within which the anonymous method is declared.</value>
-        public Type EnclosingType { get; }
+        while (EnclosingType?.DeclaringType != null &&
+               EnclosingType.IsCompilerGenerated())
+        {
+            EnclosingType = EnclosingType.DeclaringType;
+        }
     }
+
+    public string MethodName => anonymousMethod.Name;
+
+    /// <summary>
+    ///   Gets the name of the enclosing method.
+    /// </summary>
+    /// <value>The name of the method in which the anonymous method is declared.</value>
+    public string EnclosingMethodName { get; }
+
+    /// <summary>
+    ///   Gets the type of the enclosing.
+    /// </summary>
+    /// <value>The name of the class within which the anonymous method is declared.</value>
+    public Type EnclosingType { get; }
 }

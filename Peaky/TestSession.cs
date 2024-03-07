@@ -4,23 +4,22 @@
 using System;
 using Microsoft.AspNetCore.Http;
 
-namespace Peaky
+namespace Peaky;
+
+public class TestSession
 {
-    public class TestSession
+    private readonly IHttpContextAccessor httpContextAccessor;
+
+    internal TestSession(IHttpContextAccessor httpContextAccessor)
     {
-        private readonly IHttpContextAccessor httpContextAccessor;
-
-        internal TestSession(IHttpContextAccessor httpContextAccessor)
-        {
-            this.httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
-        }
-
-        public string GetString(string key) =>
-            httpContextAccessor.HttpContext.Request.Cookies.TryGetValue(key, out var value)
-                ? value
-                : null;
-
-        public void SetString(string key, string value) =>
-            httpContextAccessor.HttpContext.Response.Cookies.Append(key, value);
+        this.httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
     }
+
+    public string GetString(string key) =>
+        httpContextAccessor.HttpContext.Request.Cookies.TryGetValue(key, out var value)
+            ? value
+            : null;
+
+    public void SetString(string key, string value) =>
+        httpContextAccessor.HttpContext.Response.Cookies.Append(key, value);
 }

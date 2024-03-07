@@ -1,14 +1,13 @@
 using System;
 
-namespace Peaky
-{
-    internal class TestCase
-    {
-        public ParameterSet Parameters { get; }
+namespace Peaky;
 
-        public TestCase(ParameterSet parameters)
-        {
-            Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
-        }
+internal class TestCase
+{
+    public ParameterSet Parameters { get; }
+
+    public TestCase(ParameterSet parameters)
+    {
+        Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
     }
 }
