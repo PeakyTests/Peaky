@@ -18,6 +18,8 @@
 		<PackageProjectUrl>https://github.com/PeakyTests/Peaky</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/PeakyTests/Peaky</RepositoryUrl>
 		<PackageLicenseUrl>https://github.com/PeakyTests/peaky/blob/master/LICENSE</PackageLicenseUrl>
+		<SignAssembly>True</SignAssembly>
+		<AssemblyOriginatorKeyFile>..\Peaky.snk</AssemblyOriginatorKeyFile>
 	</PropertyGroup>
 
 	<ItemGroup>
