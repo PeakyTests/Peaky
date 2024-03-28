@@ -1,21 +1,20 @@
-﻿namespace Peaky.Tests.TestClasses
+﻿namespace Peaky.Tests.TestClasses;
+
+public class TestDiscoveryResponse
 {
-    public class TestDiscoveryResponse
+    public Test[] Tests { get; set; }
+
+    public class Test
     {
-        public Test[] Tests { get; set; }
+        public string Application { get; set; }
+        public string Environment { get; set; }
+        public string Url { get; set; }
+        public Parameter[] Parameters { get; set; }
 
-        public class Test
+        public class Parameter
         {
-            public string Application { get; set; }
-            public string Environment { get; set; }
-            public string Url { get; set; }
-            public Parameter[] Parameters { get; set; }
-
-            public class Parameter
-            {
-                public string Name { get; set; }
-                public object DefaultValue { get; set; }
-            }
+            public string Name { get; set; }
+            public object DefaultValue { get; set; }
         }
     }
 }

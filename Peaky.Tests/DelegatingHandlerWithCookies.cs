@@ -7,49 +7,48 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Peaky.Tests
+namespace Peaky.Tests;
+
+internal class DelegatingHandlerWithCookies : DelegatingHandler
 {
-    internal class DelegatingHandlerWithCookies : DelegatingHandler
+    private readonly CookieContainer cookieContainer = new CookieContainer();
+
+    internal DelegatingHandlerWithCookies(HttpMessageHandler innerHandler) : base(innerHandler)
     {
-        private readonly CookieContainer cookieContainer = new CookieContainer();
+    }
 
-        internal DelegatingHandlerWithCookies(HttpMessageHandler innerHandler) : base(innerHandler)
+    protected override async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        AddCookiesTo(request);
+
+        var response = await base.SendAsync(request, cancellationToken);
+
+        SetCookiesOn(response);
+
+        return response;
+    }
+
+    private void AddCookiesTo(HttpRequestMessage request)
+    {
+        var cookieHeader = cookieContainer.GetCookieHeader(request.RequestUri);
+
+        if (!string.IsNullOrEmpty(cookieHeader))
         {
+            request.Headers.TryAddWithoutValidation("Cookie", cookieHeader);
         }
+    }
 
-        protected override async Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
+    private void SetCookiesOn(HttpResponseMessage response)
+    {
+        if (response.Headers.TryGetValues("Set-Cookie", out var cookies))
         {
-            AddCookiesTo(request);
-
-            var response = await base.SendAsync(request, cancellationToken);
-
-            SetCookiesOn(response);
-
-            return response;
-        }
-
-        private void AddCookiesTo(HttpRequestMessage request)
-        {
-            var cookieHeader = cookieContainer.GetCookieHeader(request.RequestUri);
-
-            if (!string.IsNullOrEmpty(cookieHeader))
+            foreach (var cookie in cookies)
             {
-                request.Headers.TryAddWithoutValidation("Cookie", cookieHeader);
-            }
-        }
-
-        private void SetCookiesOn(HttpResponseMessage response)
-        {
-            if (response.Headers.TryGetValues("Set-Cookie", out var cookies))
-            {
-                foreach (var cookie in cookies)
-                {
-                    cookieContainer.SetCookies(
-                        response.RequestMessage.RequestUri,
-                        cookie);
-                }
+                cookieContainer.SetCookies(
+                    response.RequestMessage.RequestUri,
+                    cookie);
             }
         }
     }

@@ -11,110 +11,109 @@ using Pocket;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Peaky.Tests
+namespace Peaky.Tests;
+
+public class TestPageTests : IDisposable
 {
-    public class TestPageTests : IDisposable
+    private readonly CompositeDisposable disposables = new CompositeDisposable();
+
+    public TestPageTests(ITestOutputHelper output)
     {
-        private readonly CompositeDisposable disposables = new CompositeDisposable();
+        disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
+    }
 
-        public TestPageTests(ITestOutputHelper output)
+    public void Dispose() => disposables.Dispose();
+
+    [Fact]
+    public async Task When_HTML_is_requested_then_the_tests_endpoint_returns_UI_bootstrap_HTML()
+    {
+        var response = await RequestTestsHtml();
+
+        response.ShouldSucceed();
+
+        var result = await response.Content.ReadAsStringAsync();
+
+        response.Content
+                .Headers
+                .ContentType
+                .ToString()
+                .Should()
+                .Be("text/html");
+        result.Should()
+              .StartWith(@"<!doctype html>");
+    }
+
+    [Fact]
+    public async Task When_HTML_is_requested_then_it_contains_a_semantically_versioned_script_link()
+    {
+        var response = await RequestTestsHtml();
+
+        response.ShouldSucceed();
+
+        var result = await response.Content.ReadAsStringAsync();
+
+        result.Should().Contain(@"<script src=""//peakytests.github.io/Peaky/javascripts/peaky.js?version=");
+    }
+
+    [Fact]
+    public async Task The_default_test_page_contains_a_css_link()
+    {
+        var response = await RequestTestsHtml();
+
+        response.ShouldSucceed();
+
+        var result = await response.Content.ReadAsStringAsync();
+
+        result.Should().Contain(@"<link rel=""stylesheet"" href=""//peakytests.github.io/Peaky/stylesheets/peaky.css?version=");
+
+    }
+
+    [Fact]
+    public async Task Test_page_HTML_can_be_overridden()
+    {
+        var response = await RequestTestsHtml(services =>
         {
-            disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
-        }
+            services.AddTransient<ITestPageRenderer>(c => new SubstituteTestPageRenderer("not actually html"));
+        });
 
-        public void Dispose() => disposables.Dispose();
+        var content = await response.Content.ReadAsStringAsync();
 
-        [Fact]
-        public async Task When_HTML_is_requested_then_the_tests_endpoint_returns_UI_bootstrap_HTML()
-        {
-            var response = await RequestTestsHtml();
-
-            response.ShouldSucceed();
-
-            var result = await response.Content.ReadAsStringAsync();
-
-            response.Content
-                    .Headers
-                    .ContentType
-                    .ToString()
-                    .Should()
-                    .Be("text/html");
-            result.Should()
-                  .StartWith(@"<!doctype html>");
-        }
-
-        [Fact]
-        public async Task When_HTML_is_requested_then_it_contains_a_semantically_versioned_script_link()
-        {
-            var response = await RequestTestsHtml();
-
-            response.ShouldSucceed();
-
-            var result = await response.Content.ReadAsStringAsync();
-
-            result.Should().Contain(@"<script src=""//peakytests.github.io/Peaky/javascripts/peaky.js?version=");
-        }
-
-        [Fact]
-        public async Task The_default_test_page_contains_a_css_link()
-        {
-            var response = await RequestTestsHtml();
-
-            response.ShouldSucceed();
-
-            var result = await response.Content.ReadAsStringAsync();
-
-            result.Should().Contain(@"<link rel=""stylesheet"" href=""//peakytests.github.io/Peaky/stylesheets/peaky.css?version=");
-
-        }
-
-        [Fact]
-        public async Task Test_page_HTML_can_be_overridden()
-        {
-            var response = await RequestTestsHtml(services =>
-            {
-                services.AddTransient<ITestPageRenderer>(c => new SubstituteTestPageRenderer("not actually html"));
-            });
-
-            var content = await response.Content.ReadAsStringAsync();
-
-            content.Should().Be("not actually html");
-        }
+        content.Should().Be("not actually html");
+    }
       
-        public class SubstituteTestPageRenderer : ITestPageRenderer
-        {
-            private readonly string html;
+    public class SubstituteTestPageRenderer : ITestPageRenderer
+    {
+        private readonly string html;
 
-            public SubstituteTestPageRenderer(string html) => this.html = html;
+        public SubstituteTestPageRenderer(string html) => this.html = html;
 
-            public async Task Render(HttpContext httpContext) => await httpContext.Response.WriteAsync(html);
-        }
+        public async Task Render(HttpContext httpContext) => await httpContext.Response.WriteAsync(html);
+    }
 
-        private HttpClient CreateClient(Action<IServiceCollection> configureServices)
-        {
-            var peakyService = new PeakyService(
-                targets =>
-                    targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
-                           .Add("production", "widgetapi", new Uri("http://widgets.com"))
-                           .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
-                           .Add("production", "sprocketapi", new Uri("http://sprockets.com")),
-                configureServices: configureServices);
+    private HttpClient CreateClient(Action<IServiceCollection> configureServices)
+    {
+        var peakyService = new PeakyService(
+            targets =>
+                targets.Add("staging", "widgetapi", new Uri("http://staging.widgets.com"))
+                       .Add("production", "widgetapi", new Uri("http://widgets.com"))
+                       .Add("staging", "sprocketapi", new Uri("http://staging.sprockets.com"))
+                       .Add("production", "sprocketapi", new Uri("http://sprockets.com")),
+            configureServices: configureServices);
 
-            disposables.Add(peakyService);
+        disposables.Add(peakyService);
 
-            return peakyService.CreateHttpClient();
-        }
+        return peakyService.CreateHttpClient();
+    }
 
-        private async Task<HttpResponseMessage> RequestTestsHtml(
-            Action<IServiceCollection> configureServices = null)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, "http://blammo.com/tests/");
+    private async Task<HttpResponseMessage> RequestTestsHtml(
+        Action<IServiceCollection> configureServices = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://blammo.com/tests/");
 
-            request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
+        request.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8");
 
-            var response = await CreateClient(configureServices).SendAsync(request);
+        var response = await CreateClient(configureServices).SendAsync(request);
 
-            return response;
-        }
+        return response;
     }
 }

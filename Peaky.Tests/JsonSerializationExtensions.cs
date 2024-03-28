@@ -7,41 +7,40 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Peaky.Tests
+namespace Peaky.Tests;
+
+public static class JsonSerializationExtensions
 {
-    public static class JsonSerializationExtensions
+    public static async Task<dynamic> JsonContent(this HttpResponseMessage response)
     {
-        public static async Task<dynamic> JsonContent(this HttpResponseMessage response)
+        var json = await response.Content.ReadAsStringAsync();
+        try
         {
-            var json = await response.Content.ReadAsStringAsync();
-            try
-            {
-                return JToken.Parse(json);
-            }
-            catch (Exception)
-            {
-                Console.WriteLine("Invalid Json: " + json);
-                throw;
-            }
+            return JToken.Parse(json);
         }
-
-        internal static async Task<TestList> AsTestList(this HttpResponseMessage response)
+        catch (Exception)
         {
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<TestList>(json);
+            Console.WriteLine("Invalid Json: " + json);
+            throw;
         }
+    }
 
-        internal static async Task<TestResult> AsTestResult(this HttpResponseMessage response)
-        {
-            var content = response.Content;
+    internal static async Task<TestList> AsTestList(this HttpResponseMessage response)
+    {
+        var json = await response.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<TestList>(json);
+    }
 
-            var json = await content.ReadAsStringAsync();
+    internal static async Task<TestResult> AsTestResult(this HttpResponseMessage response)
+    {
+        var content = response.Content;
 
-            Console.WriteLine();
-            Console.WriteLine(json);
-            Console.WriteLine();
+        var json = await content.ReadAsStringAsync();
 
-            return JsonConvert.DeserializeObject<TestResult>(json);
-        }
+        Console.WriteLine();
+        Console.WriteLine(json);
+        Console.WriteLine();
+
+        return JsonConvert.DeserializeObject<TestResult>(json);
     }
 }

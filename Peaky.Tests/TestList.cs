@@ -1,9 +1,8 @@
 using System;
 
-namespace Peaky.Tests
+namespace Peaky.Tests;
+
+internal class TestList
 {
-    internal class TestList
-    {
-        public Test[] Tests { get; set; }
-    }
+    public Test[] Tests { get; set; }
 }

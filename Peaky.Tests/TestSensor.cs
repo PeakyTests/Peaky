@@ -3,16 +3,15 @@
 
 using System;
 
-namespace Peaky.Tests
-{
-    public class TestSensor
-    {
-        public static Func<object> GetSensorValue { get; set; }
+namespace Peaky.Tests;
 
-        [DiagnosticSensor]
-        public static object SensorMethod()
-        {
-            return GetSensorValue?.Invoke();
-        }
+public class TestSensor
+{
+    public static Func<object> GetSensorValue { get; set; }
+
+    [DiagnosticSensor]
+    public static object SensorMethod()
+    {
+        return GetSensorValue?.Invoke();
     }
 }

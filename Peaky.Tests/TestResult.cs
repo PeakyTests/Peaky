@@ -1,19 +1,18 @@
 using System;
 
-namespace Peaky.Tests
+namespace Peaky.Tests;
+
+public class TestResult
 {
-    public class TestResult
-    {
-        public object ReturnValue { get; set; }
+    public object ReturnValue { get; set; }
 
-        public bool Passed { get; set; }
+    public bool Passed { get; set; }
 
-        public string Log { get; set; }
+    public string Log { get; set; }
 
-        public object Exception { get; set; }
+    public object Exception { get; set; }
 
-        public TimeSpan Duration { get; set; }
+    public TimeSpan Duration { get; set; }
 
-        public TestInfo Test { get; set; }
-    }
+    public TestInfo Test { get; set; }
 }

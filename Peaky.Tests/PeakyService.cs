@@ -11,80 +11,79 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pocket;
 
-namespace Peaky.Tests
+namespace Peaky.Tests;
+
+public class PeakyService : IDisposable
 {
-    public class PeakyService : IDisposable
+    private readonly TestServer testServer;
+    private readonly CompositeDisposable disposables = new CompositeDisposable();
+
+    public PeakyService(
+        Action<TestTargetRegistry> configureTargets = null,
+        Action<IServiceCollection> configureServices = null,
+        Type[] testTypes = null)
     {
-        private readonly TestServer testServer;
-        private readonly CompositeDisposable disposables = new CompositeDisposable();
+        testServer = Configure(
+            configureTargets,
+            configureServices,
+            testTypes);
 
-        public PeakyService(
-            Action<TestTargetRegistry> configureTargets = null,
-            Action<IServiceCollection> configureServices = null,
-            Type[] testTypes = null)
+        disposables.Add(testServer);
+    }
+
+    private static TestServer Configure(
+        Action<TestTargetRegistry> configureTargets = null,
+        Action<IServiceCollection> configureServices = null,
+        IReadOnlyCollection<Type> testTypes = null)
+    {
+        var webHostBuilder = new WebHostBuilder();
+
+        if (configureServices != null)
         {
-            testServer = Configure(
-                configureTargets,
-                configureServices,
-                testTypes);
-
-            disposables.Add(testServer);
+            webHostBuilder.ConfigureServices(configureServices);
         }
 
-        private static TestServer Configure(
-            Action<TestTargetRegistry> configureTargets = null,
-            Action<IServiceCollection> configureServices = null,
-            IReadOnlyCollection<Type> testTypes = null)
+        webHostBuilder.ConfigureServices(services =>
         {
-            var webHostBuilder = new WebHostBuilder();
+            services.AddPeakySensors();
+            services.AddPeakyTests(configureTargets, testTypes);
+        });
 
-            if (configureServices != null)
-            {
-                webHostBuilder.ConfigureServices(configureServices);
-            }
+        return new TestServer(webHostBuilder.UseStartup<TestApiStartup>());
+    }
 
-            webHostBuilder.ConfigureServices(services =>
-            {
-                services.AddPeakySensors();
-                services.AddPeakyTests(configureTargets, testTypes);
-            });
+    public HttpClient CreateHttpClient()
+    {
+        var httpMessageHandler = testServer.CreateHandler();
+        var clientHandler = new DelegatingHandlerWithCookies(httpMessageHandler);
+        var httpClient = new HttpClient(clientHandler);
+        return httpClient;
+    }
 
-            return new TestServer(webHostBuilder.UseStartup<TestApiStartup>());
+    public void Dispose() => disposables.Dispose();
+
+    internal class TestApiStartup
+    {
+        public TestApiStartup(IWebHostEnvironment environment)
+        {
         }
 
-        public HttpClient CreateHttpClient()
+        public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            var httpMessageHandler = testServer.CreateHandler();
-            var clientHandler = new DelegatingHandlerWithCookies(httpMessageHandler);
-            var httpClient = new HttpClient(clientHandler);
-            return httpClient;
+            services.AddMvc(options => options.EnableEndpointRouting = false);
+
+            return services.BuildServiceProvider();
         }
 
-        public void Dispose() => disposables.Dispose();
-
-        internal class TestApiStartup
+        public void Configure(
+            IApplicationBuilder app,
+            ILoggerFactory loggerFactory)
         {
-            public TestApiStartup(IWebHostEnvironment environment)
-            {
-            }
+            // FIX: (Configure)     loggerFactory.AddPocketLogger();
 
-            public IServiceProvider ConfigureServices(IServiceCollection services)
-            {
-                services.AddMvc(options => options.EnableEndpointRouting = false);
+            app.UseMvc();
 
-                return services.BuildServiceProvider();
-            }
-
-            public void Configure(
-                IApplicationBuilder app,
-                ILoggerFactory loggerFactory)
-            {
-                // FIX: (Configure)     loggerFactory.AddPocketLogger();
-
-                app.UseMvc();
-
-                app.UsePeaky();
-            }
+            app.UsePeaky();
         }
     }
 }

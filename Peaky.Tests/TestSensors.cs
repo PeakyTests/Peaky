@@ -4,74 +4,73 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading;
 
-namespace Peaky
-{
-    public class TestSensors
-    {
-        [DiagnosticSensor]
-        public IDictionary<string, object> DictionarySensor()
-        {
-            return new Dictionary<string, object>
-            {
-                { "an int", 42 }
-            };
-        }
+namespace Peaky;
 
-        [DiagnosticSensor]
-        public FileInfo FileInfoSensor()
+public class TestSensors
+{
+    [DiagnosticSensor]
+    public IDictionary<string, object> DictionarySensor()
+    {
+        return new Dictionary<string, object>
         {
-            return new FileInfo("somefile.txt");
-        }
+            { "an int", 42 }
+        };
     }
 
-    public static class StaticTestSensors
+    [DiagnosticSensor]
+    public FileInfo FileInfoSensor()
     {
-        private static int callCount = 0;
+        return new FileInfo("somefile.txt");
+    }
+}
 
-        public static Barrier Barrier;
+public static class StaticTestSensors
+{
+    private static int callCount = 0;
 
-        [DiagnosticSensor]
-        internal static object InternalSensor()
-        {
-            return new object();
-        }
+    public static Barrier Barrier;
 
-        [DiagnosticSensor]
-        private static object PrivateSensor()
-        {
-            return new object();
-        }
+    [DiagnosticSensor]
+    internal static object InternalSensor()
+    {
+        return new object();
+    }
 
-        [DiagnosticSensor]
-        internal static object CounterSensor()
-        {
-            return callCount++;
-        }
+    [DiagnosticSensor]
+    private static object PrivateSensor()
+    {
+        return new object();
+    }
 
-        [DiagnosticSensor]
-        [DisplayName("custom-name")]
-        public static object CustomNamedSensor()
-        {
-            return new object();
-        }
+    [DiagnosticSensor]
+    internal static object CounterSensor()
+    {
+        return callCount++;
+    }
 
-        [DiagnosticSensor]
-        public static object ExceptionSensor()
-        {
-            throw new DataMisalignedException();
-        }
+    [DiagnosticSensor]
+    [DisplayName("custom-name")]
+    public static object CustomNamedSensor()
+    {
+        return new object();
+    }
 
-        [DiagnosticSensor]
-        private static object Sensor_for_Discovered_sensors_can_be_removed_at_runtime()
-        {
-            return new object();
-        }
+    [DiagnosticSensor]
+    public static object ExceptionSensor()
+    {
+        throw new DataMisalignedException();
+    }
 
-        [DiagnosticSensor]
-        private static object ConcurrencySensor()
-        {
-            Barrier?.SignalAndWait();
-            return new object();
-        }
+    [DiagnosticSensor]
+    private static object Sensor_for_Discovered_sensors_can_be_removed_at_runtime()
+    {
+        return new object();
+    }
+
+    [DiagnosticSensor]
+    private static object ConcurrencySensor()
+    {
+        Barrier?.SignalAndWait();
+        return new object();
     }
 }
