@@ -2,11 +2,10 @@
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Peaky.SampleWebApplication.Controllers
+namespace Peaky.SampleWebApplication.Controllers;
+
+public class HomeController : Controller
 {
-    public class HomeController : Controller
-    {
-        [Route("/")]
-        public IActionResult Index() => Redirect("/tests");
-    }
+    [Route("/")]
+    public IActionResult Index() => Redirect("/tests");
 }

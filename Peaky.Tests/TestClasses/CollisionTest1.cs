@@ -1,10 +1,9 @@
-﻿namespace Peaky.Tests.TestClasses
+﻿namespace Peaky.Tests.TestClasses;
+
+public class CollisionTest1 : IPeakyTest
 {
-    public class CollisionTest1 : IPeakyTest
+    public dynamic name_collision()
     {
-        public dynamic name_collision()
-        {
-            return GetType().Name;
-        }
+        return GetType().Name;
     }
 }

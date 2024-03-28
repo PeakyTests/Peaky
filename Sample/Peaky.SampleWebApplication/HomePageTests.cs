@@ -5,40 +5,39 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 
-namespace Peaky.SampleWebApplication
+namespace Peaky.SampleWebApplication;
+
+public class HomePageTests : IHaveTags
 {
-    public class HomePageTests : IHaveTags
+    private readonly HttpClient httpClient;
+    private ILogger<HomePageTests> logger;
+
+    public HomePageTests(
+        HttpClient httpClient,
+        ILoggerFactory loggerFactory)
     {
-        private readonly HttpClient httpClient;
-        private ILogger<HomePageTests> logger;
-
-        public HomePageTests(
-            HttpClient httpClient,
-            ILoggerFactory loggerFactory)
+        if (loggerFactory == null)
         {
-            if (loggerFactory == null)
-            {
-                throw new ArgumentNullException(nameof(loggerFactory));
-            }
-
-            this.logger = loggerFactory.CreateLogger<HomePageTests>();
-            this.httpClient = httpClient;
+            throw new ArgumentNullException(nameof(loggerFactory));
         }
 
-        public string[] Tags => new[]
-        {
-            "NonSideEffecting"
-        };
+        this.logger = loggerFactory.CreateLogger<HomePageTests>();
+        this.httpClient = httpClient;
+    }
 
-        public async Task homepage_should_return_200OK()
-        {
-            var response = await httpClient.GetAsync("/");
+    public string[] Tags => new[]
+    {
+        "NonSideEffecting"
+    };
 
-            logger.LogInformation("Response: {response}", response);
+    public async Task homepage_should_return_200OK()
+    {
+        var response = await httpClient.GetAsync("/");
 
-            response.StatusCode
-                    .Should()
-                    .Be(HttpStatusCode.OK);
-        }
+        logger.LogInformation("Response: {response}", response);
+
+        response.StatusCode
+                .Should()
+                .Be(HttpStatusCode.OK);
     }
 }

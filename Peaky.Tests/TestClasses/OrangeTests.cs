@@ -1,12 +1,11 @@
-﻿namespace Peaky.Tests.TestClasses
-{
-    public class OrangeTests : IHaveTags
-    {
-        public string[] Tags => new[]
-        {
-            "orange", "fruit"
-        };
+﻿namespace Peaky.Tests.TestClasses;
 
-        public dynamic tangerine() => "Oooh!";
-    }
+public class OrangeTests : IHaveTags
+{
+    public string[] Tags => new[]
+    {
+        "orange", "fruit"
+    };
+
+    public dynamic tangerine() => "Oooh!";
 }
