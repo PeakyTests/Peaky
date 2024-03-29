@@ -16,7 +16,7 @@ namespace Peaky.Tests;
 public class PeakyService : IDisposable
 {
     private readonly TestServer testServer;
-    private readonly CompositeDisposable disposables = new CompositeDisposable();
+    private readonly CompositeDisposable disposables = new();
 
     public PeakyService(
         Action<TestTargetRegistry> configureTargets = null,
@@ -38,7 +38,7 @@ public class PeakyService : IDisposable
     {
         var webHostBuilder = new WebHostBuilder();
 
-        if (configureServices != null)
+        if (configureServices is not null)
         {
             webHostBuilder.ConfigureServices(configureServices);
         }

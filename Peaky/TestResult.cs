@@ -11,7 +11,8 @@ internal class TestResult
     {
     }
 
-    public TestOutcome Outcome { get; private set; }
+    public TestOutcome Outcome { get; private init; }
+
     public object ReturnValue { get; private set; }
 
     public bool Passed => Outcome == TestOutcome.Passed;
@@ -23,8 +24,6 @@ internal class TestResult
     public Exception Exception { get; private set; }
 
     public TestInfo Test { get; private set; }
-
-    public bool SupportsRetry { get; private set; }
 
     public static TestResult Pass(
         object returnValue,
@@ -59,7 +58,6 @@ internal class TestResult
             Exception = exception,
             Duration = duration,
             Test = test,
-            SupportsRetry = true,
             Outcome = TestOutcome.Inconclusive
         };
 

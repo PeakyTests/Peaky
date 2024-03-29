@@ -43,7 +43,7 @@ internal class TestDefinition<T> : TestDefinition
         ??
         Array.Empty<string>();
 
-    internal override async Task<object> Run(HttpContext context, Func<Type, object> resolve, TestTarget target)
+    internal override object Run(HttpContext context, Func<Type, object> resolve, TestTarget target)
     {
         var executeTestMethod = defaultExecuteTestMethod;
         var methodParameters = TestMethod.GetParameters();
