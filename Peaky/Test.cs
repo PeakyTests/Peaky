@@ -11,17 +11,27 @@ namespace Peaky;
 
 internal class Test
 {
-    public string Application { get; set; }
+    public Test(string name, string environment, string application, string url)
+    {
+        Name = name;
+        Environment = environment;
+        Application = application;
+        Url = url;
+    }
 
-    public string Environment { get; set; }
+    public string Application { get; }
 
-    public string Url { get; set; }
+    public string Environment { get; }
+
+    public string Name { get; }
+
+    public string Url { get; }
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public string[] Tags { get; set; }
+    public string[] Tags { get; init; }
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public Parameter[] Parameters { get; set; }
+    public Parameter[] Parameters { get; init; }
 
     public static IEnumerable<Test> CreateTests(TestTarget testTarget, TestDefinition definition, HttpRequest request)
     {
@@ -33,11 +43,12 @@ internal class Test
         {
             foreach (var testCase in testCases)
             {
-                yield return new Test
+                yield return new Test(
+                    definition.TestName,
+                    testTarget.Environment,
+                    testTarget.Application,
+                    request.GetLinkWithQuery(testTarget, definition, testCase))
                 {
-                    Environment = testTarget.Environment,
-                    Application = testTarget.Application,
-                    Url = request.GetLinkWithQuery(testTarget, definition, testCase),
                     Tags = definition.Tags,
                     Parameters = testCase.ToArray()
                 };
@@ -45,13 +56,14 @@ internal class Test
         }
         else
         {
-            yield return new Test
+            yield return new Test(
+                definition.TestName,
+                testTarget.Environment,
+                testTarget.Application,
+                definition.Parameters.Any()
+                    ? request.GetLinkWithQuery(testTarget, definition, definition.Parameters)
+                    : request.GetLink(testTarget, definition))
             {
-                Environment = testTarget.Environment,
-                Application = testTarget.Application,
-                Url = definition.Parameters.Any()
-                          ? request.GetLinkWithQuery(testTarget, definition, definition.Parameters)
-                          : request.GetLink(testTarget, definition),
                 Tags = definition.Tags,
                 Parameters = definition.Parameters.Any()
                                  ? definition.Parameters.ToArray()

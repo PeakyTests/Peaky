@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
 namespace Peaky;
@@ -21,7 +20,8 @@ public abstract class TestDefinition
     internal Type TestType { get;  set; }
 
     internal MethodInfo TestMethod { get; set; }
-    internal abstract Task<object> Run(HttpContext httpContext, Func<Type, object> resolve, TestTarget target);
+
+    internal abstract object Run(HttpContext httpContext, Func<Type, object> resolve, TestTarget target);
 
     internal static TestDefinition Create(MethodInfo methodInfo)
     {
@@ -43,8 +43,7 @@ public abstract class TestDefinition
 
     internal IEnumerable<Parameter> Parameters
     {
-        get => testParameters ??
-               (testParameters = Enumerable.Empty<Parameter>());
+        get => testParameters ??= Enumerable.Empty<Parameter>();
         set => testParameters = value;
     }
 

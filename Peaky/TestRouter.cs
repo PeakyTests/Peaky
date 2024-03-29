@@ -114,7 +114,7 @@ internal class TestRouter : PeakyRouter
     {
         using (Log.OnEnterAndExit())
         {
-            if (environment != null)
+            if (environment is not null)
             {
                 if (!testTargets.Any(tt => tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase)))
                 {
@@ -236,7 +236,7 @@ internal class TestRouter : PeakyRouter
                     await warmup.WarmUp();
                 }
 
-                var returnValue = await testDefinition.Run(
+                var returnValue = testDefinition.Run(
                                       httpContext,
                                       container.Resolve,
                                       target);
