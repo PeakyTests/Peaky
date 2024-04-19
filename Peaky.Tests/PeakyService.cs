@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pocket;
+using Pocket.For.MicrosoftExtensionsLogging;
 
 namespace Peaky.Tests;
 
@@ -79,7 +80,7 @@ public class PeakyService : IDisposable
             IApplicationBuilder app,
             ILoggerFactory loggerFactory)
         {
-            // FIX: (Configure)     loggerFactory.AddPocketLogger();
+            loggerFactory.AddPocketLogger();
 
             app.UseMvc();
 
