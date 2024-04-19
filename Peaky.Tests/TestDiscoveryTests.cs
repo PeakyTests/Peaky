@@ -21,7 +21,7 @@ namespace Peaky.Tests;
 public class TestDiscoveryTests : IDisposable
 {
     private readonly HttpClient apiClient;
-    private readonly CompositeDisposable disposables = new CompositeDisposable();
+    private readonly CompositeDisposable disposables = new();
 
     public TestDiscoveryTests(ITestOutputHelper output)
     {
@@ -587,5 +587,21 @@ public class TestDiscoveryTests : IDisposable
         var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(await response.Content.ReadAsStringAsync());
         content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task?expectedResult=false&testCaseId=case8", StringComparison.OrdinalIgnoreCase));
         content.Tests.Should().Contain(t => t.Url.ToString().EndsWith("I_do_stuff_and_return_task_of_bool?expectedResult=false&testCaseId=case9", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task Tests_URL_scheme_can_be_configured_to_differ_from_the_default()
+    {
+        using var peakyService = new PeakyService(
+            targets =>
+                targets.Add("production", "example", new Uri("https://example.com")));
+
+        var apiClient = peakyService.CreateHttpClient();
+
+        var response = await apiClient.GetAsync("http://example.com/tests");
+
+        var content = JsonConvert.DeserializeObject<TestDiscoveryResponse>(await response.Content.ReadAsStringAsync());
+
+        content.Tests.Should().Contain(o => o.Url == "https://example.com/tests/production/example/passing_test_returns_object");
     }
 }
