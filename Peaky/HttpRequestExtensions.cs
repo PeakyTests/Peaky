@@ -15,11 +15,17 @@ internal static class HttpRequestExtensions
         TestTarget testTarget,
         TestDefinition testDefinition)
     {
-        var scheme = request.Scheme;
+        var scheme = testTarget.BaseAddress.Scheme switch
+        {
+            "https" => "https",
+            _ => request.Scheme
+        };
+
         var host = request.Host;
 
         return $"{scheme}://{host}/tests/{testTarget.Environment}/{testTarget.Application}/{testDefinition.TestName}";
     }
+
     internal static string GetLinkWithQuery(
         this HttpRequest request,
         TestTarget testTarget,
@@ -41,7 +47,6 @@ internal static class HttpRequestExtensions
         query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"?{query}";
         return $"{request.GetLink(testTarget, testDefinition)}{query}";
     }
-
 
     internal static string GetQueryString(IEnumerable<Parameter> parameters)
     {

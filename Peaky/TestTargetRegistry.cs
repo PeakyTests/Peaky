@@ -66,7 +66,7 @@ public class TestTargetRegistry : IEnumerable<TestTarget>
         container.OnFailedResolve = (t, e) =>
             throw new InvalidOperationException($"TestTarget does not contain registration for '{t}'.");
 
-        if (services != null)
+        if (services is not null)
         {
             // fall back to application's IServiceProvider
             container.AddStrategy(type =>
