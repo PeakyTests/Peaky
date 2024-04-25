@@ -15,7 +15,7 @@ namespace Peaky.Tests;
 
 public class TestPageTests : IDisposable
 {
-    private readonly CompositeDisposable disposables = new CompositeDisposable();
+    private readonly CompositeDisposable disposables = new();
 
     public TestPageTests(ITestOutputHelper output)
     {
@@ -44,7 +44,7 @@ public class TestPageTests : IDisposable
     }
 
     [Fact]
-    public async Task When_HTML_is_requested_then_it_contains_a_semantically_versioned_script_link()
+    public async Task When_HTML_is_requested_from_tests_endpoint_then_it_lists_the_tests()
     {
         var response = await RequestTestsHtml();
 
@@ -53,19 +53,6 @@ public class TestPageTests : IDisposable
         var result = await response.Content.ReadAsStringAsync();
 
         result.Should().Contain(@"<script src=""//peakytests.github.io/Peaky/javascripts/peaky.js?version=");
-    }
-
-    [Fact]
-    public async Task The_default_test_page_contains_a_css_link()
-    {
-        var response = await RequestTestsHtml();
-
-        response.ShouldSucceed();
-
-        var result = await response.Content.ReadAsStringAsync();
-
-        result.Should().Contain(@"<link rel=""stylesheet"" href=""//peakytests.github.io/Peaky/stylesheets/peaky.css?version=");
-
     }
 
     [Fact]

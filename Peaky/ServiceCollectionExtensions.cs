@@ -27,7 +27,7 @@ public static class ServiceCollectionExtensions
 
         builder.TryAddSingleton(c => new TestDefinitionRegistry(testTypes));
 
-        builder.TryAddTransient<ITestPageRenderer>(c => new TestPageRenderer());
+        builder.TryAddTransient<ITestPageRenderer>(c => new HtmlTestPageRenderer());
             
         builder.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 

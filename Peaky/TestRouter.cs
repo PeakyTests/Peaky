@@ -92,7 +92,7 @@ internal class TestRouter : PeakyRouter
 
             application = segments.ElementAtOrDefault(1);
 
-            if (environment == null)
+            if (environment is null)
             {
                 application = firstSegment;
             }
@@ -112,54 +112,53 @@ internal class TestRouter : PeakyRouter
         string application,
         RouteContext context)
     {
-        using (Log.OnEnterAndExit())
-        {
-            if (environment is not null)
-            {
-                if (!testTargets.Any(tt => tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase)))
-                {
-                    return;
-                }
-            }
+        using var _ = Log.OnEnterAndExit();
 
-            if (application != null &&
-                !testTargets.Any(tt => tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase)))
+        if (environment is not null)
+        {
+            if (!testTargets.Any(tt => tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase)))
             {
                 return;
             }
-
-            context.Handler = async httpContext =>
-            {
-                var applicableTargets = testTargets
-                                        .Where(
-                                            tt => environment == null ||
-                                                  tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase))
-                                        .Where(
-                                            tt => application == null ||
-                                                  tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
-                                        .ToArray();
-
-                DiscoverParameterizedTestCases(context, applicableTargets);
-
-                var tests = testDefinitions
-                            .SelectMany(
-                                definition =>
-                                    applicableTargets
-                                        .Where(definition.AppliesTo)
-                                        .Where(_ =>
-                                                   MatchesFilter(
-                                                       definition.Tags,
-                                                       context.HttpContext.Request.Query))
-                                        .SelectMany(
-                                            target => Test.CreateTests(target,definition, context.HttpContext.Request))
-                                        .Where(l => l.Url != null))
-                            .OrderBy(t => t.Url.ToString());
-
-                var json = JsonConvert.SerializeObject(new { Tests = tests }, SerializerSettings);
-
-                await httpContext.Response.WriteAsync(json);
-            };
         }
+
+        if (application is not null &&
+            !testTargets.Any(tt => tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        context.Handler = async httpContext =>
+        {
+            var applicableTargets = testTargets
+                                    .Where(
+                                        tt => environment is null ||
+                                              tt.Environment.Equals(environment, StringComparison.OrdinalIgnoreCase))
+                                    .Where(
+                                        tt => application is null ||
+                                              tt.Application.Equals(application, StringComparison.OrdinalIgnoreCase))
+                                    .ToArray();
+
+            DiscoverParameterizedTestCases(context, applicableTargets);
+
+            var tests = testDefinitions
+                        .SelectMany(
+                            definition =>
+                                applicableTargets
+                                    .Where(definition.AppliesTo)
+                                    .Where(_ =>
+                                               MatchesFilter(
+                                                   definition.Tags,
+                                                   context.HttpContext.Request.Query))
+                                    .SelectMany(
+                                        target => Test.CreateTests(target,definition, context.HttpContext.Request))
+                                    .Where(l => l.Url is not null))
+                        .OrderBy(t => t.Url.ToString());
+
+            var json = JsonConvert.SerializeObject(new { Tests = tests }, SerializerSettings);
+
+            await httpContext.Response.WriteAsync(json);
+        };
     }
 
     private void DiscoverParameterizedTestCases(RouteContext context, TestTarget[] applicableTargets)
@@ -188,19 +187,19 @@ internal class TestRouter : PeakyRouter
         string environment,
         string application,
         string testName,
-        RouteContext context)
+        RouteContext routeContext)
     {
         using var exit = Log.OnEnterAndExit();
 
         TestTarget target;
-
+        
         try
         {
             target = testTargets.Get(environment, application);
         }
         catch (TestNotDefinedException)
         {
-            context.Handler = async httpContext =>
+            routeContext.Handler = async httpContext =>
             {
                 await Task.Yield();
                 httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
@@ -215,10 +214,10 @@ internal class TestRouter : PeakyRouter
             return Task.CompletedTask;
         }
 
-        var url = context.HttpContext.Request.GetLink(target, testDefinition);
+        var url = routeContext.HttpContext.Request.GetLink(target, testDefinition);
         var testInfo = new TestInfo(target.Application, target.Environment, testDefinition.TestName, new Uri(url), testDefinition.Tags);
 
-        context.Handler = async httpContext =>
+        routeContext.Handler = async httpContext =>
         {
             TestResult result;
 
