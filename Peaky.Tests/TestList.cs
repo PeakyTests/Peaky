@@ -1,5 +1,3 @@
-using System;
-
 namespace Peaky.Tests;
 
 internal class TestList

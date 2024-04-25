@@ -24,7 +24,7 @@ internal abstract class PeakyRouter : IRouter
 
     async Task IRouter.RouteAsync(RouteContext context)
     {
-        if (context.Handler != null)
+        if (context.Handler is not null)
         {
             return;
         }

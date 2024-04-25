@@ -11,7 +11,7 @@ namespace Peaky;
 
 public static class ApplicationBuilderExtensions
 {
-    private static readonly object lockObj = new object();
+    private static readonly object lockObj = new();
 
     public static IApplicationBuilder UsePeaky(this IApplicationBuilder app)
     {
@@ -26,11 +26,10 @@ public static class ApplicationBuilderExtensions
         app.UseRouter(builder =>
         {
             var services = builder.ServiceProvider;
-
                 
             var sensorRegistry = services.GetService<SensorRegistry>();
 
-            if (sensorRegistry != null)
+            if (sensorRegistry is not null)
             {
                 builder.Routes.Add(
                     new SensorRouter(
@@ -43,8 +42,8 @@ public static class ApplicationBuilderExtensions
 
             var testDefinitions = services.GetService<TestDefinitionRegistry>();
 
-            if (testTargets != null &&
-                testDefinitions != null)
+            if (testTargets is not null &&
+                testDefinitions is not null)
             {
                 var uiRouter = new TestPageRouter(services.GetRequiredService<ITestPageRenderer>())
                                .AllowVerbs("GET")

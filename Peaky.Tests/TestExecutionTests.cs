@@ -17,7 +17,7 @@ public class TestExecutionTests : IDisposable
 {
     private readonly HttpClient apiClient;
 
-    private readonly CompositeDisposable disposables = new CompositeDisposable();
+    private readonly CompositeDisposable disposables = new();
 
     public TestExecutionTests(ITestOutputHelper output)
     {
