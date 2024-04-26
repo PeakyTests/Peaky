@@ -11,7 +11,7 @@ namespace Peaky;
 
 public abstract class TestDefinition
 {
-    private IEnumerable<Parameter> testParameters;
+    private IEnumerable<TestParameter> testParameters;
 
     public string TestName { get; internal set; }
 
@@ -37,13 +37,13 @@ public abstract class TestDefinition
         testDefinition.TestType = testType;
         testDefinition.Parameters = methodInfo.GetParameters()
                                               .Select(p =>
-                                                          new Parameter(p.Name, p.GetDefaultValue()));
+                                                          new TestParameter(p.Name, p.GetDefaultValue()));
         return testDefinition;
     }
 
-    internal IEnumerable<Parameter> Parameters
+    internal IEnumerable<TestParameter> Parameters
     {
-        get => testParameters ??= Enumerable.Empty<Parameter>();
+        get => testParameters ??= Enumerable.Empty<TestParameter>();
         set => testParameters = value;
     }
 

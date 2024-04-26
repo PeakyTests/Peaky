@@ -4,9 +4,9 @@ namespace Peaky;
 
 internal class TestCase
 {
-    public ParameterSet Parameters { get; }
+    public TestParameterSet Parameters { get; }
 
-    public TestCase(ParameterSet parameters)
+    public TestCase(TestParameterSet parameters)
     {
         Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
     }

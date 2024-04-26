@@ -39,19 +39,14 @@ public static class ApplicationBuilderExtensions
             }
 
             var testTargets = services.GetService<TestTargetRegistry>();
-
             var testDefinitions = services.GetService<TestDefinitionRegistry>();
 
             if (testTargets is not null &&
                 testDefinitions is not null)
             {
-                var uiRouter = new TestPageRouter(services.GetRequiredService<ITestPageRenderer>())
-                               .AllowVerbs("GET")
-                               .Accept("text/html");
-                builder.Routes.Add(uiRouter);
-
                 var testRouter = new TestRouter(testTargets, testDefinitions)
                     .AllowVerbs("GET", "POST");
+
                 builder.Routes.Add(testRouter);
 
                 services.GetService<ILoggerFactory>()

@@ -58,7 +58,7 @@ public class TestDependencyRegistry
     {
         var body = expression;
         var method = body.Method;
-        var values = new List<Parameter>();
+        var values = new List<TestParameter>();
 
         var parameters = body.Method.GetParameters();
         var arguments = parameters.Select((p, i) => new { p.Name, Argument = body.Arguments[i].Reduce() });
@@ -79,15 +79,15 @@ public class TestDependencyRegistry
                     break;
             }
 
-            values.Add(new Parameter(argumentName, data));
+            values.Add(new TestParameter(argumentName, data));
         }
 
-        return (method, new TestCase(new ParameterSet(values)));
+        return (method, new TestCase(new TestParameterSet(values)));
     }
 
-    internal IReadOnlyCollection<ParameterSet> GetParameterSetsFor(MethodInfo method) =>
+    internal IReadOnlyCollection<TestParameterSet> GetParameterSetsFor(MethodInfo method) =>
         parameterizedTestCases.TryGetValue(method, out var testCases)
             ? testCases.Select(e => e.Value.Parameters)
                        .ToArray()
-            : Array.Empty<ParameterSet>();
+            : Array.Empty<TestParameterSet>();
 }

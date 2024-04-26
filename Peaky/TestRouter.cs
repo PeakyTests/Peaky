@@ -56,7 +56,7 @@ internal class TestRouter : PeakyRouter
     {
         var (environment, application, test) = ParseUrl(context);
 
-        if (test == null)
+        if (test is null)
         {
             ListTests(environment,
                       application,
@@ -199,10 +199,10 @@ internal class TestRouter : PeakyRouter
         }
         catch (TestNotDefinedException)
         {
-            routeContext.Handler = async httpContext =>
+            routeContext.Handler = httpContext =>
             {
-                await Task.Yield();
-                httpContext.Response.StatusCode = (int) HttpStatusCode.NotFound;
+                httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                return Task.CompletedTask;
             };
             return Task.CompletedTask;
         }
@@ -215,7 +215,14 @@ internal class TestRouter : PeakyRouter
         }
 
         var url = routeContext.HttpContext.Request.GetLink(target, testDefinition);
-        var testInfo = new TestInfo(target.Application, target.Environment, testDefinition.TestName, new Uri(url), testDefinition.Tags);
+        var test = new Test(
+            application: target.Application,
+            environment: target.Environment,
+            name: testDefinition.TestName,
+            url: url)
+        {
+            Tags = testDefinition.Tags
+        };
 
         routeContext.Handler = async httpContext =>
         {
@@ -260,37 +267,52 @@ internal class TestRouter : PeakyRouter
                     }
                 }
 
-                result = TestResult.Pass(returnValue, stopwatch.Elapsed, testInfo);
+                result = TestResult.CreatePassedResult(returnValue, stopwatch.Elapsed, test);
             }
             catch (ParameterFormatException exception)
             {
-                result = TestResult.Fail(exception, stopwatch.Elapsed, testInfo);
+                result = TestResult.CreateFailedResult(exception, stopwatch.Elapsed, test);
                 httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
             }
             catch (TestInconclusiveException tie)
             {
-                result = TestResult.Inconclusive(tie, stopwatch.Elapsed, testInfo);
+                result = TestResult.CreateInconclusiveResult(tie, stopwatch.Elapsed, test);
                 httpContext.Response.StatusCode = (int) HttpStatusCode.ServiceUnavailable;
             }
             catch (TestTimeoutException tte)
             {
-                result = TestResult.Timeout(tte, stopwatch.Elapsed, testInfo);
+                result = TestResult.CreateTimeoutResult(tte, stopwatch.Elapsed, test);
                 httpContext.Response.StatusCode = (int) HttpStatusCode.GatewayTimeout;
             }
             catch (TestFailedException tfe)
             {
-                result = TestResult.Fail(tfe, stopwatch.Elapsed, testInfo);
+                result = TestResult.CreateFailedResult(tfe, stopwatch.Elapsed, test);
                 httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
             catch (Exception exception)
             {
-                result = TestResult.Fail(exception, stopwatch.Elapsed, testInfo);
-                httpContext.Response.StatusCode = (int) HttpStatusCode.InternalServerError;
+                result = TestResult.CreateFailedResult(exception, stopwatch.Elapsed, test);
+                httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
 
-            var json = JsonConvert.SerializeObject(result, SerializerSettings);
+            string responseText = null;
 
-            await httpContext.Response.WriteAsync(json);
+            switch (httpContext.Request.ContentType)
+            {
+                case "text/html":
+
+                    break;
+
+                case "application/json":
+                default:
+                    responseText = JsonConvert.SerializeObject(result, SerializerSettings);
+
+                    break;
+            }
+
+            httpContext.Response.ContentType ??= "application/json";
+
+            await httpContext.Response.WriteAsync(responseText);
         };
 
         return Task.CompletedTask;
@@ -300,8 +322,8 @@ internal class TestRouter : PeakyRouter
         string[] testTags,
         IQueryCollection query)
     {
-        //If no tags were requested, then then it is a match
-        if (!query.Any())
+        //If no tags were requested, then it is a match
+        if (query.Count is 0)
         {
             return true;
         }

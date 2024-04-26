@@ -4,18 +4,18 @@ using System.Collections.Immutable;
 
 namespace Peaky;
 
-internal class ParameterSet : IEnumerable<Parameter>
+internal class TestParameterSet : IEnumerable<TestParameter>
 {
-    private readonly ImmutableArray<Parameter> parameters;
+    private readonly ImmutableArray<TestParameter> parameters;
     private readonly string queryString;
 
-    public ParameterSet(IEnumerable<Parameter> parameters)
+    public TestParameterSet(IEnumerable<TestParameter> parameters)
     {
         this.parameters = parameters.ToImmutableArray();
         queryString = ToUrlQueryString();
     }
 
-    public IEnumerator<Parameter> GetEnumerator()
+    public IEnumerator<TestParameter> GetEnumerator()
     {
         foreach (var parameter in parameters)
         {

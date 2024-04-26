@@ -35,3 +35,5 @@ Its.Log.Monitoring.UI/styles/monitoring.css
 Peaky\.UI/\.vs/config/
 
 *.cache
+
+.NCrunch_Peaky/StoredText/

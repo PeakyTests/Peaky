@@ -5,9 +5,9 @@ using System;
 
 namespace Peaky;
 
-internal class Parameter
+public class TestParameter
 {
-    public Parameter(string name, object defaultValue)
+    internal TestParameter(string name, object defaultValue)
     {
         if (string.IsNullOrWhiteSpace(name))
         {

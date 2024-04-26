@@ -5,7 +5,7 @@ using System;
 
 namespace Peaky;
 
-internal class TestResult
+public class TestResult
 {
     private TestResult()
     {
@@ -23,12 +23,12 @@ internal class TestResult
 
     public Exception Exception { get; private set; }
 
-    public TestInfo Test { get; private set; }
+    public Test Test { get; private set; }
 
-    public static TestResult Pass(
+    internal static TestResult CreatePassedResult(
         object returnValue,
         TimeSpan duration,
-        TestInfo test)
+        Test test)
     {
         var testResult = new TestResult
         {
@@ -42,10 +42,10 @@ internal class TestResult
         return testResult;
     }
 
-    public static TestResult Inconclusive(
+    internal static TestResult CreateInconclusiveResult(
         TestInconclusiveException exception,
         TimeSpan duration,
-        TestInfo test)
+        Test test)
     {
         if (exception == null)
         {
@@ -64,10 +64,10 @@ internal class TestResult
         return testResult;
     }
 
-    public static TestResult Timeout(
+    internal static TestResult CreateTimeoutResult(
         TestTimeoutException exception,
         TimeSpan duration,
-        TestInfo test)
+        Test test)
     {
         if (exception == null)
         {
@@ -86,10 +86,10 @@ internal class TestResult
         return testResult;
     }
 
-    public static TestResult Fail(
+    internal static TestResult CreateFailedResult(
         Exception exception,
         TimeSpan duration, 
-        TestInfo test)
+        Test test)
     {
         if (exception == null)
         {
