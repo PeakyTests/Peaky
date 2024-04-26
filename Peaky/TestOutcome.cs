@@ -1,6 +1,6 @@
 namespace Peaky;
 
-internal enum TestOutcome
+public enum TestOutcome
 {
     Passed,
     Failed,

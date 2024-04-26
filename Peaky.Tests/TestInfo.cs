@@ -14,5 +14,6 @@ public class TestInfo
     public string Environment { get; set; }
 
     public Uri Url { get; set; }
+
     public string[] Tags { get; set; }
 }

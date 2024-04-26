@@ -30,7 +30,7 @@ internal static class HttpRequestExtensions
         this HttpRequest request,
         TestTarget testTarget,
         TestDefinition testDefinition,
-        IEnumerable<Parameter> parameters)
+        IEnumerable<TestParameter> parameters)
     {
         var query = GetQueryString(parameters);
         query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"?{query}";
@@ -41,14 +41,14 @@ internal static class HttpRequestExtensions
         this HttpRequest request,
         TestTarget testTarget,
         TestDefinition testDefinition,
-        ParameterSet parameters)
+        TestParameterSet parameters)
     {
         var query = parameters.GetQueryString();
         query = string.IsNullOrWhiteSpace(query) ? string.Empty : $"?{query}";
         return $"{request.GetLink(testTarget, testDefinition)}{query}";
     }
 
-    internal static string GetQueryString(IEnumerable<Parameter> parameters)
+    internal static string GetQueryString(IEnumerable<TestParameter> parameters)
     {
         return string.Join(
             "&",

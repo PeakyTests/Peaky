@@ -27,14 +27,14 @@ public class TestExecutionTests : IDisposable
             targets => targets
                        .Add("production",
                             "widgetapi",
-                            new Uri("http://widgets.com"),
+                            new Uri("http://example.com"),
                             dependencies => dependencies.Register<HttpClient>(() =>
                             {
                                 return new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK));
                             }))
                        .Add("production",
                             "sprocketapi",
-                            new Uri("http://widgets.com"),
+                            new Uri("http://example.com"),
                             dependencies => dependencies.Register<HttpClient>(() =>
                             {
                                 return new FakeHttpClient(msg => new HttpResponseMessage(HttpStatusCode.OK));
@@ -50,7 +50,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_with_a_return_value_passes_then_a_200_is_returned()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/passing_test_returns_object");
 
         response.ShouldSucceed(HttpStatusCode.OK);
     }
@@ -58,7 +58,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_with_a_void_return_value_passes_then_a_200_is_returned()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_void_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/passing_void_test");
 
         response.ShouldSucceed(HttpStatusCode.OK);
     }
@@ -66,7 +66,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_with_a_resultless_Task_return_value_passes_then_a_200_is_returned()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_void_async_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/passing_void_async_test");
 
         response.ShouldSucceed(HttpStatusCode.OK);
     }
@@ -74,7 +74,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_with_a_resultless_Task_return_value_passes_then_ReturnValue_is_null()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_void_async_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/passing_void_async_test");
             
         var result = await response.AsTestResult();
 
@@ -84,7 +84,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_passes_and_returns_an_object_then_the_response_contains_the_test_return_value()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/passing_test_returns_object");
 
         var result = await response.Content.ReadAsStringAsync();
 
@@ -94,7 +94,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_passes_and_returns_a_struct_then_the_response_contains_the_test_return_value()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/passing_test_returns_struct");
 
         var result = JsonConvert.DeserializeObject<TestResult>(await response.Content.ReadAsStringAsync());
         result.Passed.Should().BeTrue();
@@ -103,20 +103,22 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_executes_and_returns_a_struct_then_the_response_contains_test_metadata()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/passing_test_returns_struct");
 
-        var result = JsonConvert.DeserializeObject<TestResult>(await response.Content.ReadAsStringAsync());
+        var json = await response.Content.ReadAsStringAsync();
+
+        var result = JsonConvert.DeserializeObject<TestResult>(json);
         result.Test.Should().NotBeNull();
         result.Test.Application.Should().Be("widgetapi");
         result.Test.Environment.Should().Be("production");
-        result.Test.Url.Should().Be("http://blammo.com/tests/production/widgetapi/passing_test_returns_struct");
+        result.Test.Url.Should().Be("http://example.com/tests/production/widgetapi/passing_test_returns_struct");
         result.Test.Tags.Should().BeNullOrEmpty();
     }
 
     [Fact]
     public async Task When_a_test_with_a_return_value_throws_then_a_500_Test_Failed_is_returned()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/throwing_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/throwing_test");
 
         response.ShouldFailWith(HttpStatusCode.InternalServerError);
     }
@@ -124,7 +126,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_throws_TestFailedException_then_a_500_Test_Failed_is_returned()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/failing_test");
 
         response.ShouldFailWith(HttpStatusCode.InternalServerError);
     }
@@ -132,7 +134,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_throws_TestTimeoutException_then_a_503_Test_Failed_is_returned()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/timingout_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/timingout_test");
 
         response.ShouldFailWith(HttpStatusCode.GatewayTimeout);
     }
@@ -140,7 +142,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_throws_TestInconclusiveException_then_a_503_Test_Failed_is_returned()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/inconclusive_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/inconclusive_test");
 
         response.ShouldFailWith(HttpStatusCode.ServiceUnavailable);
     }
@@ -148,7 +150,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_with_a_void_return_value_throws_then_a_500_Test_Failed_is_returned()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/failing_void_test");
 
         response.ShouldFailWith(HttpStatusCode.InternalServerError);
 
@@ -161,7 +163,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_with_a_Task_return_value_throws_then_a_500_Test_Failed_is_returned()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_async_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/failing_void_async_test");
 
         response.ShouldFailWith(HttpStatusCode.InternalServerError);
 
@@ -174,7 +176,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_with_a_return_value_fails_then_the_response_contains_the_test_return_value_and_exception_details()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/failing_test");
 
         var result = await response.Content.ReadAsStringAsync();
 
@@ -184,7 +186,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_with_a_void_return_value_fails_then_the_response_contains_the_test_return_value_and_exception_details()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/failing_void_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/failing_void_test");
 
         var result = await response.Content.ReadAsStringAsync();
 
@@ -194,7 +196,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_is_not_valid_for_a_given_environment_then_calling_it_returns_404()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/internal_only_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/internal_only_test");
 
         response.ShouldFailWith(HttpStatusCode.NotFound);
     }
@@ -202,7 +204,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task When_a_test_is_not_valid_for_a_given_application_then_calling_it_returns_404()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/sprocketapi/widgetapi_only_test");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/sprocketapi/widgetapi_only_test");
 
         response.ShouldFailWith(HttpStatusCode.NotFound);
     }
@@ -215,7 +217,7 @@ public class TestExecutionTests : IDisposable
     [InlineData("tests/production/widgetapi/PASSING_TEST_RETURNS_OBJECT")]
     public async Task Test_invocation_is_case_insensitive(string relativeUri)
     {
-        var response = await apiClient.GetAsync($"http://blammo.com/{relativeUri}");
+        var response = await apiClient.GetAsync($"http://example.com/{relativeUri}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -223,7 +225,7 @@ public class TestExecutionTests : IDisposable
     [Fact]
     public async Task Tests_return_a_duration()
     {
-        var response = await apiClient.GetAsync("http://blammo.com/tests/production/widgetapi/passing_test_returns_object");
+        var response = await apiClient.GetAsync("http://example.com/tests/production/widgetapi/passing_test_returns_object");
 
         var result = await response.AsTestResult();
 

@@ -9,9 +9,9 @@ using Newtonsoft.Json;
 
 namespace Peaky;
 
-internal class Test
+public class Test
 {
-    public Test(string name, string environment, string application, string url)
+    internal Test(string name, string environment, string application, string url)
     {
         Name = name;
         Environment = environment;
@@ -31,9 +31,9 @@ internal class Test
     public string[] Tags { get; init; }
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-    public Parameter[] Parameters { get; init; }
+    public TestParameter[] Parameters { get; init; }
 
-    public static IEnumerable<Test> CreateTests(TestTarget testTarget, TestDefinition definition, HttpRequest request)
+    internal static IEnumerable<Test> CreateTests(TestTarget testTarget, TestDefinition definition, HttpRequest request)
     {
         var testCases = testTarget
                         .DependencyRegistry
@@ -67,7 +67,7 @@ internal class Test
                 Tags = definition.Tags,
                 Parameters = definition.Parameters.Any()
                                  ? definition.Parameters.ToArray()
-                                 : Array.Empty<Parameter>()
+                                 : Array.Empty<TestParameter>()
             };
         }
     }
