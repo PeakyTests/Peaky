@@ -11,6 +11,7 @@
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
+      "launchUrl": "tests",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
@@ -18,10 +19,11 @@
     "Peaky.SampleWebApplication": {
       "commandName": "Project",
       "launchBrowser": true,
+      "launchUrl": "tests",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "http://localhost:62470/"
+      "applicationUrl": "https://localhost:62469;http://localhost:62470/"
     }
   }
 }

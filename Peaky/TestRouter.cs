@@ -21,7 +21,9 @@ internal class TestRouter : PeakyRouter
 {
     private readonly TestTargetRegistry testTargets;
     private readonly TestDefinitionRegistry testDefinitions;
+    private readonly Func<IHtmlTestPageRenderer> getTestPageRenderer;
     private readonly string pathBase;
+
     private static readonly JsonSerializerSettings SerializerSettings = new()
     {
         ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
@@ -32,15 +34,13 @@ internal class TestRouter : PeakyRouter
                 NamingStrategy = new CamelCaseNamingStrategy()
             }
         },
-        Error = (_, args) =>
-        {
-            args.ErrorContext.Handled = true;
-        }
+        Error = (_, args) => { args.ErrorContext.Handled = true; }
     };
 
     public TestRouter(
         TestTargetRegistry testTargets,
         TestDefinitionRegistry testDefinitions,
+        Func<IHtmlTestPageRenderer> getTestPageRenderer,
         string pathBase = "/tests") : base(pathBase)
     {
         this.pathBase = pathBase ??
@@ -48,6 +48,7 @@ internal class TestRouter : PeakyRouter
 
         this.testDefinitions = testDefinitions ??
                                throw new ArgumentNullException(nameof(testDefinitions));
+        this.getTestPageRenderer = getTestPageRenderer;
         this.testTargets = testTargets ??
                            throw new ArgumentNullException(nameof(testTargets));
     }
@@ -71,37 +72,39 @@ internal class TestRouter : PeakyRouter
         }
     }
 
-    private (string environment, string application, string test) ParseUrl(RouteContext context)
+    private (string environment, string application, string testName) ParseUrl(RouteContext context)
     {
         var segments = context.HttpContext
                               .Request
                               .Path
-                              .Value
-                              .Substring(pathBase.Length)
+                              .Value[pathBase.Length..]
                               .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
 
         string application = null;
         string environment = null;
         string test = null;
 
-        if (segments.Length < 3)
+        switch (segments.Length)
         {
-            var firstSegment = segments.ElementAtOrDefault(0);
+            case < 3:
+                var firstSegment = segments.ElementAtOrDefault(0);
 
-            environment = testTargets.FirstOrDefault(t => t.Environment.Equals(firstSegment, StringComparison.OrdinalIgnoreCase))?.Environment;
+                environment = testTargets.FirstOrDefault(t => t.Environment.Equals(firstSegment, StringComparison.OrdinalIgnoreCase))?.Environment;
 
-            application = segments.ElementAtOrDefault(1);
+                application = segments.ElementAtOrDefault(1);
 
-            if (environment is null)
-            {
-                application = firstSegment;
-            }
-        }
-        else if (segments.Length == 3)
-        {
-            environment = segments.ElementAt(0);
-            application = segments.ElementAt(1);
-            test = segments.ElementAt(2);
+                if (environment is null)
+                {
+                    application = firstSegment;
+                }
+
+                break;
+
+            case 3:
+                environment = segments[0];
+                application = segments[1];
+                test = segments[2];
+                break;
         }
 
         return (environment, application, test);
@@ -151,13 +154,12 @@ internal class TestRouter : PeakyRouter
                                                    definition.Tags,
                                                    context.HttpContext.Request.Query))
                                     .SelectMany(
-                                        target => Test.CreateTests(target,definition, context.HttpContext.Request))
+                                        target => Test.CreateTests(target, definition, context.HttpContext.Request))
                                     .Where(l => l.Url is not null))
-                        .OrderBy(t => t.Url.ToString());
+                        .OrderBy(t => t.Url.ToString())
+                        .ToArray();
 
-            var json = JsonConvert.SerializeObject(new { Tests = tests }, SerializerSettings);
-
-            await httpContext.Response.WriteAsync(json);
+            await WriteToResponseAsync(httpContext, tests);
         };
     }
 
@@ -177,7 +179,7 @@ internal class TestRouter : PeakyRouter
             foreach (var testTarget in parameterizedTestCases.targets)
             {
                 var testClassInstance =
-                    (IParameterizedTestCases) testTarget.DependencyRegistry.Container.Resolve(parameterizedTestCases.type);
+                    (IParameterizedTestCases)testTarget.DependencyRegistry.Container.Resolve(parameterizedTestCases.type);
                 testClassInstance.RegisterTestCasesTo(testTarget.DependencyRegistry);
             }
         }
@@ -192,7 +194,7 @@ internal class TestRouter : PeakyRouter
         using var exit = Log.OnEnterAndExit();
 
         TestTarget target;
-        
+
         try
         {
             target = testTargets.Get(environment, application);
@@ -243,9 +245,9 @@ internal class TestRouter : PeakyRouter
                 }
 
                 var returnValue = testDefinition.Run(
-                                      httpContext,
-                                      container.Resolve,
-                                      target);
+                    httpContext,
+                    container.Resolve,
+                    target);
 
                 if (returnValue is Task task)
                 {
@@ -258,7 +260,7 @@ internal class TestRouter : PeakyRouter
                         if (genericTypeParameter.IsPublic)
                         {
                             // task is Task<T> so await to get its return value
-                            returnValue = await (dynamic) task;
+                            returnValue = await (dynamic)task;
                         }
                         else
                         {
@@ -272,17 +274,17 @@ internal class TestRouter : PeakyRouter
             catch (ParameterFormatException exception)
             {
                 result = TestResult.CreateFailedResult(exception, stopwatch.Elapsed, test);
-                httpContext.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                httpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
             }
             catch (TestInconclusiveException tie)
             {
                 result = TestResult.CreateInconclusiveResult(tie, stopwatch.Elapsed, test);
-                httpContext.Response.StatusCode = (int) HttpStatusCode.ServiceUnavailable;
+                httpContext.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
             }
             catch (TestTimeoutException tte)
             {
                 result = TestResult.CreateTimeoutResult(tte, stopwatch.Elapsed, test);
-                httpContext.Response.StatusCode = (int) HttpStatusCode.GatewayTimeout;
+                httpContext.Response.StatusCode = (int)HttpStatusCode.GatewayTimeout;
             }
             catch (TestFailedException tfe)
             {
@@ -295,27 +297,67 @@ internal class TestRouter : PeakyRouter
                 httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             }
 
-            string responseText = null;
-
-            switch (httpContext.Request.ContentType)
-            {
-                case "text/html":
-
-                    break;
-
-                case "application/json":
-                default:
-                    responseText = JsonConvert.SerializeObject(result, SerializerSettings);
-
-                    break;
-            }
-
-            httpContext.Response.ContentType ??= "application/json";
-
-            await httpContext.Response.WriteAsync(responseText);
+            await WriteToResponseAsync(httpContext, result);
         };
 
         return Task.CompletedTask;
+    }
+
+    private async Task WriteToResponseAsync(HttpContext httpContext, object value)
+    {
+        var accept = httpContext.Request.GetTypedHeaders().Accept;
+
+        var isHtml = false;
+
+        if (accept is not null)
+        {
+            foreach (var mediaTypeHeaderValue in accept)
+            {
+                if (mediaTypeHeaderValue.MediaType == "text/html")
+                {
+                    isHtml = true;
+                    break;
+                }
+                else if (mediaTypeHeaderValue.MediaType == "application/json")
+                {
+                    isHtml = false;
+                    break;
+                }
+            }
+        }
+
+        if (isHtml)
+        {
+            httpContext.Response.ContentType ??= "text/html";
+
+            var renderer = getTestPageRenderer();
+
+            switch (value)
+            {
+                case TestResult result:
+                    await renderer.RenderTestResultAsync(result, httpContext);
+                    break;
+
+                case IReadOnlyList<Test> tests:
+                    await renderer.RenderTestListAsync(tests, httpContext);
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException($"Unexpected result type: {value.GetType()}");
+            }
+        }
+        else
+        {
+            httpContext.Response.ContentType ??= "application/json";
+
+            var responseText = value switch
+            {
+                TestResult result => JsonConvert.SerializeObject(result, SerializerSettings),
+                IReadOnlyList<Test> => JsonConvert.SerializeObject(new { Tests = value }, SerializerSettings),
+                _ => throw new ArgumentOutOfRangeException($"Unexpected result type: {value.GetType()}")
+            };
+            await httpContext.Response.WriteAsync(responseText);
+        }
     }
 
     private static bool MatchesFilter(

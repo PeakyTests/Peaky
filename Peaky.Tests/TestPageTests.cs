@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -26,36 +27,17 @@ public class TestPageTests : IDisposable
     public void Dispose() => disposables.Dispose();
 
     [Fact]
-    public async Task When_HTML_is_requested_then_the_tests_endpoint_returns_UI_bootstrap_HTML()
-    {
-        var response = await RequestTestsHtml();
-
-        response.ShouldSucceed();
-
-        var result = await response.Content.ReadAsStringAsync();
-
-        response.Content
-                .Headers
-                .ContentType
-                .ToString()
-                .Should()
-                .Be("text/html");
-        result.Should()
-              .StartWith("<!doctype html>");
-    }
-
-    [Fact]
     public async Task When_HTML_is_requested_from_tests_endpoint_then_test_list_is_rendered()
     {
         var response = await RequestTestsHtml();
 
         response.ShouldSucceed();
 
-        var result = await response.Content.ReadAsStringAsync();
+        var html = await response.Content.ReadAsStringAsync();
 
-        result.Should().Contain(@"<script src=""//peakytests.github.io/Peaky/javascripts/peaky.js?version=");
+        response.Content.Headers.ContentType.MediaType.Should().Be("text/html");
 
-        throw new NotImplementedException();
+        html.Should().Contain("""<title>Peaky - Tests</title>""");
     }
 
     [Fact]
@@ -63,14 +45,18 @@ public class TestPageTests : IDisposable
     {
         var client = CreateClient();
 
-        var result = await client.GetAsync("http://example.com/tests/production/widgetapi/passing_test_returns_object");
+        var request = new HttpRequestMessage(HttpMethod.Get, "http://example.com/tests/production/widgetapi/passing_test_returns_object")
+            { Headers = { Accept = { MediaTypeWithQualityHeaderValue.Parse("text/html") } } };
 
-        result.Content.Headers.ContentType.Should().Be("text/html");
+        var response = await client.SendAsync(request);
 
+        response.ShouldSucceed();
 
+        response.Content.Headers.ContentType.MediaType.Should().Be("text/html");
 
-        // TODO (When_HTML_is_requested_from_test_endpoint_then_test_is_run_and_result_is_rendered) write test
-        throw new NotImplementedException();
+        var html = await response.Content.ReadAsStringAsync();
+
+        html.Should().Contain("""<title>Peaky - passing_test_returns_object</title>""");
     }
 
     [Fact]
@@ -92,12 +78,12 @@ public class TestPageTests : IDisposable
 
         public SubstituteTestPageRenderer(string html) => this.html = html;
 
-        public async Task RenderTestResult(Peaky.TestResult result, HttpContext httpContext)
+        public async Task RenderTestResultAsync(Peaky.TestResult result, HttpContext httpContext)
         {
             await httpContext.Response.WriteAsync(html);
         }
 
-        public async Task RenderTestList(IReadOnlyList<Peaky.Test> tests, HttpContext httpContext)
+        public async Task RenderTestListAsync(IReadOnlyList<Peaky.Test> tests, HttpContext httpContext)
         {
             await httpContext.Response.WriteAsync(html);
         }

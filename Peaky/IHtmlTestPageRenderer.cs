@@ -9,7 +9,7 @@ namespace Peaky;
 
 public interface IHtmlTestPageRenderer
 {
-    Task RenderTestResult(TestResult result, HttpContext httpContext);
+    Task RenderTestResultAsync(TestResult result, HttpContext httpContext);
 
-    Task RenderTestList(IReadOnlyList<Test> tests, HttpContext httpContext);
+    Task RenderTestListAsync(IReadOnlyList<Test> tests, HttpContext httpContext);
 }
