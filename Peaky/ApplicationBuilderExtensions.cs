@@ -44,7 +44,10 @@ public static class ApplicationBuilderExtensions
             if (testTargets is not null &&
                 testDefinitions is not null)
             {
-                var testRouter = new TestRouter(testTargets, testDefinitions)
+                var testRouter = new TestRouter(
+                        testTargets, 
+                        testDefinitions, 
+                        () => services.GetService<IHtmlTestPageRenderer>())
                     .AllowVerbs("GET", "POST");
 
                 builder.Routes.Add(testRouter);
