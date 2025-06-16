@@ -107,29 +107,6 @@ internal class HtmlTestPageRenderer : IHtmlTestPageRenderer
             """);
 
         await WriteEndDocAsync(response);
-
-        static bool TryIndentJson(string content, out string formattedJson)
-        {
-            try
-            {
-                using var json = JsonDocument.Parse(content);
-
-                formattedJson = JsonSerializer.Serialize(
-                    json.RootElement,
-                    new
-                        JsonSerializerOptions
-                        {
-                            WriteIndented = true
-                        });
-
-                return true;
-            }
-            catch
-            {
-                formattedJson = null;
-                return false;
-            }
-        }
     }
 
     static async Task WriteTestAsync(Test test, HttpResponse response)

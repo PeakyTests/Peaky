@@ -1,8 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
+		<TargetFramework>net9.0</TargetFramework>
 		<LangVersion>latest</LangVersion>
+		<Nullable>disable</Nullable>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -17,7 +19,7 @@
 		<PackageTags>tests-as-a-service monitoring TiP</PackageTags>
 		<PackageProjectUrl>https://github.com/PeakyTests/Peaky</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/PeakyTests/Peaky</RepositoryUrl>
-		<PackageLicenseUrl>https://github.com/PeakyTests/peaky/blob/master/LICENSE</PackageLicenseUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<SignAssembly>True</SignAssembly>
 		<AssemblyOriginatorKeyFile>..\Peaky.snk</AssemblyOriginatorKeyFile>
 	</PropertyGroup>
@@ -31,10 +33,10 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="pocket.disposable" Version="1.1.0">
+		<PackageReference Include="pocket.disposable" Version="1.2.0">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Pocket.TypeDiscovery" Version="0.5.0">
+		<PackageReference Include="Pocket.TypeDiscovery" Version="0.6.0">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="pocketcontainer" Version="2.0.0">
@@ -43,7 +45,7 @@
 		<PackageReference Include="pocketcontainer.aftercreating" Version="2.0.0">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="pocketlogger" Version="0.8.2">
+		<PackageReference Include="pocketlogger" Version="0.9.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
